@@ -71,6 +71,29 @@ class ScriptPlayStore(private val mContext: Context) {
         }.getOrNull()
     }
 
+    /**
+     * 列出全部存档，按最近游玩排序。
+     *
+     * 只解析存档头部字段，不加载全部消息——存档可能很大，
+     * 列表页只需要知道是哪部剧本、玩到哪个场景。
+     */
+    suspend fun list(): List<ScriptPlaythrough> = withContext(Dispatchers.IO) {
+        mRoot.listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .mapNotNull { file ->
+                runCatching {
+                    Gson().fromJson(file.readText(), ScriptPlaythrough::class.java)
+                }.getOrNull()?.copy(messages = emptyList())
+            }
+            .sortedByDescending { it.roundCount }
+    }
+
+    /** 删除一局存档。 */
+    suspend fun delete(playId: String): Boolean = withContext(Dispatchers.IO) {
+        val file = File(mRoot, "$playId.json")
+        !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+    }
+
     /** 写入存档。 */
     suspend fun save(play: ScriptPlaythrough): Boolean = withContext(Dispatchers.IO) {
         runCatching {

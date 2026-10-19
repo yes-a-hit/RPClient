@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.storyeditor
 
+import me.kafuuneko.rpclient.libs.story.ChapterIndexParser
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
@@ -46,6 +47,7 @@ import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryContinuationI
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorDialogState
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorPageState
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorReferenceState
+import me.kafuuneko.rpclient.feature.storyeditor.model.ChapterSortAlgorithm
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorStructureState
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorTopBarState
 import me.kafuuneko.rpclient.feature.storyeditor.presentation.StoryEditorUiIntent
@@ -530,6 +532,81 @@ class StoryEditorViewModel : CoreViewModelWithEvent<StoryEditorUiIntent, StoryEd
     }
 
     /** 在大纲结构页切换当前选中章节。 */
+    /** 打开章节排序对话框。 */
+    @UiIntentObserver(StoryEditorUiIntent.ShowSortChaptersDialog::class)
+    private fun onShowSortChaptersDialog() {
+        val uiState = getOrNull<StoryEditorUiState.Normal>() ?: return
+        uiState.copy(sortDialogVisible = true).setup()
+    }
+
+    /** 关闭章节排序对话框。 */
+    @UiIntentObserver(StoryEditorUiIntent.DismissSortChaptersDialog::class)
+    private fun onDismissSortChaptersDialog() {
+        val uiState = getOrNull<StoryEditorUiState.Normal>() ?: return
+        uiState.copy(sortDialogVisible = false).setup()
+    }
+
+    /**
+     * 按选定算法重排章节。
+     *
+     * 未分卷与每个分卷各自成一个容器，容器内独立排序；
+     * 逐容器调用仓储的 reorderChapters，避免跨容器打乱归属。
+     */
+    @UiIntentObserver(StoryEditorUiIntent.ApplyChapterSort::class)
+    private suspend fun onApplyChapterSort(intent: StoryEditorUiIntent.ApplyChapterSort) {
+        val uiState = getOrNull<StoryEditorUiState.Normal>() ?: return
+        val structure = uiState.structureState
+        var changed = false
+
+        // 未分卷容器
+        val ungrouped = sortOutlineChapters(structure.ungroupedChapters, intent.algorithm)
+        if (ungrouped.map { it.id } != structure.ungroupedChapters.map { it.id }) {
+            changed = mStoryRepository.reorderChapters(
+                storyId = uiState.storyId,
+                volumeId = null,
+                orderedChapterIds = ungrouped.map { it.id }
+            ) || changed
+        }
+
+        // 各分卷容器
+        structure.volumes.forEach { volume ->
+            val sorted = sortOutlineChapters(volume.chapters, intent.algorithm)
+            if (sorted.map { it.id } != volume.chapters.map { it.id }) {
+                changed = mStoryRepository.reorderChapters(
+                    storyId = uiState.storyId,
+                    volumeId = volume.id,
+                    orderedChapterIds = sorted.map { it.id }
+                ) || changed
+            }
+        }
+
+        // 重排后重新拉取结构，保证界面与数据库一致
+        val editorData = mStoryRepository.getStoryEditorData(uiState.storyId, mChapter?.id)
+            ?: return
+        val current = getOrNull<StoryEditorUiState.Normal>() ?: return
+        current.copy(
+            structureState = buildStructureState(editorData),
+            sortDialogVisible = false
+        ).setup()
+    }
+
+    /** 按算法排序一组章节；不改变章节归属。 */
+    private fun sortOutlineChapters(
+        chapters: List<StoryChapterOutlineItem>,
+        algorithm: ChapterSortAlgorithm
+    ): List<StoryChapterOutlineItem> = when (algorithm) {
+        ChapterSortAlgorithm.ByIndex -> chapters.sortedWith(
+            compareBy(
+                // 解析不出序号的排在最后，保持原有相对顺序
+                { ChapterIndexParser.parseIndex(it.title) ?: Double.MAX_VALUE },
+                { it.sortOrder }
+            )
+        )
+
+        ChapterSortAlgorithm.ByTitle -> chapters.sortedBy { it.title }
+        ChapterSortAlgorithm.Reverse -> chapters.reversed()
+    }
+
     @UiIntentObserver(StoryEditorUiIntent.SelectStoryChapter::class)
     private suspend fun onSelectStoryChapter(intent: StoryEditorUiIntent.SelectStoryChapter) {
         val uiState = getOrNull<StoryEditorUiState.Normal>() ?: return

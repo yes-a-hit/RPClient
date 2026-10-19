@@ -14,6 +14,8 @@ import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.assistant.AssistantImportResult
 import me.kafuuneko.rpclient.libs.assistant.AssistantMessage
 import me.kafuuneko.rpclient.libs.assistant.AssistantPromptBuilder
+import me.kafuuneko.rpclient.libs.assistant.AssistantSessionCreateResult
+import me.kafuuneko.rpclient.libs.assistant.AssistantSessionStore
 import me.kafuuneko.rpclient.libs.assistant.AssistantStore
 import me.kafuuneko.rpclient.libs.assistant.AssistantToolCatalog
 import me.kafuuneko.rpclient.libs.assistant.AssistantToolExecutor
@@ -45,11 +47,15 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     AssistantUiState.Loading
 ), KoinComponent {
     private val mStore by inject<AssistantStore>()
+    private val mSessionStore by inject<AssistantSessionStore>()
     private val mToolExecutor by inject<AssistantToolExecutor>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mClientFactory by inject<LLMClientFactory>()
     private val mFileRepository by inject<FileRepository>()
     private val mContext by inject<android.content.Context>()
+
+    /** 当前会话 ID；空表示尚未确定，首次加载时创建或选取最新会话。 */
+    private var mSessionId: String = ""
 
     /** 本轮待附加的图片引用，只随下一次请求发送。 */
     private var mPendingImages: List<LLMImageReference> = emptyList()
@@ -64,7 +70,11 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     @UiIntentObserver(AssistantUiIntent.Init::class)
     private suspend fun onInit() {
         if (isStateOf<AssistantUiState.Ready>()) return
-        val stored = mStore.load()
+        // 首次进入：优先继续最近会话，没有就新建
+        if (mSessionId.isBlank()) {
+            ensureSession()
+        }
+        val stored = mSessionStore.loadSession(mSessionId)
         mMessages.clear()
         mMessages.addAll(stored)
         AssistantUiState.Ready(
@@ -122,7 +132,8 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         mGenerationJob?.cancel()
         mGenerationJob = null
         mMessages.clear()
-        mStore.clear()
+        mSessionStore.deleteSession(mSessionId)
+        ensureSession()
         val state = getOrNull<AssistantUiState.Ready>() ?: return
         state.copy(
             items = emptyList(),
@@ -178,7 +189,9 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
             AssistantAttachment(
                 uri = uri.toString(),
                 name = name,
-                isImage = mime.startsWith("image/")
+                isImage = mime.startsWith("image/"),
+                mimeType = mime,
+                byteCount = querySize(uri)
             )
         }
         // 同一文件重复选择时按 URI 去重，避免同图发多次
@@ -227,6 +240,20 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     /** 查询文件显示名，缺失时退回末段。 */
+    /** 查询文件字节数；查询失败时返回 0，界面不展示大小。 */
+    private fun querySize(uri: Uri): Long {
+        val projection = arrayOf(android.provider.OpenableColumns.SIZE)
+        runCatching {
+            mContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                    if (index >= 0) return cursor.getLong(index)
+                }
+            }
+        }
+        return 0L
+    }
+
     private fun queryDisplayName(uri: Uri): String {
         val projection = arrayOf(android.provider.OpenableColumns.DISPLAY_NAME)
         runCatching {
@@ -262,6 +289,120 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
 
     /** 换行字面量，避免在多行字符串里写死转义。 */
     private fun nlLiteral(): String = System.lineSeparator()
+
+    /** 确保有可用会话：取最近一个活跃会话，没有就新建。 */
+    private suspend fun ensureSession() {
+        val active = mSessionStore.listSessions(includeArchived = false).firstOrNull()
+        mSessionId = active?.id ?: when (val created = mSessionStore.createSession()) {
+            is AssistantSessionCreateResult.Created -> created.id
+            is AssistantSessionCreateResult.LimitReached -> ""
+        }
+    }
+
+    /** 打开会话列表。 */
+    @UiIntentObserver(AssistantUiIntent.OpenSessionList::class)
+    private suspend fun onOpenSessionList() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(
+            sessionListVisible = true,
+            sessions = mSessionStore.listSessions()
+        ).setup()
+    }
+
+    /** 关闭会话列表。 */
+    @UiIntentObserver(AssistantUiIntent.CloseSessionList::class)
+    private fun onCloseSessionList() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(sessionListVisible = false).setup()
+    }
+
+    /** 新建会话；满额时存储层会自动归档最旧的。 */
+    @UiIntentObserver(AssistantUiIntent.NewSession::class)
+    private suspend fun onNewSession() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        when (val created = mSessionStore.createSession()) {
+            is AssistantSessionCreateResult.Created -> {
+                mSessionId = created.id
+                mMessages.clear()
+                state.copy(
+                    items = emptyList(),
+                    currentSessionId = created.id,
+                    sessions = mSessionStore.listSessions(),
+                    sessionListVisible = false
+                ).setup()
+            }
+
+            is AssistantSessionCreateResult.LimitReached ->
+                AssistantViewEvent.Toast("会话已达上限").tryEmit()
+        }
+    }
+
+    /** 切换到指定会话。 */
+    @UiIntentObserver(AssistantUiIntent.SwitchSession::class)
+    private suspend fun onSwitchSession(intent: AssistantUiIntent.SwitchSession) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        mSessionId = intent.sessionId
+        mMessages.clear()
+        mMessages.addAll(mSessionStore.loadSession(intent.sessionId))
+        state.copy(
+            items = mMessages.toItems(),
+            currentSessionId = intent.sessionId,
+            sessionListVisible = false
+        ).setup()
+    }
+
+    /** 归档会话；归档当前会话时自动切到另一个。 */
+    @UiIntentObserver(AssistantUiIntent.ArchiveSession::class)
+    private suspend fun onArchiveSession(intent: AssistantUiIntent.ArchiveSession) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        mSessionStore.archiveSession(intent.sessionId)
+        if (intent.sessionId == mSessionId) {
+            ensureSession()
+            mMessages.clear()
+            mMessages.addAll(mSessionStore.loadSession(mSessionId))
+        }
+        state.copy(
+            sessions = mSessionStore.listSessions(),
+            currentSessionId = mSessionId,
+            items = mMessages.toItems()
+        ).setup()
+    }
+
+    /** 删除会话；删除当前会话时自动切到另一个。 */
+    @UiIntentObserver(AssistantUiIntent.DeleteSession::class)
+    private suspend fun onDeleteSession(intent: AssistantUiIntent.DeleteSession) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        mSessionStore.deleteSession(intent.sessionId)
+        if (intent.sessionId == mSessionId) {
+            mSessionId = ""
+            ensureSession()
+            mMessages.clear()
+            mMessages.addAll(mSessionStore.loadSession(mSessionId))
+        }
+        state.copy(
+            sessions = mSessionStore.listSessions(),
+            currentSessionId = mSessionId,
+            items = mMessages.toItems()
+        ).setup()
+    }
+
+    /** 清空独立提示词并回到继承全局。 */
+    @UiIntentObserver(AssistantUiIntent.ResetPrompt::class)
+    private fun onResetPrompt() {
+        AppModel.assistantSystemPrompt = ""
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(customPrompt = "", inheritGlobalPrompt = true).setup()
+    }
+
+    /** 清空沙箱并刷新占用提示。 */
+    @UiIntentObserver(AssistantUiIntent.ClearSandbox::class)
+    private suspend fun onClearSandbox() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        val removed = mStore.clearSandbox()
+        state.copy(sandboxHint = mStore.sandboxSummary()).setup()
+        AssistantViewEvent.Toast("已清空沙箱，移除 $removed 项").tryEmit()
+    }
+
     /** 打开文件选择器。 */
     @UiIntentObserver(AssistantUiIntent.ImportFilesClick::class)
     private fun onImportFilesClick() {
@@ -319,6 +460,12 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
             throw cancellation
         } catch (error: Exception) {
             val message = error.message ?: error::class.simpleName ?: "未知错误"
+            // 失败也写进对话，避免只闪一下 Toast 就查不到原因
+            mMessages += AssistantMessage(
+                role = ROLE_ASSISTANT,
+                content = "生成失败：$message"
+            )
+            persistAndPublish()
             AssistantViewEvent.Toast("生成失败：$message").tryEmit()
             finishGeneration()
         }
@@ -383,7 +530,7 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
 
     /** 落盘并刷新页面消息列表。 */
     private suspend fun persistAndPublish() {
-        mStore.save(mMessages)
+        mSessionStore.saveSession(mSessionId, mMessages)
         publishItems()
     }
 

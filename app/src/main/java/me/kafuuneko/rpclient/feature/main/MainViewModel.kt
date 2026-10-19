@@ -16,6 +16,7 @@ import me.kafuuneko.rpclient.feature.about.AboutActivity
 import me.kafuuneko.rpclient.feature.characterlist.CharacterListActivity
 import me.kafuuneko.rpclient.feature.assistant.AssistantActivity
 import me.kafuuneko.rpclient.feature.script.ScriptEditorActivity
+import me.kafuuneko.rpclient.feature.scriptadventure.ScriptAdventureActivity
 import me.kafuuneko.rpclient.feature.script.ScriptLibraryActivity
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryTab
 import me.kafuuneko.rpclient.feature.chat.ChatActivity
@@ -63,6 +64,7 @@ import me.kafuuneko.rpclient.feature.main.presentation.MainUserIdentityState
 import me.kafuuneko.rpclient.feature.main.presentation.MainViewEvent
 import me.kafuuneko.rpclient.feature.main.presentation.MainWorldInfoBudgetState
 import me.kafuuneko.rpclient.feature.main.presentation.canOpenDialog
+import me.kafuuneko.rpclient.feature.main.model.items.MainAdventureItem
 import me.kafuuneko.rpclient.feature.main.presentation.mergeAllRecentItems
 import me.kafuuneko.rpclient.feature.main.presentation.mergeResumeRefresh
 import me.kafuuneko.rpclient.feature.main.presentation.preserveCollapsedGroupsFrom
@@ -70,6 +72,7 @@ import me.kafuuneko.rpclient.feature.main.presentation.toMainSummaryInjectionSta
 import me.kafuuneko.rpclient.feature.main.presentation.toggleItem
 import me.kafuuneko.rpclient.feature.promptpreset.PromptPresetActivity
 import me.kafuuneko.rpclient.feature.regexscript.RegexScriptActivity
+import me.kafuuneko.rpclient.libs.script.ScriptPlayStore
 import me.kafuuneko.rpclient.feature.requestlog.RequestLogActivity
 import me.kafuuneko.rpclient.feature.storycreate.StoryCreateActivity
 import me.kafuuneko.rpclient.feature.storyeditor.StoryEditorActivity
@@ -129,6 +132,9 @@ private val WHITESPACE_REGEX = Regex("\\s+")
 class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
     MainUiState.None
 ), KoinComponent {
+    /** 剧情冒险存档，用于首页最近内容。 */
+    private val mScriptPlayStore by inject<ScriptPlayStore>()
+
     private val mLLMRepository by inject<LLMRepository>()
     private val mLorebookRepository by inject<LorebookRepository>()
     private val mChatRepository by inject<ChatRepository>()
@@ -729,6 +735,13 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
     private fun onOpenScriptEditor() {
         if (!isStateOf<MainUiState.Normal>()) return
         AppViewEvent.StartActivity(ScriptEditorActivity::class.java).tryEmit()
+    }
+
+    /** 打开剧情冒险页。 */
+    @UiIntentObserver(MainUiIntent.OpenAdventure::class)
+    private fun onOpenAdventure() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(ScriptAdventureActivity::class.java).tryEmit()
     }
 
     /** 打开剧本库。 */
@@ -1694,6 +1707,7 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
             }
             // 装配完整的首页状态模型
             MainHomeState(
+                adventureItems = loadAdventureItems(),
                 resourceState = MainHomeResourceState(
                     totalCharacters = characters.size,
                     totalWorldBooks = mLorebookRepository.getAllLorebooks().size
@@ -1976,6 +1990,24 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
             latestTime = latestTime
         )
     }
+
+    /**
+     * 读取剧情冒险存档，转成首页条目。
+     *
+     * 只取最近若干条：首页是概览，不需要把全部存档铺开。
+     */
+    private suspend fun loadAdventureItems(): List<MainAdventureItem> =
+        runCatching {
+            mScriptPlayStore.list().take(5).map { play ->
+                MainAdventureItem(
+                    playId = play.id,
+                    packId = play.packId,
+                    title = play.packName,
+                    preview = if (play.finished) play.endReason else "${play.roundCount} 轮",
+                    latestTime = 0L
+                )
+            }
+        }.getOrDefault(emptyList())
 }
 
 /** 设置页聊天背景预览图的解码目标宽度。 */

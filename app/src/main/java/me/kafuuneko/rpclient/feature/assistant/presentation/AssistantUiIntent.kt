@@ -31,6 +31,30 @@ sealed class AssistantUiIntent {
     /** 修改独立提示词并立即持久化。 */
     data class CustomPromptChanged(val text: String) : AssistantUiIntent()
 
+    /** 打开会话列表。 */
+    data object OpenSessionList : AssistantUiIntent()
+
+    /** 关闭会话列表。 */
+    data object CloseSessionList : AssistantUiIntent()
+
+    /** 新建会话；满额时自动归档最旧的。 */
+    data object NewSession : AssistantUiIntent()
+
+    /** 切换到指定会话。 */
+    data class SwitchSession(val sessionId: String) : AssistantUiIntent()
+
+    /** 归档指定会话。 */
+    data class ArchiveSession(val sessionId: String) : AssistantUiIntent()
+
+    /** 删除指定会话。 */
+    data class DeleteSession(val sessionId: String) : AssistantUiIntent()
+
+    /** 清空独立提示词，回到继承全局。 */
+    data object ResetPrompt : AssistantUiIntent()
+
+    /** 清空沙箱内的全部文件。 */
+    data object ClearSandbox : AssistantUiIntent()
+
     /** 选择附件，随下一条消息发送。 */
     data class AttachFiles(val uris: List<Uri>) : AssistantUiIntent()
 

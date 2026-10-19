@@ -21,6 +21,8 @@ sealed class StoryEditorUiState {
         /** 当前页面正文区域的可渲染状态。 */
         val contentState: StoryEditorContentState,
         /** 故事卷与章节结构区域的可渲染状态。 */
+        /** 章节排序对话框是否展开。 */
+        val sortDialogVisible: Boolean = false,
         val structureState: StoryEditorStructureState,
         /** 角色与世界书引用区域的可渲染状态。 */
         val referenceState: StoryEditorReferenceState,

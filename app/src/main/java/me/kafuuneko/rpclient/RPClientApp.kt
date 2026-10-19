@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.character.CharacterCardRepository
+import me.kafuuneko.rpclient.libs.assistant.AssistantSessionStore
 import me.kafuuneko.rpclient.libs.assistant.AssistantStore
 import me.kafuuneko.rpclient.libs.assistant.AssistantToolExecutor
 import me.kafuuneko.rpclient.libs.billing.PricingRepository
@@ -217,6 +218,7 @@ internal val appModules = module {
 
     // 助手会话：沙箱内文件工具与角色卡编辑工具
     single { AssistantStore(androidContext()) }
+    single { AssistantSessionStore(androidContext()) }
     single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get(), get()) }
 
     // 计费：模型报价快照与服务商余额查询

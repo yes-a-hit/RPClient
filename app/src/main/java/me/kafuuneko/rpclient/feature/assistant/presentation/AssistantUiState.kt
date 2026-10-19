@@ -32,6 +32,12 @@ sealed class AssistantUiState {
         val promptEditorVisible: Boolean = false,
         // 一次性状态提示，例如工具执行进度
         val statusText: String = "",
+        /** 会话列表是否展开。 */
+        val sessionListVisible: Boolean = false,
+        /** 全部会话摘要。 */
+        val sessions: List<me.kafuuneko.rpclient.libs.assistant.AssistantSessionSummary> = emptyList(),
+        /** 当前会话 ID。 */
+        val currentSessionId: String = "",
         /** 待发送附件：选中后随下一条消息一起发出。 */
         val attachments: List<AssistantAttachment> = emptyList()
     ) : AssistantUiState()
@@ -70,5 +76,9 @@ data class AssistantAttachment(
     /** 显示名。 */
     val name: String,
     /** 是否为图片。 */
-    val isImage: Boolean
+    val isImage: Boolean,
+    /** MIME 类型，用于选择预览方式。 */
+    val mimeType: String = "",
+    /** 字节数，用于展示大小。 */
+    val byteCount: Long = 0
 )

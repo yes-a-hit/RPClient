@@ -24,6 +24,9 @@ sealed class MainUiIntent {
     /** 打开剧本画布。 */
     data object OpenScriptEditor : MainUiIntent()
 
+    /** 打开剧情冒险：开新局或继续存档。 */
+    data object OpenAdventure : MainUiIntent()
+
     /** 打开剧本库。 */
     data object OpenScriptLibrary : MainUiIntent()
 

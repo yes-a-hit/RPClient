@@ -109,6 +109,20 @@ class AssistantStore(private val mContext: Context) {
     }
 
     /** 沙箱内的文件数量与占用，供页面展示权限范围。 */
+    /**
+     * 清空沙箱。
+     *
+     * 只删子项、保留根目录：根目录被删掉后工具会立刻失效，需要重启才能恢复。
+     */
+    suspend fun clearSandbox(): Int = withContext(Dispatchers.IO) {
+        val children = sandboxRoot.listFiles().orEmpty()
+        var removed = 0
+        children.forEach { child ->
+            if (runCatching { child.deleteRecursively() }.getOrDefault(false)) removed++
+        }
+        removed
+    }
+
     fun sandboxSummary(): String {
         val files = sandboxRoot.walkTopDown().filter { it.isFile }.toList()
         if (files.isEmpty()) return "沙箱为空"

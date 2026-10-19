@@ -55,6 +55,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Redo
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -90,6 +91,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -134,6 +136,7 @@ import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryChapterDestination
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryChapterDropPosition
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryChapterDropTarget
+import me.kafuuneko.rpclient.feature.storyeditor.model.ChapterSortAlgorithm
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryChapterOutlineItem
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryCharacterActivationMode
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryCharacterOptionItem
@@ -217,6 +220,7 @@ private fun StoryEditorNormal(
         StoryEditorPageState.Outline -> StoryOutlinePage(
             storyTitle = state.topBarState.title,
             structureState = state.structureState,
+            sortDialogVisible = state.sortDialogVisible,
             emit = emit
         )
 
@@ -2474,9 +2478,17 @@ private fun ImportPreviewDialog(
 private fun StoryOutlinePage(
     storyTitle: String,
     structureState: StoryEditorStructureState,
+    sortDialogVisible: Boolean,
     emit: StoryEditorUiIntent.() -> Unit
 ) {
     var collapsedVolumeIds by remember { mutableStateOf(emptySet<Long>()) }
+    if (sortDialogVisible) {
+        ChapterSortDialog(
+            emit = emit,
+            onDismiss = { StoryEditorUiIntent.DismissSortChaptersDialog.emit() }
+        )
+    }
+
     val controlsEnabled = !structureState.isUpdating
     val totalChapterCount = structureState.ungroupedChapters.size +
             structureState.volumes.sumOf { it.chapters.size }
@@ -2512,6 +2524,15 @@ private fun StoryOutlinePage(
                 title = stringResource(R.string.story_outline),
                 onBack = { StoryEditorUiIntent.CloseStoryOutline.emit() },
                 actions = {
+                    IconButton(
+                        onClick = { StoryEditorUiIntent.ShowSortChaptersDialog.emit() },
+                        enabled = controlsEnabled
+                    ) {
+                        Icon(
+                            Icons.Rounded.Sort,
+                            contentDescription = stringResource(R.string.story_sort_chapters)
+                        )
+                    }
                     IconButton(
                         onClick = { StoryEditorUiIntent.ShowCreateVolumeDialog.emit() },
                         enabled = controlsEnabled
@@ -4031,3 +4052,39 @@ private fun StoryGenerationStatusCardPreview() {
 
 private const val SLOW_GENERATION_HINT_SECONDS = 12L
 private const val REASONING_SCROLL_BOTTOM_TOLERANCE_PX = 2
+
+/** 章节排序对话框：选算法后按容器逐个重排。 */
+@Composable
+private fun ChapterSortDialog(emit: StoryEditorUiIntent.() -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.story_sort_chapters)) },
+        text = {
+            Column {
+                ChapterSortAlgorithm.entries.forEach { algorithm ->
+                    val label = when (algorithm) {
+                        ChapterSortAlgorithm.ByIndex -> stringResource(R.string.story_sort_by_index)
+                        ChapterSortAlgorithm.ByTitle -> stringResource(R.string.story_sort_by_title)
+                        ChapterSortAlgorithm.Reverse -> stringResource(R.string.story_sort_reverse)
+                    }
+                    Text(
+                        text = label,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                StoryEditorUiIntent.ApplyChapterSort(algorithm).emit()
+                            }
+                            .padding(vertical = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
+}
+

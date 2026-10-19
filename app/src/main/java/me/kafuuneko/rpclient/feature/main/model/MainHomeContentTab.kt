@@ -5,5 +5,8 @@ enum class MainHomeContentTab {
     All,
     Single,
     Group,
-    Story
+    Story,
+
+    /** 剧情冒险存档。 */
+    Adventure
 }

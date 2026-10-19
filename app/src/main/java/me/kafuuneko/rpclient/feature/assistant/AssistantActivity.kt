@@ -22,7 +22,8 @@ class AssistantActivity : CoreActivityWithEvent() {
     private val mFilePicker = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
-        if (!uris.isNullOrEmpty()) mViewModel.emit(AssistantUiIntent.FilesPicked(uris))
+        // 选中的文件作为附件随消息发送，不再复制进沙箱
+        if (!uris.isNullOrEmpty()) mViewModel.emit(AssistantUiIntent.AttachFiles(uris))
     }
 
     override fun getViewEventFlow() = mViewModel.viewEventFlow

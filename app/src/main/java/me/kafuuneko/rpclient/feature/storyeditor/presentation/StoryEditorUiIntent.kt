@@ -1,5 +1,7 @@
 package me.kafuuneko.rpclient.feature.storyeditor.presentation
 
+import me.kafuuneko.rpclient.feature.storyeditor.model.ChapterSortAlgorithm
+
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryEditorSnapshot
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryCharacterActivationMode
 import me.kafuuneko.rpclient.feature.storyeditor.model.StoryChapterDestination
@@ -20,6 +22,16 @@ sealed class StoryEditorUiIntent {
     data object CopyConflictDraft : StoryEditorUiIntent()
     data object ReloadAfterConflict : StoryEditorUiIntent()
     data class OpenStoryOutline(val snapshot: StoryEditorSnapshot) : StoryEditorUiIntent()
+
+    /** 打开章节排序对话框。 */
+    data object ShowSortChaptersDialog : StoryEditorUiIntent()
+
+    /** 关闭章节排序对话框。 */
+    data object DismissSortChaptersDialog : StoryEditorUiIntent()
+
+    /** 按选定算法重排章节。 */
+    data class ApplyChapterSort(val algorithm: ChapterSortAlgorithm) : StoryEditorUiIntent()
+
     data object CloseStoryOutline : StoryEditorUiIntent()
     data class SelectStoryChapter(val chapterId: Long) : StoryEditorUiIntent()
     data object ShowCreateVolumeDialog : StoryEditorUiIntent()

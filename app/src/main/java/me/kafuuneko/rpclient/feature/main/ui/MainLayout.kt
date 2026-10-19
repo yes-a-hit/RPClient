@@ -40,6 +40,8 @@ import androidx.compose.material.icons.rounded.AddComment
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Bookmarks
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChatBubble
@@ -116,6 +118,7 @@ import me.kafuuneko.rpclient.feature.main.model.MainProviderItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainGroupChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainHomeContentItem
+import me.kafuuneko.rpclient.feature.main.model.items.MainAdventureItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainStoryItem
 import me.kafuuneko.rpclient.feature.main.presentation.MainAppearanceSettingsState
 import me.kafuuneko.rpclient.feature.main.presentation.MainDebugSettingsState
@@ -795,55 +798,41 @@ private fun LazyListScope.homeEntryItems(
     resourceState: MainHomeResourceState,
     emit: MainUiIntent.() -> Unit
 ) {
-    item {
-        HeroEntryCard(
-            title = stringResource(R.string.new_session),
-            subtitle = stringResource(R.string.new_session_desc),
-            onClick = { MainUiIntent.OpenCreateChat.emit() }
-        )
-    }
+    // 五个一级入口统一成竖排小卡：一行放下五个，标题在图标下方
     item {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            HomeQuickActionCard(
+            HomeEntryTile(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Rounded.AddComment,
+                title = stringResource(R.string.new_session),
+                onClick = { MainUiIntent.OpenCreateChat.emit() }
+            )
+            HomeEntryTile(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.Groups,
                 title = stringResource(R.string.group_chat),
                 onClick = { MainUiIntent.OpenCreateGroupChat.emit() }
             )
-            HomeQuickActionCard(
+            HomeEntryTile(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.AutoStories,
                 title = stringResource(R.string.story_create_story),
                 onClick = { MainUiIntent.OpenCreateStory.emit() }
             )
-            HomeQuickActionCard(
+            HomeEntryTile(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.SmartToy,
                 title = stringResource(R.string.assistant_entry_title),
                 onClick = { MainUiIntent.OpenAssistant.emit() }
             )
-        }
-    }
-    // 剧本与场景单独一行：五个入口挤在一排会把文字标签压没
-    item {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            HomeQuickActionCard(
+            HomeEntryTile(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Rounded.Bookmarks,
-                title = stringResource(R.string.script_tab_pack),
-                onClick = { MainUiIntent.OpenScriptLibrary.emit() }
-            )
-            HomeQuickActionCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Rounded.Layers,
-                title = stringResource(R.string.script_tab_scene),
-                onClick = { MainUiIntent.OpenScriptScene.emit() }
+                icon = Icons.Rounded.PlayCircle,
+                title = stringResource(R.string.adventure_short),
+                onClick = { MainUiIntent.OpenAdventure.emit() }
             )
         }
     }
@@ -912,6 +901,24 @@ private fun LazyListScope.homeContentSection(
     }
 
     when (state.selectedContentTab) {
+        // 冒险存档同样汇入全部列表，单独一档时只筛出冒险
+        MainHomeContentTab.Adventure -> {
+            val adventures = state.allRecentItems.filterIsInstance<MainAdventureItem>()
+            if (adventures.isEmpty()) {
+                // 没有存档时给一个直达入口，而不是空白提示
+                item {
+                    RecentAdventureEntryCard { emit(MainUiIntent.OpenAdventure) }
+                }
+            } else {
+                recentAllItems(
+                    items = adventures,
+                    multiSelectMode = multiSelectMode,
+                    selectedItems = selectedItems,
+                    emit = emit
+                )
+            }
+        }
+
         MainHomeContentTab.All -> {
             if (state.allRecentItems.isEmpty()) {
                 item {
@@ -1007,6 +1014,7 @@ private fun LazyListScope.recentAllItems(
                 is MainChatSessionItem -> "session-${item.id}"
                 is MainGroupChatSessionItem -> "group-session-${item.id}"
                 is MainStoryItem -> "story-${item.id}"
+                is MainAdventureItem -> "adventure-${item.playId}"
             }
         }
     ) { item ->
@@ -1029,6 +1037,11 @@ private fun LazyListScope.recentAllItems(
                 story = item,
                 multiSelectMode = multiSelectMode,
                 selectedItems = selectedItems,
+                emit = emit
+            )
+
+            is MainAdventureItem -> RecentAdventureCard(
+                item = item,
                 emit = emit
             )
         }
@@ -2914,6 +2927,91 @@ private fun MainSettingsLayoutPreview() {
                 )
             ),
             emit = {}
+        )
+    }
+}
+
+/** 首页的冒险卡片：点一下直接继续那一局。 */
+@Composable
+private fun RecentAdventureCard(
+    item: MainAdventureItem,
+    emit: MainUiIntent.() -> Unit
+) {
+    RpSettingsGroup {
+        RpSettingsTile(
+            icon = Icons.Rounded.PlayArrow,
+            iconColor = AccentVioletColor,
+            iconContainerColor = AccentVioletColor.copy(alpha = 0.14f),
+            title = item.title,
+            subtitle = item.preview,
+            onClick = { emit(MainUiIntent.OpenAdventure) },
+            trailing = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.50f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        )
+    }
+}
+
+/** 首页一级入口：图标在上、文字在下的竖排小卡，一行可放五个。 */
+@Composable
+private fun HomeEntryTile(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            RpIconBubble(icon = icon, modifier = Modifier.size(30.dp))
+            Text(
+                text = title,
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** 没有任何冒险存档时的入口卡片：直接进剧情冒险页。 */
+@Composable
+private fun RecentAdventureEntryCard(onClick: () -> Unit) {
+    RpSettingsGroup {
+        RpSettingsTile(
+            icon = Icons.Rounded.PlayCircle,
+            iconColor = AccentVioletColor,
+            iconContainerColor = AccentVioletColor.copy(alpha = 0.14f),
+            title = stringResource(R.string.adventure_last_hint),
+            subtitle = stringResource(R.string.adventure_subtitle),
+            onClick = onClick,
+            trailing = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.50f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         )
     }
 }

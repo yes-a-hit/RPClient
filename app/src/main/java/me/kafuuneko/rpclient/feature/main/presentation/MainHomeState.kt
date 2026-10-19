@@ -3,6 +3,7 @@ package me.kafuuneko.rpclient.feature.main.presentation
 import me.kafuuneko.rpclient.feature.main.model.MainChatSessionGroup
 import me.kafuuneko.rpclient.feature.main.model.MainHomeContentTab
 import me.kafuuneko.rpclient.feature.main.model.MainHomeItemSelection
+import me.kafuuneko.rpclient.feature.main.model.items.MainAdventureItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainGroupChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainHomeContentItem
@@ -23,6 +24,8 @@ data class MainHomeState(
     /** 主页内容区域当前选中的标签页。 */
     val selectedContentTab: MainHomeContentTab = MainHomeContentTab.All,
     /** 主页多选模式与已选项目的状态。 */
+    /** 进行中的剧情冒险存档，单独成组展示，不参与内容 Tab 筛选。 */
+    val adventureItems: List<MainAdventureItem> = emptyList(),
     val selectionState: MainHomeSelectionState = MainHomeSelectionState.None
 )
 
@@ -30,9 +33,11 @@ data class MainHomeState(
 internal fun mergeAllRecentItems(
     chats: List<MainChatSessionItem>,
     groupChats: List<MainGroupChatSessionItem>,
-    stories: List<MainStoryItem>
+    stories: List<MainStoryItem>,
+    adventures: List<MainAdventureItem> = emptyList()
 ): List<MainHomeContentItem> {
-    return (chats + groupChats + stories).sortedByDescending { it.latestTime }
+    // 冒险按存档时间参与统一排序，与单聊/群聊/故事同列展示
+    return (chats + groupChats + stories + adventures).sortedByDescending { it.latestTime }
 }
 
 /** 首页角色卡与世界书入口所需的资源统计。 */

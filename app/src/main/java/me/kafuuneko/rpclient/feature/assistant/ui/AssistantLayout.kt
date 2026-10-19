@@ -28,6 +28,23 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Close
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantAttachment
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,6 +104,18 @@ fun AssistantLayout(
                     IconButton(onClick = { AssistantUiIntent.OpenPromptEditor.emit() }) {
                         Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.assistant_prompt_settings))
                     }
+                    IconButton(onClick = { AssistantUiIntent.OpenSessionList.emit() }) {
+                        Icon(
+                            Icons.Rounded.Forum,
+                            contentDescription = stringResource(R.string.assistant_sessions)
+                        )
+                    }
+                    IconButton(onClick = { AssistantUiIntent.ClearSandbox.emit() }) {
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = stringResource(R.string.assistant_clear_sandbox)
+                        )
+                    }
                     IconButton(onClick = { AssistantUiIntent.ClearSession.emit() }) {
                         Icon(Icons.Rounded.DeleteSweep, contentDescription = stringResource(R.string.assistant_clear))
                     }
@@ -113,6 +142,10 @@ fun AssistantLayout(
             AssistantInputBar(state, emit)
         }
     }
+    if (state.sessionListVisible) {
+        SessionListDialog(state, emit)
+    }
+
     if (state.promptEditorVisible) {
         AssistantPromptEditor(state, emit)
     }
@@ -250,30 +283,7 @@ private fun AssistantInputBar(
     Surface(tonalElevation = 3.dp) {
         Column {
             if (state.attachments.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    state.attachments.forEach { attachment ->
-                        Text(
-                            text = attachment.name,
-                            modifier = Modifier
-                                .clickable {
-                                    AssistantUiIntent.RemoveAttachment(attachment.uri).emit()
-                                }
-                                .background(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
+                AttachmentTray(state.attachments, emit)
             }
         Row(
             modifier = Modifier
@@ -386,9 +396,287 @@ private fun AssistantPromptEditor(
             }
         },
         confirmButton = {
+            TextButton(onClick = { AssistantUiIntent.ResetPrompt.emit() }) {
+                Text(stringResource(R.string.assistant_prompt_reset))
+            }
             TextButton(onClick = { AssistantUiIntent.ClosePromptEditor.emit() }) {
                 Text(stringResource(R.string.assistant_done))
             }
         }
     )
 }
+
+/**
+ * 待发送附件托盘。
+ *
+ * 图片显示缩略图、文本显示类型图标与体积，点卡片可预览内容，
+ * 右上角叉号移除——对齐常见聊天客户端的附件呈现方式。
+ */
+@Composable
+private fun AttachmentTray(
+    attachments: List<AssistantAttachment>,
+    emit: AssistantUiIntent.() -> Unit
+) {
+    var previewTarget by remember { mutableStateOf<AssistantAttachment?>(null) }
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(attachments, key = { it.uri }) { attachment ->
+            AttachmentCard(
+                attachment = attachment,
+                onPreview = { previewTarget = attachment },
+                onRemove = { AssistantUiIntent.RemoveAttachment(attachment.uri).emit() }
+            )
+        }
+    }
+    previewTarget?.let { target ->
+        AttachmentPreviewDialog(target) { previewTarget = null }
+    }
+}
+
+/** 单个附件卡片：图片走缩略图，文本走图标。 */
+@Composable
+private fun AttachmentCard(
+    attachment: AssistantAttachment,
+    onPreview: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Box(modifier = Modifier.width(96.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onPreview)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp)
+                )
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                if (attachment.isImage) {
+                    AttachmentThumbnail(attachment.uri)
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.Description,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Text(
+                text = attachment.name,
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = formatSize(attachment.byteCount),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.align(Alignment.TopEnd).size(20.dp)
+        ) {
+            Icon(
+                Icons.Rounded.Close,
+                contentDescription = stringResource(R.string.assistant_send),
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+/** 图片缩略图：按目标尺寸采样解码，避免大图占内存。 */
+@Composable
+private fun AttachmentThumbnail(uri: String) {
+    val context = LocalContext.current
+    val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(initialValue = null, uri) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val parsed = android.net.Uri.parse(uri)
+                val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(parsed)?.use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, options)
+                }
+                // 按最长边 256 采样，卡片只有 64dp 高
+                var sample = 1
+                val longest = maxOf(options.outWidth, options.outHeight)
+                while (longest / sample > 256) sample *= 2
+                val decodeOptions = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+                val bitmap = context.contentResolver.openInputStream(parsed)?.use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, decodeOptions)
+                }
+                bitmap?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    bitmap?.let {
+        Image(
+            bitmap = it,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+/** 预览对话框：图片铺满，文本显示前若干行。 */
+@Composable
+private fun AttachmentPreviewDialog(
+    attachment: AssistantAttachment,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(attachment.name) },
+        text = {
+            if (attachment.isImage) {
+                val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, attachment.uri) {
+                    value = withContext(Dispatchers.IO) {
+                        runCatching {
+                            val parsed = android.net.Uri.parse(attachment.uri)
+                            val options = android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }
+                            context.contentResolver.openInputStream(parsed)?.use {
+                                android.graphics.BitmapFactory.decodeStream(it, null, options)?.asImageBitmap()
+                            }
+                        }.getOrNull()
+                    }
+                }
+                bitmap?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit
+                    )
+                } ?: Text(stringResource(R.string.assistant_attach_file))
+            } else {
+                val text by produceState("", attachment.uri) {
+                    value = withContext(Dispatchers.IO) {
+                        runCatching {
+                            context.contentResolver.openInputStream(android.net.Uri.parse(attachment.uri))
+                                ?.bufferedReader()?.use { reader -> reader.readText().take(4000) }
+                        }.getOrNull().orEmpty()
+                    }
+                }
+                Text(text = text, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
+}
+
+/** 人类可读的体积。 */
+private fun formatSize(bytes: Long): String = when {
+    bytes <= 0L -> ""
+    bytes < 1024 -> "$bytes B"
+    bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+    else -> String.format("%.1f MB", bytes / 1024.0 / 1024.0)
+}
+
+/**
+ * 会话列表对话框。
+ *
+ * 展示全部会话与消息条数，可新建、切换、归档与删除；
+ * 顶部标注当前占用额度，超限时由存储层自动归档最旧的会话。
+ */
+@Composable
+private fun SessionListDialog(
+    state: AssistantUiState.Ready,
+    emit: AssistantUiIntent.() -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { AssistantUiIntent.CloseSessionList.emit() },
+        title = {
+            Text(
+                text = stringResource(R.string.assistant_sessions) + " " +
+                    stringResource(R.string.assistant_session_count, state.sessions.count { !it.archived })
+            )
+        },
+        text = {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(state.sessions, key = { it.id }) { session ->
+                    val current = session.id == state.currentSessionId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { AssistantUiIntent.SwitchSession(session.id).emit() }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = session.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (current) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (session.archived) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                            Text(
+                                text = stringResource(R.string.assistant_session_meta, session.messageCount),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (!session.archived) {
+                            IconButton(
+                                onClick = { AssistantUiIntent.ArchiveSession(session.id).emit() },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Archive,
+                                    contentDescription = stringResource(R.string.assistant_session_archive),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { AssistantUiIntent.DeleteSession(session.id).emit() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = stringResource(R.string.assistant_session_delete),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { AssistantUiIntent.NewSession.emit() }) {
+                Text(stringResource(R.string.assistant_session_new))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { AssistantUiIntent.CloseSessionList.emit() }) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
+}
+
