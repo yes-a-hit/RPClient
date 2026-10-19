@@ -1,12 +1,16 @@
 name: debug-apk
 
-# 每次推到 master 或手动触发时，自动跑测试并产出可安装的 debug 包。
-# 目的：避免再出现「dist 里还是旧包」这类问题——
-# 包由 CI 从当前提交现场构建，文件名带定制版版本号与提交短哈希。
+# 每次推到 master 或手动触发时：跑测试 → 构建 debug 包 → 发布到 Releases。
+# 发布到 Release 而不是只留 artifact，是因为 artifact 30 天过期，
+# 而 Release 里的包可以直接给人下载安装。
 on:
   push:
     branches: [master]
   workflow_dispatch:
+
+# 创建 Release 需要写权限
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -20,8 +24,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: 安装 Android SDK
-        uses: android-actions/setup-android@v3
+      # 不依赖 setup-android：runner 自带 SDK，缺的组件让 Gradle 自行补装。
+      # 前提是把许可先接受掉，否则 sdkmanager 会卡在交互提问上。
+      - name: 接受 Android 许可
+        run: |
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "SDK: $SDK_ROOT"
+          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
       - name: 准备 Gradle
         run: chmod +x ./gradlew
@@ -34,11 +43,12 @@ jobs:
 
       - name: 读取定制版版本号
         id: version
-        # 从 AppModel.kt 抓 UV_VERSION，保证产物命名与关于页显示一致
+        # 从源码抓版本号，保证产物命名与关于页显示一致
         run: |
           UV=$(grep -oP 'UV_VERSION\s*=\s*"\K[^"]+' app/src/main/java/me/kafuuneko/rpclient/libs/AppModel.kt | head -1)
           VN=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
           echo "uv=$UV" >> "$GITHUB_OUTPUT"
+          echo "vn=$VN" >> "$GITHUB_OUTPUT"
           echo "name=rpclient-${VN}-dev-debug-v${UV}" >> "$GITHUB_OUTPUT"
 
       - name: 重命名产物
@@ -46,17 +56,38 @@ jobs:
           mv app/build/outputs/apk/debug/app-debug.apk \
              "app/build/outputs/apk/debug/${{ steps.version.outputs.name }}.apk"
 
-      - name: 上传产物
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.version.outputs.name }}
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
+      - name: 发布到 Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          # 同一版本重复构建时覆盖同名 Release，避免堆积孤儿标签
+          tag_name: v${{ steps.version.outputs.uv }}
+          name: RPClient UV v${{ steps.version.outputs.uv }}
+          body: |
+            自动构建自 ${{ github.sha }}。
+
+            定制版版本：${{ steps.version.outputs.uv }}
+            上游版本：${{ steps.version.outputs.vn }}
+            单元测试：全部通过（构建前已执行）
+
+            这是 debug 签名包，可直接安装，但不可用于上架分发。
+          files: app/build/outputs/apk/debug/*.apk
+          fail_on_unmatched_files: true
+          # 已有同名 Release 时更新其附件
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 汇总测试结果
         if: always()
         run: |
-          # 把失败的用例单独列出来，方便在 CI 页面直接看到
+          # 失败用例单独列出，方便直接在 CI 页面看到
           find app/build/test-results -name '*.xml' -print0 2>/dev/null \
             | xargs -0 grep -l '<failure' 2>/dev/null \
             | xargs -r -n1 basename || echo "全部用例通过"
