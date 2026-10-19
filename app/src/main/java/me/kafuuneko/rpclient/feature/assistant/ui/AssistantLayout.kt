@@ -1,13 +1,16 @@
 package me.kafuuneko.rpclient.feature.assistant.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.NoteAdd
 import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Stop
@@ -31,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -77,6 +83,7 @@ fun AssistantLayout(
                     }
                 },
                 actions = {
+
                     IconButton(onClick = { AssistantUiIntent.OpenPromptEditor.emit() }) {
                         Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.assistant_prompt_settings))
                     }
@@ -91,6 +98,10 @@ fun AssistantLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // 先消耗 Scaffold 已给的系统栏内边距，再补键盘高度，
+                // 否则 edge-to-edge 下会和输入法 inset 重复计算，导致留白或遮挡
+                .consumeWindowInsets(padding)
+                .imePadding()
         ) {
             AssistantStatusBar(state)
             AssistantMessageList(
@@ -237,12 +248,46 @@ private fun AssistantInputBar(
     emit: AssistantUiIntent.() -> Unit
 ) {
     Surface(tonalElevation = 3.dp) {
+        Column {
+            if (state.attachments.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    state.attachments.forEach { attachment ->
+                        Text(
+                            text = attachment.name,
+                            modifier = Modifier
+                                .clickable {
+                                    AssistantUiIntent.RemoveAttachment(attachment.uri).emit()
+                                }
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = { AssistantUiIntent.ImportFilesClick.emit() }) {
+                Icon(
+                    Icons.Rounded.AttachFile,
+                    contentDescription = stringResource(R.string.assistant_attach_file),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             OutlinedTextField(
                 value = state.input,
                 onValueChange = { AssistantUiIntent.InputChanged(it).emit() },
@@ -287,6 +332,7 @@ private fun AssistantInputBar(
                     }
                 }
             }
+        }
         }
     }
 }

@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.storycreate.presentation
 
+import me.kafuuneko.rpclient.feature.storycreate.model.ExtractionUiState
 import me.kafuuneko.rpclient.feature.storycreate.model.NovelImportPreview
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterItem
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateForm
@@ -30,7 +31,9 @@ sealed class StoryCreateUiState {
         /** 本地小说导入的阶段性状态。 */
         val importState: StoryImportState = StoryImportState.Idle,
         /** 已解析的小说预览；为空时按普通方式创建故事。 */
-        val importPreview: NovelImportPreview? = null
+        val importPreview: NovelImportPreview? = null,
+        /** 角色与世界书提取的展示状态。 */
+        val extraction: ExtractionUiState = ExtractionUiState()
     ) : StoryCreateUiState() {
         val selectedCharacterCount: Int
             get() = form.selectedCharacterIds.size

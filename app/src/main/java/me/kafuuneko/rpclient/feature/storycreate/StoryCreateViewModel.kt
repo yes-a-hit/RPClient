@@ -5,6 +5,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.R
+import me.kafuuneko.rpclient.feature.storycreate.model.ExtractionUiState
 import me.kafuuneko.rpclient.feature.storycreate.model.NovelImportPreview
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterActivationMode
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterItem
@@ -28,6 +29,7 @@ import me.kafuuneko.rpclient.libs.room.repository.StoryCharacterSelection
 import me.kafuuneko.rpclient.libs.room.repository.StoryLorebookEntrySelection
 import me.kafuuneko.rpclient.libs.room.repository.StoryRepository
 import me.kafuuneko.rpclient.libs.story.NovelImportRepository
+import me.kafuuneko.rpclient.libs.story.StoryExtractionService
 import me.kafuuneko.rpclient.utils.toDefaultChatTitle
 import me.kafuuneko.rpclient.utils.filterLorebookGroups
 import me.kafuuneko.rpclient.utils.toggle
@@ -50,6 +52,7 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
     private val mLorebookRepository by inject<LorebookRepository>()
     private val mStoryRepository by inject<StoryRepository>()
     private val mNovelImportRepository by inject<NovelImportRepository>()
+    private val mExtractionService by inject<StoryExtractionService>()
 
     /** 初始化页面，拉取数据库中的角色列表与世界书条目候选数据。 */
     @UiIntentObserver(StoryCreateUiIntent.Init::class)
@@ -83,6 +86,49 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
         val uiState = getOrNull<StoryCreateUiState.Normal>() ?: return
         if (uiState.loadState == StoryCreateLoadState.Creating) return
         StoryCreateUiState.finished(uiState).setup()
+    }
+
+    /** 用当前导入的小说正文提取角色卡与世界书。 */
+    @UiIntentObserver(StoryCreateUiIntent.ExtractSettingsClick::class)
+    private suspend fun onExtractSettingsClick() {
+        val uiState = readyState() ?: return
+        val preview = uiState.importPreview ?: return
+        if (uiState.extraction.running) return
+        uiState.copy(extraction = ExtractionUiState(running = true)).setup()
+        // 一次非流式请求拿走整段节选，失败时只标记失败态，不写半成品
+        val result = runCatching {
+            mExtractionService.extract(
+                chapters = preview.chapters,
+                storyTitle = uiState.form.title.trim().ifBlank { preview.sourceName }
+            )
+        }
+        val current = getOrNull<StoryCreateUiState.Normal>() ?: return
+        result.onSuccess { extracted ->
+            current.copy(
+                extraction = ExtractionUiState(
+                    characterCount = extracted.characterCount,
+                    entryCount = extracted.entryCount,
+                    worldbookName = extracted.worldbookName
+                )
+            ).setup()
+            // 提取结果已入库，刷新候选列表让用户立刻可以勾选
+            refreshOptions()
+        }.onFailure {
+            current.copy(extraction = ExtractionUiState(failed = true)).setup()
+            AppViewEvent.PopupToastMessageByResId(R.string.story_extract_failed).tryEmit()
+        }
+    }
+
+    /** 重新拉取角色与世界书候选，保留当前表单与导入状态。 */
+    private suspend fun refreshOptions() {
+        val data = runCatching { withContext(Dispatchers.IO) { loadOptions() } }.getOrNull() ?: return
+        val current = getOrNull<StoryCreateUiState.Normal>() ?: return
+        current.copy(
+            characters = data.characters,
+            visibleCharacters = data.characters,
+            lorebookGroups = data.lorebookGroups,
+            visibleLorebookGroups = data.lorebookGroups
+        ).setup()
     }
 
     /** 修改故事标题。 */
@@ -234,6 +280,19 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
     private fun onClearImportedNovel() {
         val uiState = readyState() ?: return
         uiState.copy(importState = StoryImportState.Idle, importPreview = null).setup()
+    }
+
+    /** 上移或下移一章，越界请求直接忽略。 */
+    @UiIntentObserver(StoryCreateUiIntent.MoveImportedChapter::class)
+    private fun onMoveImportedChapter(intent: StoryCreateUiIntent.MoveImportedChapter) {
+        val uiState = readyState() ?: return
+        val preview = uiState.importPreview ?: return
+        val target = intent.index + intent.delta
+        if (intent.index !in preview.chapters.indices || target !in preview.chapters.indices) return
+        val reordered = preview.chapters.toMutableList().apply {
+            add(target, removeAt(intent.index))
+        }
+        uiState.copy(importPreview = preview.reordered(reordered)).setup()
     }
 
     /** Story 与初始引用必须在同一事务中创建，避免配置校验失败后留下空 Story。 */

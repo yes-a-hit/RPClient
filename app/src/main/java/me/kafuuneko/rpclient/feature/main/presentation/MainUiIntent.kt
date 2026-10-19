@@ -21,6 +21,15 @@ sealed class MainUiIntent {
     /** 打开助手会话页。 */
     data object OpenAssistant : MainUiIntent()
 
+    /** 打开剧本画布。 */
+    data object OpenScriptEditor : MainUiIntent()
+
+    /** 打开剧本库。 */
+    data object OpenScriptLibrary : MainUiIntent()
+
+    /** 打开场景总览。 */
+    data object OpenScriptScene : MainUiIntent()
+
     data object Resume : MainUiIntent()
 
     data object Back : MainUiIntent()
@@ -213,4 +222,16 @@ sealed class MainUiIntent {
     data object ConfirmDeleteSelected : MainUiIntent()
 
     data object DismissDialog : MainUiIntent()
+
+    /** 打开 Skill 文件选择器。 */
+    data object PickSkillFiles : MainUiIntent()
+
+    /** 打开 Skill 目录选择器。 */
+    data object PickSkillFolder : MainUiIntent()
+
+    /** 用户选中了若干 Skill 文件。 */
+    data class SkillFilesPicked(val uris: List<Uri>) : MainUiIntent()
+
+    /** 用户选中了包含 Skill 文件的目录。 */
+    data class SkillFolderPicked(val treeUri: Uri) : MainUiIntent()
 }

@@ -15,6 +15,9 @@ import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.about.AboutActivity
 import me.kafuuneko.rpclient.feature.characterlist.CharacterListActivity
 import me.kafuuneko.rpclient.feature.assistant.AssistantActivity
+import me.kafuuneko.rpclient.feature.script.ScriptEditorActivity
+import me.kafuuneko.rpclient.feature.script.ScriptLibraryActivity
+import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryTab
 import me.kafuuneko.rpclient.feature.chat.ChatActivity
 import me.kafuuneko.rpclient.feature.chatcreate.ChatCreateActivity
 import me.kafuuneko.rpclient.feature.groupchat.GroupChatActivity
@@ -76,6 +79,7 @@ import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.feature.main.presentation.MainSkillItem
 import me.kafuuneko.rpclient.feature.main.presentation.MainSkillSettingsState
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
+import me.kafuuneko.rpclient.libs.skill.SkillImportOutcome
 import me.kafuuneko.rpclient.libs.skill.SkillRepository
 import me.kafuuneko.rpclient.libs.chat.ChatArchive
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
@@ -720,6 +724,32 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         AppViewEvent.StartActivity(AssistantActivity::class.java).tryEmit()
     }
 
+    /** 打开剧本表格编辑页。 */
+    @UiIntentObserver(MainUiIntent.OpenScriptEditor::class)
+    private fun onOpenScriptEditor() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(ScriptEditorActivity::class.java).tryEmit()
+    }
+
+    /** 打开剧本库。 */
+    @UiIntentObserver(MainUiIntent.OpenScriptLibrary::class)
+    private fun onOpenScriptLibrary() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(ScriptLibraryActivity::class.java).tryEmit()
+    }
+
+    /** 打开场景总览。 */
+    @UiIntentObserver(MainUiIntent.OpenScriptScene::class)
+    private fun onOpenScriptScene() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(
+            ScriptLibraryActivity::class.java,
+            android.os.Bundle().apply {
+                putString(ScriptLibraryActivity.EXTRA_TAB, ScriptLibraryActivity.TAB_SCENE)
+            }
+        ).tryEmit()
+    }
+
     /** 打开角色管理列表页。 */
     @UiIntentObserver(MainUiIntent.OpenCharacterManager::class)
     private fun onOpenCharacterManager() {
@@ -1273,9 +1303,45 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         refreshSkillState()
     }
 
+    /** 打开 Skill 文件选择器。 */
+    @UiIntentObserver(MainUiIntent.PickSkillFiles::class)
+    private fun onPickSkillFiles() {
+        MainViewEvent.OpenSkillFilePicker.tryEmit()
+    }
+
+    /** 打开 Skill 目录选择器。 */
+    @UiIntentObserver(MainUiIntent.PickSkillFolder::class)
+    private fun onPickSkillFolder() {
+        MainViewEvent.OpenSkillFolderPicker.tryEmit()
+    }
+
+    /** 导入用户选中的 Skill 文件；单个文件损坏不影响其余文件。 */
+    @UiIntentObserver(MainUiIntent.SkillFilesPicked::class)
+    private suspend fun onSkillFilesPicked(intent: MainUiIntent.SkillFilesPicked) {
+        val outcome = runCatching { mSkillRepository.importFromUris(intent.uris) }
+            .getOrElse { SkillImportOutcome(0, intent.uris.size) }
+        finishSkillImport(outcome)
+    }
+
+    /** 导入目录树中的 Skill 文件。 */
+    @UiIntentObserver(MainUiIntent.SkillFolderPicked::class)
+    private suspend fun onSkillFolderPicked(intent: MainUiIntent.SkillFolderPicked) {
+        val outcome = runCatching { mSkillRepository.importFromTree(intent.treeUri) }
+            .getOrElse { SkillImportOutcome(0, 0) }
+        finishSkillImport(outcome)
+    }
+
+    /** 刷新 Skill 列表，并把导入条数交给 Activity 提示。 */
+    private suspend fun finishSkillImport(outcome: SkillImportOutcome) {
+        refreshSkillState()
+        MainViewEvent.ShowSkillImportResult(
+            importedCount = outcome.importedCount,
+            failedFileCount = outcome.failedFileCount
+        ).tryEmit()
+    }
+
     /** 修改自动总结的触发消息轮数阈值。 */
-    @UiIntentObserver(MainUiIntent.ChangeSummaryTriggerMessageCount::class)
-    private fun onChangeSummaryTriggerMessageCount(intent: MainUiIntent.ChangeSummaryTriggerMessageCount) {
+    @UiIntentObserver(MainUiIntent.ChangeSummaryTriggerMessageCount::class)    private fun onChangeSummaryTriggerMessageCount(intent: MainUiIntent.ChangeSummaryTriggerMessageCount) {
         updateSettingsInt(intent.value, minimum = 1) {
             AppModel.summaryTriggerMessageCount = it
             copy(

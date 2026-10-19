@@ -14,7 +14,10 @@ import me.kafuuneko.rpclient.libs.assistant.AssistantToolExecutor
 import me.kafuuneko.rpclient.libs.billing.PricingRepository
 import me.kafuuneko.rpclient.libs.billing.ProviderBalanceClient
 import me.kafuuneko.rpclient.libs.billing.UsageCostCalculator
+import me.kafuuneko.rpclient.libs.script.ScriptStore
+import me.kafuuneko.rpclient.libs.script.ScriptPlayStore
 import me.kafuuneko.rpclient.libs.story.NovelImportRepository
+import me.kafuuneko.rpclient.libs.story.StoryExtractionService
 import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenClient
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
@@ -214,14 +217,19 @@ internal val appModules = module {
 
     // 助手会话：沙箱内文件工具与角色卡编辑工具
     single { AssistantStore(androidContext()) }
-    single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get()) }
+    single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get(), get()) }
 
     // 计费：模型报价快照与服务商余额查询
     single { PricingRepository(get(), get()) }
     single { ProviderBalanceClient(get(), get()) }
     single { UsageCostCalculator(get()) }
 
-    // 本地小说导入：文本读取与分章建故事
+    // 剧本存储：一个剧本一个 JSON 文件，不做数据库迁移
+    single { ScriptStore(androidContext()) }
+    single { ScriptPlayStore(androidContext()) }
+
+    // 本地小说导入：文本读取、分章建故事与设定提取
     single { NovelImportRepository(androidContext(), get()) }
+    single { StoryExtractionService(get(), get(), get(), get()) }
 
 }

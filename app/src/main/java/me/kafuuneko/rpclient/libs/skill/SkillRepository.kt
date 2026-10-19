@@ -1,6 +1,8 @@
 package me.kafuuneko.rpclient.libs.skill
 
 import android.content.Context
+import android.net.Uri
+import android.provider.DocumentsContract
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +83,84 @@ class SkillRepository(private val mContext: Context) {
     /** 导出全部 Skill，便于分享给其他设备。 */
     suspend fun exportAll(): String = withContext(Dispatchers.IO) {
         SkillCodec.encodeAll(readAll())
+    }
+
+    /**
+     * 从 SAF 选中的文件导入。
+     *
+     * 每个文件独立解析，单个文件损坏不影响其余文件；
+     * 返回的成功数量按实际写入的 Skill 条数统计，而非文件数。
+     *
+     * @param uris 用户选中的文件，可多选
+     * @return 导入结果统计
+     */
+    suspend fun importFromUris(uris: List<Uri>): SkillImportOutcome = withContext(Dispatchers.IO) {
+        var imported = 0
+        var failed = 0
+        for (uri in uris) {
+            // 读取失败的单个文件计入失败数后继续处理下一个
+            val text = runCatching {
+                mContext.contentResolver.openInputStream(uri)
+                    ?.use { it.readBytes().toString(Charsets.UTF_8) }
+            }.getOrNull()
+            if (text.isNullOrBlank()) {
+                failed++
+                continue
+            }
+            val parsed = runCatching { importSkills(text) }.getOrElse { emptyList() }
+            if (parsed.isEmpty()) failed++ else imported += parsed.size
+        }
+        SkillImportOutcome(importedCount = imported, failedFileCount = failed)
+    }
+
+    /**
+     * 从 SAF 授权的目录树递归导入。
+     *
+     * 只收集 `.json` 文件，跳过子目录以外的其他类型；目录可以是用户从「文档」里授权的任意位置。
+     *
+     * @param treeUri 目录选择器返回的树 URI
+     * @return 导入结果统计
+     */
+    suspend fun importFromTree(treeUri: Uri): SkillImportOutcome = withContext(Dispatchers.IO) {
+        val documents = collectJsonDocuments(treeUri)
+        if (documents.isEmpty()) return@withContext SkillImportOutcome(0, 0)
+        importFromUris(documents)
+    }
+
+    /** 递归收集目录树下的 JSON 文档；读取失败的子目录直接跳过。 */
+    private fun collectJsonDocuments(treeUri: Uri): List<Uri> {
+        val documentId = runCatching {
+            DocumentsContract.getTreeDocumentId(treeUri)
+        }.getOrNull() ?: return emptyList()
+        val result = mutableListOf<Uri>()
+        val pending = ArrayDeque<String>()
+        pending.addLast(documentId)
+        // 广度遍历整棵树，深度异常时由队列自然收敛
+        while (pending.isNotEmpty()) {
+            val parentId = pending.removeFirst()
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
+            val projection = arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
+            )
+            runCatching {
+                mContext.contentResolver.query(childrenUri, projection, null, null, null)
+                    ?.use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val childId = cursor.getString(0)
+                            val name = cursor.getString(1) ?: ""
+                            val mime = cursor.getString(2) ?: ""
+                            if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                                pending.addLast(childId)
+                            } else if (name.endsWith(FILE_SUFFIX, ignoreCase = true)) {
+                                result += DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
+                            }
+                        }
+                    }
+            }
+        }
+        return result
     }
 
     /**
@@ -171,3 +251,11 @@ private fun SkillManifest.matches(recentText: String): Boolean {
         trigger.isNotBlank() && recentText.contains(trigger, ignoreCase = true)
     }
 }
+
+/** 一次 Skill 导入的结果统计。 */
+data class SkillImportOutcome(
+    /** 实际写入的 Skill 条数。 */
+    val importedCount: Int,
+    /** 解析或读取失败的文件数。 */
+    val failedFileCount: Int
+)

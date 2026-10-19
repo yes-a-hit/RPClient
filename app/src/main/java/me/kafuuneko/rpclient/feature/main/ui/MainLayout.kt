@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AddComment
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChatBubble
@@ -48,6 +49,7 @@ import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
@@ -825,6 +827,26 @@ private fun LazyListScope.homeEntryItems(
             )
         }
     }
+    // 剧本与场景单独一行：五个入口挤在一排会把文字标签压没
+    item {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            HomeQuickActionCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Rounded.Bookmarks,
+                title = stringResource(R.string.script_tab_pack),
+                onClick = { MainUiIntent.OpenScriptLibrary.emit() }
+            )
+            HomeQuickActionCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Rounded.Layers,
+                title = stringResource(R.string.script_tab_scene),
+                onClick = { MainUiIntent.OpenScriptScene.emit() }
+            )
+        }
+    }
     item {
         HomeAssetDock(resourceState, emit)
     }
@@ -1503,14 +1525,14 @@ private fun SettingsPage(
         item { AppearancePanel(state.appearanceState, emit) }
         item { ChatDataManagementPanel(state.chatDataManagementState, emit) }
         item { TokenUsageEntryCard { emit(MainUiIntent.OpenTokenUsage) } }
+        item { ScriptEditorEntryCard { emit(MainUiIntent.OpenScriptEditor) } }
         item { DebugPanel(state.debugState, emit) }
         item { AboutEntryCard { emit(MainUiIntent.OpenAbout) } }
     }
 }
 
 @Composable
-private fun AppearancePanel(
-    state: MainAppearanceSettingsState,
+private fun AppearancePanel(    state: MainAppearanceSettingsState,
     emit: MainUiIntent.() -> Unit
 ) {
     val backgroundState = state.backgroundState
@@ -1598,6 +1620,29 @@ private fun TokenUsageEntryCard(onClick: () -> Unit) {
             iconContainerColor = AccentSkyColor.copy(alpha = 0.14f),
             title = stringResource(R.string.token_usage),
             subtitle = stringResource(R.string.token_usage_entry_subtitle),
+            onClick = onClick,
+            trailing = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.50f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun ScriptEditorEntryCard(onClick: () -> Unit) {
+    // 剧本画布属于创作工具，与消耗统计并列放在数据与系统分组
+    RpSettingsGroup {
+        RpSettingsTile(
+            icon = Icons.Rounded.AutoStories,
+            iconColor = AccentVioletColor,
+            iconContainerColor = AccentVioletColor.copy(alpha = 0.14f),
+            title = stringResource(R.string.script_editor_entry_title),
+            subtitle = stringResource(R.string.script_editor_entry_desc),
             onClick = onClick,
             trailing = {
                 Icon(

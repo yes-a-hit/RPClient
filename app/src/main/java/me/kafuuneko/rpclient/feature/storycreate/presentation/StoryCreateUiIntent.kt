@@ -25,5 +25,11 @@ sealed class StoryCreateUiIntent {
     /** 放弃已解析的小说，回到普通创建流程。 */
     data object ClearImportedNovel : StoryCreateUiIntent()
 
+    /** 调整导入章节的顺序：delta 为 -1 上移、+1 下移。 */
+    data class MoveImportedChapter(val index: Int, val delta: Int) : StoryCreateUiIntent()
+
+    /** 调用模型从正文提取角色卡与世界书。 */
+    data object ExtractSettingsClick : StoryCreateUiIntent()
+
     data object CreateStory : StoryCreateUiIntent()
 }

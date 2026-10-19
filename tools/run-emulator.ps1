@@ -15,20 +15,40 @@
 param(
     [string]$Avd = 'RPClient_API36',
     [string]$Apk = '',
-    [string]$Sdk = $(if ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT }
-        elseif ($env:ANDROID_HOME) { $env:ANDROID_HOME }
-        elseif ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
-        else { '' }),
+    [string]$Sdk = '',
     [int]$Margin = 40,
     # Quick Boot snapshots go stale after a forced shutdown and the guest then
     # hangs before adbd starts. A cold boot reaches sys.boot_completed in about
     # 15s here, so skip the snapshot unless it is explicitly requested.
-    [bool]$ColdBoot = $true
+    [bool]$ColdBoot = $true,
+    # 客户机显示尺寸：AVD 默认 1080x2400 会让窗口高过宿主屏幕，底部导航栏落到桌面外。
+    [string]$Resolution = '900x1600',
+    [int]$Density = 420
 )
 
 # adb prints routine state transitions to stderr, so native failures must not
 # abort the script; real problems are reported with explicit throw statements.
 $ErrorActionPreference = 'Continue'
+
+# SDK discovery order: explicit argument, env vars, repo local.properties, then the
+# default install location. local.properties is what Gradle uses, so trust it first.
+if (-not $Sdk) {
+    if ($env:ANDROID_SDK_ROOT) { $Sdk = $env:ANDROID_SDK_ROOT }
+    elseif ($env:ANDROID_HOME) { $Sdk = $env:ANDROID_HOME }
+}
+if (-not $Sdk) {
+    $localProps = Join-Path (Split-Path -Parent $PSScriptRoot) 'local.properties'
+    if (Test-Path $localProps) {
+        $line = Get-Content $localProps | Where-Object { $_ -match '^sdk\.dir=' } | Select-Object -First 1
+        if ($line) {
+            $value = $line -replace '^sdk\.dir=', ''
+            $Sdk = ($value -replace '\\\\', '\') -replace '\\:', ':'
+        }
+    }
+}
+if (-not $Sdk -and $env:LOCALAPPDATA) {
+    $Sdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+}
 
 $emulator = Join-Path $Sdk 'emulator\emulator.exe'
 $adb = Join-Path $Sdk 'platform-tools\adb.exe'
@@ -104,6 +124,16 @@ if (-not $booted) {
     return
 }
 "guest booted"
+
+# Keep the guest short enough that the whole window fits on a 1440p screen:
+# at the default 2400px height the window overflows and the navigation bar
+# ends up below the desktop, which makes manual debugging impossible.
+if ($Resolution) {
+    & $adb shell wm size $Resolution 2>&1 | Out-Null
+    if ($Density) { & $adb shell wm density $Density 2>&1 | Out-Null }
+    "resolution set to $Resolution (density $Density)"
+    Start-Sleep -Seconds 2
+}
 
 if ($Apk) {
     $apkPath = (Resolve-Path -LiteralPath $Apk).Path

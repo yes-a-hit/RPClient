@@ -97,7 +97,7 @@ private fun AboutViewContent(
         ) {
             AboutHeroHeader(uiState.appInfo.isDevelopmentBuild)
             AboutRatingCard(onRateApp)
-            AboutCustomSection(onDownloadReadme)
+            AboutCustomSection(uiState.appInfo.versionName, onDownloadReadme)
             AboutCommunitySection(uiState.githubRepoName, onOpenFeedback, onOpenRepository)
             AboutSupportSection(uiState.developerEmail, onCopyDeveloperEmail, onOpenRepository)
             AboutAppInfoSection(uiState.appInfo)
@@ -113,12 +113,22 @@ private fun AboutViewContent(
  * 因此不需要存储权限，也不依赖应用私有目录的可见性。
  */
 @Composable
-private fun AboutCustomSection(onDownloadReadme: () -> Unit) {
+private fun AboutCustomSection(
+    upstreamVersion: String,
+    onDownloadReadme: () -> Unit
+) {
     AboutSection(stringResource(R.string.section_custom_build)) {
         AboutInfoRow(
             icon = Icons.Rounded.Person,
             label = stringResource(R.string.uv_author_label),
             value = AppModel.UV_AUTHOR
+        )
+        AboutDivider()
+        // 定制版版本与上游版本分开标注，便于判断这一份构建基于哪次上游
+        AboutInfoRow(
+            icon = Icons.Rounded.Numbers,
+            label = stringResource(R.string.uv_version_label),
+            value = stringResource(R.string.uv_version_value, AppModel.UV_VERSION, upstreamVersion)
         )
         AboutDivider()
         AboutActionRow(

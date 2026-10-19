@@ -71,8 +71,17 @@ internal fun SkillPanel(state: MainSkillSettingsState, emit: MainUiIntent.() -> 
             state.skills.forEach { skill ->
                 SkillRow(skill, emit)
             }
-            TextButton(onClick = { MainUiIntent.OpenSkillImport.emit() }) {
-                Text(stringResource(R.string.skill_import_action))
+            // 文件与目录导入走系统选择器，手写粘贴保留给快速改单条的场景
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { MainUiIntent.PickSkillFiles.emit() }) {
+                    Text(stringResource(R.string.skill_import_from_file))
+                }
+                TextButton(onClick = { MainUiIntent.PickSkillFolder.emit() }) {
+                    Text(stringResource(R.string.skill_import_from_folder))
+                }
+                TextButton(onClick = { MainUiIntent.OpenSkillImport.emit() }) {
+                    Text(stringResource(R.string.skill_import_action))
+                }
             }
         }
     }

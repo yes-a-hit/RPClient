@@ -31,7 +31,9 @@ sealed class AssistantUiState {
         // 是否展开提示词编辑弹窗
         val promptEditorVisible: Boolean = false,
         // 一次性状态提示，例如工具执行进度
-        val statusText: String = ""
+        val statusText: String = "",
+        /** 待发送附件：选中后随下一条消息一起发出。 */
+        val attachments: List<AssistantAttachment> = emptyList()
     ) : AssistantUiState()
 
     /** 页面结束。 */
@@ -54,4 +56,19 @@ data class AssistantMessageItem(
     val role: AssistantRole,
     val content: String,
     val toolName: String? = null
+)
+
+/**
+ * 一条待发送附件。
+ *
+ * 文本附件在发送时读入正文，图片附件转成多模态内容块，
+ * 两者都不落进沙箱，避免和助手自己的文件操作混淆。
+ */
+data class AssistantAttachment(
+    /** 原始 URI 字符串。 */
+    val uri: String,
+    /** 显示名。 */
+    val name: String,
+    /** 是否为图片。 */
+    val isImage: Boolean
 )

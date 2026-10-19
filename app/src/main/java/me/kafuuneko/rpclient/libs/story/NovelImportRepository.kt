@@ -33,7 +33,7 @@ class NovelImportRepository(
             val name = queryDisplayName(uri)
             val text = readText(uri)
             if (text.isBlank()) null else name to text
-        }.sortedBy { (name, _) -> naturalKey(name) }
+        }.sortedWith(chapterFileOrder)
 
         val result = mutableListOf<NovelChapter>()
         for ((name, text) in files) {
@@ -75,10 +75,21 @@ class NovelImportRepository(
             characterSelections = characterSelections,
             initialChapterTitle = firstTitle
         )
-            val editor = mStoryRepository.getStoryEditorData(storyId) ?: return@withContext storyId
+        val editor = mStoryRepository.getStoryEditorData(storyId) ?: return@withContext storyId
+
+        // 按出现顺序建卷，卷内章节保持原文顺序，实现自动归档与排序
+        val volumeIds = mutableMapOf<String, Long>()
+        chapters.mapNotNull { it.volume }.distinct().forEach { volumeTitle ->
+            volumeIds[volumeTitle] = mStoryRepository.createVolume(storyId, volumeTitle)
+        }
 
         // 首章写入既有章节，剩余章节逐条新建后写入正文
         val head = editor.currentChapter
+        first.volume?.let { volumeTitle ->
+            volumeIds[volumeTitle]?.let { volumeId ->
+                mStoryRepository.moveChapterToVolume(storyId, head.id, volumeId)
+            }
+        }
         mStoryRepository.updateChapterDraft(
             storyId = storyId,
             chapterId = head.id,
@@ -87,9 +98,10 @@ class NovelImportRepository(
             continuationGuidance = ""
         )
         chapters.drop(1).forEach { chapter ->
+            val volumeId = chapter.volume?.let { volumeIds[it] }
             val chapterId = mStoryRepository.createChapter(
                 storyId = storyId,
-                volumeId = null,
+                volumeId = volumeId,
                 title = chapter.title.ifBlank { DEFAULT_CHAPTER_TITLE }
             )
             mStoryRepository.updateChapterDraft(
@@ -102,6 +114,17 @@ class NovelImportRepository(
         }
             storyId
         }
+
+    /**
+     * 散装章节文件的排序规则。
+     *
+     * 文件名里的序号写法很杂（`1`、`01`、`001`、`第1章`），按字符串排序会得到
+     * `1, 10, 2` 这种错误顺序，所以先提取首个数字按数值比较，再按原名称兜底。
+     */
+    private val chapterFileOrder = compareBy<Pair<String, String>>(
+        { ChapterIndexParser.parseIndex(it.first) ?: ChapterIndexParser.NO_INDEX_WEIGHT },
+        { it.first.lowercase() }
+    )
 
     /** 读取文本内容；UTF-8 出现大量替换字符时回退到 GB18030。 */
     private fun readText(uri: Uri): String {
@@ -130,11 +153,6 @@ class NovelImportRepository(
             }
         }
         return uri.lastPathSegment.orEmpty()
-    }
-
-    /** 文件名自然排序键：数字段补零，保证 chapter2 排在 chapter10 之前。 */
-    private fun naturalKey(name: String): String = name.lowercase().replace(Regex("\\d+")) { match ->
-        match.value.padStart(8, '0')
     }
 
     private companion object {

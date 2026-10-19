@@ -4,12 +4,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantAttachment
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantMessageItem
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantRole
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantUiIntent
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantUiState
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantViewEvent
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.assistant.AssistantImportResult
 import me.kafuuneko.rpclient.libs.assistant.AssistantMessage
 import me.kafuuneko.rpclient.libs.assistant.AssistantPromptBuilder
 import me.kafuuneko.rpclient.libs.assistant.AssistantStore
@@ -26,6 +28,10 @@ import me.kafuuneko.rpclient.libs.llm.model.LLMStreamEvent
 import me.kafuuneko.rpclient.libs.room.entity.toConfig
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import me.kafuuneko.rpclient.libs.room.repository.FileRepository
+import me.kafuuneko.rpclient.libs.llm.model.LLMContentBlock
+import me.kafuuneko.rpclient.libs.llm.model.LLMImageReference
+import android.net.Uri
 
 /**
  * 助手页状态持有者。
@@ -42,6 +48,11 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     private val mToolExecutor by inject<AssistantToolExecutor>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mClientFactory by inject<LLMClientFactory>()
+    private val mFileRepository by inject<FileRepository>()
+    private val mContext by inject<android.content.Context>()
+
+    /** 本轮待附加的图片引用，只随下一次请求发送。 */
+    private var mPendingImages: List<LLMImageReference> = emptyList()
 
     /** 会话内存副本；与磁盘保持同步。 */
     private val mMessages = mutableListOf<AssistantMessage>()
@@ -74,20 +85,23 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
 
     /** 提交输入并启动生成。 */
     @UiIntentObserver(AssistantUiIntent.Send::class)
-    private fun onSend() {
+    private suspend fun onSend() {
         val state = getOrNull<AssistantUiState.Ready>() ?: return
         if (state.isGenerating) return
-        val text = state.input.trim()
-        if (text.isEmpty()) return
+        val rawText = state.input.trim()
+        // 纯附件也可以发送，因此只在没有文字也没有附件时才拦下
+        if (rawText.isEmpty() && state.attachments.isEmpty()) return
         if (mMessages.isEmpty()) {
             AssistantViewEvent.Toast("助手已就绪").tryEmit()
         }
 
         // 先落用户消息，保证中断后历史仍然完整
-        mMessages += AssistantMessage(role = ROLE_USER, content = text)
+        val prepared = buildAttachmentPayload(state.attachments, rawText)
+        mMessages += AssistantMessage(role = ROLE_USER, content = prepared.text)
         state.copy(
             items = mMessages.toItems(),
             input = "",
+            attachments = emptyList(),
             isGenerating = true,
             streamingReply = "",
             statusText = ""
@@ -150,6 +164,122 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         AppModel.assistantSystemPrompt = intent.text
         val state = getOrNull<AssistantUiState.Ready>() ?: return
         state.copy(customPrompt = intent.text).setup()
+    }
+
+
+    /** 选择附件：记录 URI 与显示名，发送时才真正读取内容。 */
+    @UiIntentObserver(AssistantUiIntent.AttachFiles::class)
+    private fun onAttachFiles(intent: AssistantUiIntent.AttachFiles) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        val added = intent.uris.mapNotNull { uri ->
+            val name = queryDisplayName(uri)
+            if (name.isBlank()) return@mapNotNull null
+            val mime = mContext.contentResolver.getType(uri).orEmpty()
+            AssistantAttachment(
+                uri = uri.toString(),
+                name = name,
+                isImage = mime.startsWith("image/")
+            )
+        }
+        // 同一文件重复选择时按 URI 去重，避免同图发多次
+        val merged = (state.attachments + added).distinctBy { it.uri }
+        state.copy(attachments = merged).setup()
+    }
+
+    /** 移除一条待发送附件。 */
+    @UiIntentObserver(AssistantUiIntent.RemoveAttachment::class)
+    private fun onRemoveAttachment(intent: AssistantUiIntent.RemoveAttachment) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(attachments = state.attachments.filterNot { it.uri == intent.uri })
+            .setup()
+    }
+
+    /**
+     * 把附件整理成一条待发送内容。
+     *
+     * 文本附件直接拼进正文，图片附件转成多模态块暂存，
+     * 由 [buildRequestMessages] 附加到最后一条用户消息上。
+     */
+    private suspend fun buildAttachmentPayload(
+        attachments: List<AssistantAttachment>,
+        rawText: String
+    ): PreparedPayload {
+        val textParts = mutableListOf<String>()
+        if (rawText.isNotBlank()) textParts += rawText
+        val images = mutableListOf<LLMImageReference>()
+        attachments.forEach { attachment ->
+            val uri = Uri.parse(attachment.uri)
+            if (attachment.isImage) {
+                val uuid = runCatching { mFileRepository.saveFile(uri) }.getOrNull()
+                if (uuid != null) buildImageReference(uuid)?.let(images::add)
+            } else {
+                val content = runCatching {
+                    mContext.contentResolver.openInputStream(uri)?.bufferedReader()
+                        ?.use { it.readText() }
+                }.getOrNull()
+                if (!content.isNullOrBlank()) {
+                    textParts += "【附件：${attachment.name}】" + nlLiteral() + content.take(MAX_ATTACHMENT_CHARS)
+                }
+            }
+        }
+        mPendingImages = images
+        return PreparedPayload(textParts.joinToString(nlLiteral().repeat(2)))
+    }
+
+    /** 查询文件显示名，缺失时退回末段。 */
+    private fun queryDisplayName(uri: Uri): String {
+        val projection = arrayOf(android.provider.OpenableColumns.DISPLAY_NAME)
+        runCatching {
+            mContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) return cursor.getString(index).orEmpty()
+                }
+            }
+        }
+        return uri.lastPathSegment.orEmpty()
+    }
+
+    /** 构造图片引用，供多模态请求使用。 */
+    private suspend fun buildImageReference(uuid: String): LLMImageReference? {
+        val entity = mFileRepository.getFileEntity(uuid) ?: return null
+        val file = mFileRepository.getFile(uuid)
+        val bitmap = mFileRepository.loadSampledBitmap(
+            uuid = uuid,
+            requestedWidthPx = IMAGE_MAX_EDGE,
+            requestedHeightPx = IMAGE_MAX_EDGE
+        )
+        val reference = LLMImageReference(
+            uuid = uuid,
+            mimeType = entity.mimeType ?: "image/jpeg",
+            width = bitmap?.width ?: 0,
+            height = bitmap?.height ?: 0,
+            byteCount = file?.length() ?: 0L
+        )
+        bitmap?.recycle()
+        return reference
+    }
+
+    /** 换行字面量，避免在多行字符串里写死转义。 */
+    private fun nlLiteral(): String = System.lineSeparator()
+    /** 打开文件选择器。 */
+    @UiIntentObserver(AssistantUiIntent.ImportFilesClick::class)
+    private fun onImportFilesClick() {
+        AssistantViewEvent.OpenFilePicker.tryEmit()
+    }
+
+    /** 把选中的文件复制进沙箱，并刷新沙箱占用提示。 */
+    @UiIntentObserver(AssistantUiIntent.FilesPicked::class)
+    private suspend fun onFilesPicked(intent: AssistantUiIntent.FilesPicked) {
+        if (intent.uris.isEmpty()) return
+        val result = runCatching { mStore.importFiles(intent.uris) }
+            .getOrElse { AssistantImportResult(0, intent.uris.size) }
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(sandboxHint = mStore.sandboxSummary()).setup()
+        AssistantViewEvent.ShowImportResult(
+            importedCount = result.importedCount,
+            failedCount = result.failedCount
+        ).tryEmit()
     }
 
     /**
@@ -237,6 +367,17 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
                 else -> LLMMessage(LLMMessageRole.User, message.content)
             }
         }
+        // 图片只随第一次请求发送，工具循环里的后续请求不再重复携带
+        if (mPendingImages.isNotEmpty() && messages.isNotEmpty()) {
+            val last = messages.last()
+            if (last.role == LLMMessageRole.User) {
+                messages[messages.lastIndex] = last.copy(
+                    blocks = listOf(LLMContentBlock.Text(last.content)) +
+                        mPendingImages.map { LLMContentBlock.Image(it) }
+                )
+            }
+            mPendingImages = emptyList()
+        }
         return messages
     }
 
@@ -291,6 +432,11 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     private companion object {
+        /** 单个文本附件读入正文的上限字符数。 */
+        const val MAX_ATTACHMENT_CHARS = 20000
+
+        /** 图片送入模型前的最长边，控制请求体积。 */
+        const val IMAGE_MAX_EDGE = 1024
         const val ROLE_USER = "user"
         const val ROLE_ASSISTANT = "assistant"
         const val ROLE_TOOL = "tool"
@@ -298,4 +444,8 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         /** 请求携带的最近消息条数；助手场景不需要整段历史。 */
         const val MAX_CONTEXT_MESSAGES = 40
     }
+
+    /** 携带附件的待发送内容。 */
+    private data class PreparedPayload(val text: String)
+
 }

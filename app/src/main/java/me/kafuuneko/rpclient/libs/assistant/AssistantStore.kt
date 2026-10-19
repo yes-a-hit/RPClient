@@ -1,6 +1,8 @@
 package me.kafuuneko.rpclient.libs.assistant
 
 import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -39,6 +41,67 @@ class AssistantStore(private val mContext: Context) {
         mSessionFile.writeText(Gson().toJson(messages))
     }
 
+    /**
+     * 把手机里的文件复制进沙箱，供助手读写。
+     *
+     * 只复制内容不保留原路径；重名时自动追加序号，避免互相覆盖。
+     * 助手仍只能看到沙箱内部，所以导入是它接触外部内容的唯一入口。
+     *
+     * @param uris 系统文件选择器返回的 URI
+     * @return 成功与失败的文件数
+     */
+    suspend fun importFiles(uris: List<Uri>): AssistantImportResult = withContext(Dispatchers.IO) {
+        var imported = 0
+        var failed = 0
+        for (uri in uris) {
+            // 单个文件读取失败不影响其余文件
+            val copied = runCatching {
+                val name = safeFileName(queryDisplayName(uri))
+                val target = uniqueFile(name)
+                mContext.contentResolver.openInputStream(uri)?.use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                } != null
+            }.getOrDefault(false)
+            if (copied) imported++ else failed++
+        }
+        AssistantImportResult(importedCount = imported, failedCount = failed)
+    }
+
+    /** 查询 SAF 文件的显示名，缺失时退回 URI 末段。 */
+    private fun queryDisplayName(uri: Uri): String {
+        val projection = arrayOf(OpenableColumns.DISPLAY_NAME)
+        runCatching {
+            mContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) return cursor.getString(index) ?: ""
+                }
+            }
+        }
+        return uri.lastPathSegment.orEmpty()
+    }
+
+    /** 只保留安全字符，避免文件名里带路径分隔符或非法符号。 */
+    private fun safeFileName(raw: String): String {
+        val cleaned = raw.trim().map { char ->
+            if (char.isLetterOrDigit() && (char.code < 128) || char in "-_. ") char else '_'
+        }.joinToString("").trim().trim('.')
+        return cleaned.ifBlank { "imported.txt" }.take(MAX_FILE_NAME_LENGTH)
+    }
+
+    /** 同名文件追加序号，保证不覆盖沙箱里已有内容。 */
+    private fun uniqueFile(name: String): File {
+        val base = name.substringBeforeLast('.', name)
+        val extension = name.substringAfterLast('.', "").let { if (it.isBlank()) "" else ".$it" }
+        var candidate = File(sandboxRoot, name)
+        var index = 1
+        while (candidate.exists()) {
+            candidate = File(sandboxRoot, "$base-$index$extension")
+            index++
+        }
+        return candidate
+    }
+
     /** 清空会话文件；沙箱文件不受影响。 */
     suspend fun clear() = withContext(Dispatchers.IO) {
         mSessionFile.delete()
@@ -75,3 +138,14 @@ data class AssistantMessage(
     val content: String,
     val toolName: String? = null
 )
+
+/** 一次沙箱导入的结果统计。 */
+data class AssistantImportResult(
+    /** 成功复制进沙箱的文件数。 */
+    val importedCount: Int,
+    /** 读取或写入失败的文件数。 */
+    val failedCount: Int
+)
+
+/** 沙箱内文件名允许的最大长度。 */
+private const val MAX_FILE_NAME_LENGTH = 96

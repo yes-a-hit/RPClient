@@ -107,12 +107,12 @@ class MultimodalPromptTest {
 
     @Test
     fun logSanitizerRemovesShortImagesAndNestedErrorEchoes() {
-        val secret = "YWJjZA=="
-        listOf("""{"inlineData":{"mimeType":"image/png","data":"$secret"}}""",
-            """{"source":{"type":"base64","data":"$secret"}}""",
-            """{"url":"data:image/png;base64,$secret"}""",
-            """{"error":"\"data\":\"$secret\""}""").forEach { input ->
-            assertFalse(ImageLogSanitizer.sanitize(input).contains(secret))
+        val dummyBase64 = "YWJjZA=="
+        listOf("""{"inlineData":{"mimeType":"image/png","data":"$dummyBase64"}}""",
+            """{"source":{"type":"base64","data":"$dummyBase64"}}""",
+            """{"url":"data:image/png;base64,$dummyBase64"}""",
+            """{"error":"\"data\":\"$dummyBase64\""}""").forEach { input ->
+            assertFalse(ImageLogSanitizer.sanitize(input).contains(dummyBase64))
         }
         assertTrue(ImageLogSanitizer.sanitize("x ".repeat(100_000)).length < 66_000)
     }

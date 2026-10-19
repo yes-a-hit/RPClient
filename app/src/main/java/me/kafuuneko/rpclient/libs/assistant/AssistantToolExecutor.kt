@@ -11,6 +11,9 @@ import me.kafuuneko.rpclient.libs.room.entity.Character
 import me.kafuuneko.rpclient.libs.room.entity.LorebookEntry
 import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
 import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
+import me.kafuuneko.rpclient.libs.script.ScriptImportOutcome
+import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
+import me.kafuuneko.rpclient.libs.script.ScriptStore
 
 /**
  * 助手工具执行器：在受限沙箱内完成文件操作与角色卡编辑。
@@ -24,8 +27,12 @@ import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
 class AssistantToolExecutor(
     private val mSandboxRoot: File,
     private val mCharacterRepository: CharacterRepository,
-    private val mLorebookRepository: LorebookRepository
+    private val mLorebookRepository: LorebookRepository,
+    private val mScriptStore: ScriptStore
 ) {
+
+    /** 剧本编解码器，仅用于把已有剧本回填给模型查看。 */
+    private val mScriptCodec = ScriptPackCodec()
     /** 执行一次调用，返回回填给模型的文本结果。 */
     suspend fun execute(call: AssistantToolCall): String = withContext(Dispatchers.IO) {
         runCatching {
@@ -37,11 +44,15 @@ class AssistantToolExecutor(
                 "delete_file" -> deleteFile(call.arguments)
                 "list_characters" -> listCharacters()
                 "get_character" -> getCharacter(call.arguments)
+                "create_character" -> createCharacter(call.arguments)
                 "update_character" -> updateCharacter(call.arguments)
                 "list_worldbooks" -> listWorldbooks()
                 "create_worldbook" -> createWorldbook(call.arguments)
                 "add_worldbook_entry" -> addWorldbookEntry(call.arguments)
                 "get_worldbook_entries" -> getWorldbookEntries(call.arguments)
+                "list_scripts" -> listScripts()
+                "get_script" -> getScript(call.arguments)
+                "create_script" -> createScript(call.arguments)
                 else -> "未知工具：${call.name}"
             }
         }.getOrElse { error ->
@@ -140,6 +151,61 @@ class AssistantToolExecutor(
             "creatorNotes=${character.creatorNotes}",
             "systemPrompt=${character.systemPrompt}"
         ).joinToString("\n")
+    }
+
+    /** 列出已保存的剧本，含场景数量。 */
+    private suspend fun listScripts(): String {
+        val items = mScriptStore.list()
+        if (items.isEmpty()) return "还没有剧本"
+        return items.joinToString("\n") { "${it.id} · ${it.name} · ${it.sceneCount} 个场景" }
+    }
+
+    /** 读取指定剧本的完整 JSON，便于模型在其基础上改。 */
+    private suspend fun getScript(arguments: JsonObject): String {
+        val id = arguments.stringOrNull("id")?.trim().orEmpty()
+        if (id.isBlank()) return "缺少参数 id"
+        val pack = mScriptStore.load(id) ?: return "剧本不存在：$id"
+        return mScriptCodec.encode(pack).take(MAX_SCRIPT_CHARS)
+    }
+
+    /**
+     * 保存模型生成的剧本 JSON。
+     *
+     * 校验与落库都交给 ScriptStore：解析失败会返回具体原因，
+     * 模型据此修正后重试，避免把半残剧本写进磁盘。
+     */
+    private suspend fun createScript(arguments: JsonObject): String {
+        val json = arguments.stringOrNull("json")?.trim().orEmpty()
+        if (json.isBlank()) return "缺少参数 json"
+        return when (val outcome = mScriptStore.importFromText(json)) {
+            is ScriptImportOutcome.Success ->
+                "已保存剧本 ${outcome.packName}（${outcome.sceneCount} 个场景，id=${outcome.packId}）"
+
+            is ScriptImportOutcome.Failure -> "剧本校验失败：${outcome.detail}"
+        }
+    }
+
+    /** 新建一张角色卡。
+     *
+     * 只有名称是必填项；其余字段留空时按空字符串落库，之后可以用 update_character 继续补。
+     * 头像留空表示使用应用默认头像。
+     */
+    private suspend fun createCharacter(arguments: JsonObject): String {
+        val name = arguments.stringOrNull("name")?.trim().orEmpty()
+        if (name.isBlank()) return "缺少参数 name"
+        val character = Character(
+            name = name,
+            avatar = "",
+            characterTags = "[]",
+            description = arguments.stringOrNull("description")?.trim().orEmpty(),
+            personality = arguments.stringOrNull("personality")?.trim().orEmpty(),
+            scenario = arguments.stringOrNull("scenario")?.trim().orEmpty(),
+            firstMessages = arguments.stringOrNull("firstMessage")?.trim().orEmpty(),
+            examplesOfDialogue = arguments.stringOrNull("exampleDialogue")?.trim().orEmpty(),
+            postHistoryInstructions = arguments.stringOrNull("postHistoryInstructions")?.trim().orEmpty()
+        )
+        val id = mCharacterRepository.saveCharacter(character)
+        return "已创建角色卡 id=$id，名称：$name"
     }
 
     /** 按白名单字段更新角色卡；未提供的字段保持原值。 */
@@ -265,6 +331,9 @@ class AssistantToolExecutor(
     }
 
     private companion object {
+        /** 单次回填给模型的剧本 JSON 上限，避免撑爆上下文。 */
+        const val MAX_SCRIPT_CHARS = 12000
+
         const val OUT_OF_SANDBOX = "拒绝访问：路径超出沙箱范围。"
 
         /** 助手写入条目的默认排序权重，与界面新建条目的初值一致。 */
@@ -273,4 +342,5 @@ class AssistantToolExecutor(
         /** 助手写入条目的默认插入深度。 */
         const val DEFAULT_ENTRY_DEPTH = 4
     }
+
 }

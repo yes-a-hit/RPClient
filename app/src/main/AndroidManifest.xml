@@ -117,6 +117,20 @@
             android:theme="@style/Theme.RPClient"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".feature.scriptplay.ScriptPlayActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPClient"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".feature.script.ScriptLibraryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPClient" />
+        <activity
+            android:name=".feature.script.ScriptEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RPClient"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".feature.assistant.AssistantActivity"
             android:exported="false"
             android:theme="@style/Theme.RPClient"

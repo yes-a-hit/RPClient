@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.feature.main
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.activity.viewModels
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.imagecrop.ImageCropActivity
 import me.kafuuneko.rpclient.feature.main.model.Route
 import me.kafuuneko.rpclient.feature.main.presentation.MainUiIntent
@@ -62,6 +64,20 @@ class MainActivity : CoreActivityWithEvent() {
         ActivityResultContracts.OpenDocumentTree()
     ) { uri -> mViewModel.emit(MainUiIntent.ChatImageDirectoryResult(uri)) }
 
+    /** Skill 文件多选：一次可导入多个 JSON 能力包。 */
+    private val mSkillFilePicker = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (!uris.isNullOrEmpty()) mViewModel.emit(MainUiIntent.SkillFilesPicked(uris))
+    }
+
+    /** Skill 目录选择：递归扫描整棵目录树里的 JSON 文件。 */
+    private val mSkillFolderPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { mViewModel.emit(MainUiIntent.SkillFolderPicked(it)) }
+    }
+
     override fun getViewEventFlow() = mViewModel.viewEventFlow
 
     @Composable
@@ -105,6 +121,22 @@ class MainActivity : CoreActivityWithEvent() {
                     "application/octet-stream"
                 )
             )
+
+            MainViewEvent.OpenSkillFilePicker -> mSkillFilePicker.launch(
+                arrayOf("application/json", "text/plain", "application/octet-stream")
+            )
+
+            MainViewEvent.OpenSkillFolderPicker -> mSkillFolderPicker.launch(null)
+
+            is MainViewEvent.ShowSkillImportResult -> Toast.makeText(
+                this,
+                getString(
+                    R.string.skill_import_result,
+                    viewEvent.importedCount,
+                    viewEvent.failedFileCount
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }

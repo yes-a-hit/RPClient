@@ -11,4 +11,16 @@ sealed class MainViewEvent : IViewEvent {
 
     data object OpenChatImporter : MainViewEvent()
     data object OpenChatImageDirectory : MainViewEvent()
+
+    /** 打开 Skill 文件选择器（可多选）。 */
+    data object OpenSkillFilePicker : MainViewEvent()
+
+    /** 打开 Skill 目录选择器，递归导入整棵目录树。 */
+    data object OpenSkillFolderPicker : MainViewEvent()
+
+    /** 展示 Skill 导入结果的条数统计。 */
+    data class ShowSkillImportResult(
+        val importedCount: Int,
+        val failedFileCount: Int
+    ) : MainViewEvent()
 }

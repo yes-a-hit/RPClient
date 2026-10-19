@@ -85,4 +85,62 @@ class NovelChapterParserTest {
         assertEquals("楔子", NovelChapterParser.detectHeading("楔子"))
         assertEquals("番外 一", NovelChapterParser.detectHeading("番外 一"))
     }
+
+    @Test
+    fun `numbered headings in mixed widths are recognized`() {
+        assertEquals("01 起风", NovelChapterParser.detectHeading("01 起风"))
+        assertEquals("1. 渡口", NovelChapterParser.detectHeading("1. 渡口"))
+        assertEquals("001、归途", NovelChapterParser.detectHeading("001、归途"))
+    }
+
+    @Test
+    fun `plain number line is not a heading`() {
+        assertNull(NovelChapterParser.detectHeading("12"))
+        assertNull(NovelChapterParser.detectHeading("2026年春天，他回来了。"))
+    }
+
+    @Test
+    fun `numbered headings split into chapters`() {
+        val text = """
+            001 起风
+            夜里下起了雨。
+            002 渡口
+            船夫松开缆绳。
+        """.trimIndent()
+
+        val chapters = NovelChapterParser.parse(text)
+
+        assertEquals(2, chapters.size)
+        assertEquals("001 起风", chapters[0].title)
+        assertEquals("002 渡口", chapters[1].title)
+    }
+
+    @Test
+    fun `volume headings group following chapters`() {
+        val text = """
+            第一卷 风起
+            第一章 初遇
+            正文一。
+            第二章 别离
+            正文二。
+            第二卷 云涌
+            第一章 重逢
+            正文三。
+        """.trimIndent()
+
+        val chapters = NovelChapterParser.parse(text)
+
+        // 卷标题不生成章节，只改变后续章节归属
+        assertEquals(3, chapters.size)
+        assertEquals("第一卷 风起", chapters[0].volume)
+        assertEquals("第一卷 风起", chapters[1].volume)
+        assertEquals("第二卷 云涌", chapters[2].volume)
+        assertEquals("第一章 初遇", chapters[0].title)
+    }
+
+    @Test
+    fun `english volume heading is recognized`() {
+        assertEquals("Volume 2", NovelChapterParser.detectVolumeHeading("Volume 2"))
+        assertNull(NovelChapterParser.detectVolumeHeading("Chapter 2"))
+    }
 }

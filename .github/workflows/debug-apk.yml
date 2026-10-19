@@ -1,0 +1,62 @@
+name: debug-apk
+
+# 每次推到 master 或手动触发时，自动跑测试并产出可安装的 debug 包。
+# 目的：避免再出现「dist 里还是旧包」这类问题——
+# 包由 CI 从当前提交现场构建，文件名带定制版版本号与提交短哈希。
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 安装 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 准备 Gradle
+        run: chmod +x ./gradlew
+
+      - name: 单元测试
+        run: ./gradlew testDebugUnitTest --console=plain
+
+      - name: 构建 debug 包
+        run: ./gradlew assembleDebug --console=plain
+
+      - name: 读取定制版版本号
+        id: version
+        # 从 AppModel.kt 抓 UV_VERSION，保证产物命名与关于页显示一致
+        run: |
+          UV=$(grep -oP 'UV_VERSION\s*=\s*"\K[^"]+' app/src/main/java/me/kafuuneko/rpclient/libs/AppModel.kt | head -1)
+          VN=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+          echo "uv=$UV" >> "$GITHUB_OUTPUT"
+          echo "name=rpclient-${VN}-dev-debug-v${UV}" >> "$GITHUB_OUTPUT"
+
+      - name: 重命名产物
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/${{ steps.version.outputs.name }}.apk"
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.name }}
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: 汇总测试结果
+        if: always()
+        run: |
+          # 把失败的用例单独列出来，方便在 CI 页面直接看到
+          find app/build/test-results -name '*.xml' -print0 2>/dev/null \
+            | xargs -0 grep -l '<failure' 2>/dev/null \
+            | xargs -r -n1 basename || echo "全部用例通过"

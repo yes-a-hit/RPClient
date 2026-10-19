@@ -21,7 +21,21 @@ data class NovelImportPreview(
     val chapterTitles: List<String>,
     /** 解析后的完整章节，仅在创建故事时使用。 */
     val chapters: List<NovelChapter>
-)
+) {
+    /**
+     * 用新的章节顺序重建预览。
+     *
+     * 标题列表与统计都由 [chapters] 派生，避免两处数据不同步。
+     */
+    fun reordered(newChapters: List<NovelChapter>): NovelImportPreview = copy(
+        chapterCount = newChapters.size,
+        characterCount = newChapters.sumOf { it.content.length },
+        chapterTitles = newChapters.mapIndexed { index, chapter ->
+            chapter.title.ifBlank { "#${index + 1}" }
+        },
+        chapters = newChapters
+    )
+}
 
 /** 本地小说导入的阶段性状态。 */
 enum class StoryImportState {
@@ -33,4 +47,22 @@ enum class StoryImportState {
 
     /** 解析完成，可创建故事。 */
     Ready
+}
+
+/**
+ * 设定提取的展示状态。
+ *
+ * 提取是一次会消耗额度的模型调用，因此运行态与结果态都要明确展示，
+ * 失败时只标记失败，不保留半成品计数。
+ */
+data class ExtractionUiState(
+    val running: Boolean = false,
+    val failed: Boolean = false,
+    val characterCount: Int = 0,
+    val entryCount: Int = 0,
+    val worldbookName: String = ""
+) {
+    /** 是否已产生可用结果。 */
+    val hasResult: Boolean
+        get() = characterCount > 0 || entryCount > 0
 }

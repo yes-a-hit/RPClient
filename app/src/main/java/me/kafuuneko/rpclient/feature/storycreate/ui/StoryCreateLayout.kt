@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
@@ -293,7 +296,7 @@ private fun NovelImportSection(
             )
             when {
                 state.importState == StoryImportState.Reading -> ImportReadingRow()
-                preview != null -> ImportPreviewContent(preview, onPickNovelFiles, emit)
+                preview != null -> ImportPreviewContent(state, preview, onPickNovelFiles, emit)
                 else -> Button(
                     onClick = onPickNovelFiles,
                     enabled = enabled
@@ -319,9 +322,15 @@ private fun ImportReadingRow() {
     }
 }
 
-/** 已解析内容的统计、章节标题预览与后续操作。 */
+/**
+ * 已解析内容的统计、章节顺序调整与后续操作。
+ *
+ * 顺序以章节列表为准：多文件合并时按文件名自然排序只是初值，
+ * 文件名不规范时需要人工校正，因此这里直接给出上移下移入口。
+ */
 @Composable
 private fun ImportPreviewContent(
+    state: StoryCreateUiState.Normal,
     preview: NovelImportPreview,
     onPickNovelFiles: () -> Unit,
     emit: StoryCreateUiIntent.() -> Unit
@@ -336,35 +345,113 @@ private fun ImportPreviewContent(
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.SemiBold
     )
-    preview.chapterTitles.forEach { title ->
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-    // 章节数超过预览上限时补一行提示，避免误以为只导入了这些
-    val hidden = preview.chapterCount - preview.chapterTitles.size
-    if (hidden > 0) {
-        Text(
-            text = stringResource(R.string.story_import_more_chapters, hidden),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    // 章节可能上百条，固定高度内滚动，避免卡片把整页撑开
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 260.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        preview.chapters.forEachIndexed { index, chapter ->
+            ImportChapterRow(
+                index = index,
+                title = chapter.title.ifBlank { "#${index + 1}" },
+                canMoveUp = index > 0,
+                canMoveDown = index < preview.chapters.lastIndex,
+                emit = emit
+            )
+        }
     }
     Text(
         text = stringResource(R.string.story_import_mode_hint),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.primary
     )
+    // 提取会调用一次模型，运行态与结果态都要可见，避免重复点击
+    if (state.extraction.running) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Text(
+                text = stringResource(R.string.story_extract_running),
+                modifier = Modifier.padding(start = 8.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    } else {
+        Button(onClick = { StoryCreateUiIntent.ExtractSettingsClick.emit() }) {
+            Text(stringResource(R.string.story_extract_action))
+        }
+        if (state.extraction.hasResult) {
+            Text(
+                text = stringResource(
+                    R.string.story_extract_result,
+                    state.extraction.characterCount,
+                    state.extraction.entryCount
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = onPickNovelFiles) {
             Text(stringResource(R.string.story_import_replace))
         }
         Button(onClick = { StoryCreateUiIntent.ClearImportedNovel.emit() }) {
             Text(stringResource(R.string.story_import_clear))
+        }
+    }
+}
+
+/** 单条章节预览行：序号、标题与上下移动按钮。 */
+@Composable
+private fun ImportChapterRow(
+    index: Int,
+    title: String,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    emit: StoryCreateUiIntent.() -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "${index + 1}.",
+            modifier = Modifier.width(28.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        IconButton(
+            onClick = { StoryCreateUiIntent.MoveImportedChapter(index, -1).emit() },
+            enabled = canMoveUp,
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowUp,
+                contentDescription = stringResource(R.string.story_import_move_up),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        IconButton(
+            onClick = { StoryCreateUiIntent.MoveImportedChapter(index, 1).emit() },
+            enabled = canMoveDown,
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = stringResource(R.string.story_import_move_down),
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
