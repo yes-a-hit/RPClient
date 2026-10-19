@@ -1380,4 +1380,5 @@
     <string name="story_sort_reverse">현재 순서 뒤집기</string>
     <string name="adventure_short">모험</string>
     <string name="adventure_last_hint">지난 모험 이어하기</string>
+    <string name="script_play_auto">자동 진행</string>
 </resources>

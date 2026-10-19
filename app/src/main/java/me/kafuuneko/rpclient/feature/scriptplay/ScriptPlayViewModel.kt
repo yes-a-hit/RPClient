@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.feature.scriptplay
 
 import java.util.UUID
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptPlayUiIntent
@@ -15,6 +16,9 @@ import me.kafuuneko.rpclient.libs.llm.model.LLMMessage
 import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPlayMessage
+import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
+import me.kafuuneko.rpclient.libs.script.ScriptPlayLineParser
+import me.kafuuneko.rpclient.libs.script.ScriptPlayOptionParser
 import me.kafuuneko.rpclient.libs.script.ScriptPlayPromptBuilder
 import me.kafuuneko.rpclient.libs.script.ScriptPlaySceneState
 import me.kafuuneko.rpclient.libs.script.ScriptPlayStore
@@ -43,6 +47,8 @@ class ScriptPlayViewModel(
 ), KoinComponent {
     private val mScriptStore by inject<ScriptStore>()
     private val mPlayStore by inject<ScriptPlayStore>()
+    private val mCharacterRepository by inject<CharacterRepository>()
+    private val mFileRepository by inject<me.kafuuneko.rpclient.libs.room.repository.FileRepository>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mClientFactory by inject<LLMClientFactory>()
 
@@ -50,6 +56,18 @@ class ScriptPlayViewModel(
 
     /** 通关后进入自由模式：不再判失败，可自由走场景。 */
     private var mFreeMode = false
+
+    /** 本轮给出的候选行动。 */
+    private var mOptions: List<String> = emptyList()
+
+    /** 角色名到头像 UUID 的缓存，供界面取头像。 */
+    private val mAvatarCache = mutableMapOf<String, String>()
+
+    /** 是否自动推进。 */
+    private var mAutoPlay = false
+
+    /** 连续自动推进轮数，用于防止无人值守时无限循环。 */
+    private var mAutoRounds = 0
     private var mPlay: ScriptPlaythrough = ScriptPlaythrough(
         id = mPlayId,
         packId = mPackId,
@@ -76,6 +94,36 @@ class ScriptPlayViewModel(
             sceneId = resolveStartScene(pack).id
         )
         publish()
+    }
+
+
+    /** 选择推荐行动，等价于把该行动当作玩家输入发送。 */
+    @UiIntentObserver(ScriptPlayUiIntent.SelectOption::class)
+    private suspend fun onSelectOption(intent: ScriptPlayUiIntent.SelectOption) {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        if (state.generating || state.finishedReason.isNotBlank()) return
+        mAutoPlay = state.autoPlay
+        state.copy(input = intent.text).setup()
+        onSend()
+    }
+
+    /** 切换自动推进：开启后每轮自动选第一个推荐行动。 */
+    @UiIntentObserver(ScriptPlayUiIntent.ToggleAutoPlay::class)
+    private suspend fun onToggleAutoPlay() {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        val next = !state.autoPlay
+        mAutoPlay = next
+        mAutoRounds = 0
+        state.copy(autoPlay = next).setup()
+        // 开启瞬间若已有候选，立即推进一轮
+        if (next) {
+            state.options.firstOrNull()?.let { first ->
+                if (!state.generating && state.finishedReason.isBlank()) {
+                    state.copy(input = first, autoPlay = true).setup()
+                    onSend()
+                }
+            }
+        }
     }
 
     /** 输入框变化。 */
@@ -106,14 +154,17 @@ class ScriptPlayViewModel(
         }
 
         // 一轮 = 一次往返，轮次在收到回复后累加
+        // 选项块从正文剥离，单独作为候选行动展示
+        val parsedReply = ScriptPlayOptionParser.parse(reply)
+        val visibleReply = parsedReply.text.ifBlank { reply }
         mPlay = mPlay.copy(
-            messages = mPlay.messages + ScriptPlayMessage(scene.name, reply),
+            messages = mPlay.messages + ScriptPlayMessage(scene.name, visibleReply),
             roundCount = mPlay.roundCount + 1
         )
         when (val outcome = ScriptPlayEngine.evaluate(
             scene = scene,
             roundCount = mPlay.roundCount,
-            lastReply = reply,
+            lastReply = visibleReply,
             freeMode = mFreeMode
         )) {
             is ScriptPlayOutcome.Failed -> {
@@ -136,8 +187,24 @@ class ScriptPlayViewModel(
 
             ScriptPlayOutcome.Continue -> Unit
         }
+        mOptions = parsedReply.options
         mPlayStore.save(mPlay)
         publish()
+
+        // 自动推进：有候选且未结束时接着走一轮，但限制连续轮数避免失控
+        if (mAutoPlay && mOptions.isNotEmpty() && mPlay.endReason.isBlank() &&
+            mAutoRounds < MAX_AUTO_ROUNDS
+        ) {
+            mAutoRounds++
+            val first = mOptions.first()
+            val current = getOrNull<ScriptPlayUiState.Ready>()
+            if (current != null) {
+                current.copy(input = first).setup()
+                onSend()
+            }
+        } else if (!mAutoPlay) {
+            mAutoRounds = 0
+        }
     }
 
     /** 切换到指定场景，轮次按新场景重置。 */
@@ -205,6 +272,43 @@ class ScriptPlayViewModel(
             ).content
         }
 
+
+    /**
+     * 角色名到头像文件 UUID 的映射。
+     *
+     * 剧本按名字引用角色，界面要头像就得回查角色卡；
+     * 查不到的（临时角色）返回空，界面退化成首字气泡。
+     */
+
+    /** 加载角色头像位图；失败时返回 null，界面退化成首字气泡。 */
+    suspend fun loadAvatarBitmap(uuid: String): androidx.compose.ui.graphics.ImageBitmap? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                mFileRepository.loadSampledBitmap(
+                    uuid = uuid,
+                    requestedWidthPx = 96,
+                    requestedHeightPx = 96
+                )?.asImageBitmap()
+            }.getOrNull()
+        }
+
+    fun avatarOf(name: String): String? = mAvatarCache[name]
+
+    /** 预加载剧本里出现过的角色头像。 */
+    private suspend fun loadAvatarCache() {
+        val names = mPlay.messages.mapNotNull { message ->
+            ScriptPlayLineParser.parse(message.content)
+                .mapNotNull { it.speaker }
+        }.flatten().toSet()
+        if (names.isEmpty()) return
+        val characters = runCatching { mCharacterRepository.getAllCharacters() }.getOrDefault(emptyList())
+        characters.forEach { character ->
+            if (character.name in names) {
+                mAvatarCache[character.name] = character.avatar
+            }
+        }
+    }
+
     /** 起始场景：多入口取第一个，否则取缺省值。 */
     private fun resolveStartScene(pack: ScriptPack): ScriptScene =
         pack.scenes.firstOrNull { it.id == pack.startSceneId } ?: pack.scenes.first()
@@ -232,7 +336,9 @@ class ScriptPlayViewModel(
                 checkpoint = scene.checkpoint
             ),
             messages = mPlay.messages,
-            finishedReason = mPlay.endReason
+            finishedReason = mPlay.endReason,
+            options = mOptions,
+            autoPlay = mAutoPlay
         ).setup()
     }
 
@@ -242,6 +348,9 @@ class ScriptPlayViewModel(
 
         /** 系统提示在存档里的发言者名。 */
         const val SYSTEM = "系统"
+
+        /** 连续自动推进的最大轮数，防止无人值守时无限消耗额度。 */
+        const val MAX_AUTO_ROUNDS = 5
 
         /** 送给模型的历史条数上限。 */
         const val MAX_HISTORY_MESSAGES = 20

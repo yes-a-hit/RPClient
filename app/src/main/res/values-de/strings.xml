@@ -1385,4 +1385,5 @@
     <string name="story_sort_reverse">Reihenfolge umkehren</string>
     <string name="adventure_short">Abenteuer</string>
     <string name="adventure_last_hint">Letztes Abenteuer fortsetzen?</string>
+    <string name="script_play_auto">Automatisch fortfahren</string>
 </resources>

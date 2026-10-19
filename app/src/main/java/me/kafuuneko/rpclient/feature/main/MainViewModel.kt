@@ -16,6 +16,7 @@ import me.kafuuneko.rpclient.feature.about.AboutActivity
 import me.kafuuneko.rpclient.feature.characterlist.CharacterListActivity
 import me.kafuuneko.rpclient.feature.assistant.AssistantActivity
 import me.kafuuneko.rpclient.feature.script.ScriptEditorActivity
+import me.kafuuneko.rpclient.feature.scriptplay.ScriptPlayActivity
 import me.kafuuneko.rpclient.feature.scriptadventure.ScriptAdventureActivity
 import me.kafuuneko.rpclient.feature.script.ScriptLibraryActivity
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryTab
@@ -735,6 +736,20 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
     private fun onOpenScriptEditor() {
         if (!isStateOf<MainUiState.Normal>()) return
         AppViewEvent.StartActivity(ScriptEditorActivity::class.java).tryEmit()
+    }
+
+
+    /** 直接继续某一局冒险，跳过冒险首页。 */
+    @UiIntentObserver(MainUiIntent.ContinueAdventure::class)
+    private fun onContinueAdventure(intent: MainUiIntent.ContinueAdventure) {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(
+            ScriptPlayActivity::class.java,
+            android.os.Bundle().apply {
+                putString(ScriptPlayActivity.EXTRA_PLAY_PACK_ID, intent.packId)
+                putString(ScriptPlayActivity.EXTRA_PLAY_ID, intent.playId)
+            }
+        ).tryEmit()
     }
 
     /** 打开剧情冒险页。 */

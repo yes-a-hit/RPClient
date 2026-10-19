@@ -1381,4 +1381,5 @@
     <string name="story_sort_reverse">現在の順序を反転</string>
     <string name="adventure_short">冒険</string>
     <string name="adventure_last_hint">前回の冒険は？</string>
+    <string name="script_play_auto">自動進行</string>
 </resources>

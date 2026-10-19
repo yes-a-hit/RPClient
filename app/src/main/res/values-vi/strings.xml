@@ -1386,4 +1386,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="story_sort_reverse">Đảo thứ tự</string>
     <string name="adventure_short">Phiêu lưu</string>
     <string name="adventure_last_hint">Tiếp tục phiêu lưu?</string>
+    <string name="script_play_auto">Tự động tiếp</string>
 </resources>

@@ -1386,4 +1386,5 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="story_sort_reverse">Balik urutan</string>
     <string name="adventure_short">Petualangan</string>
     <string name="adventure_last_hint">Lanjutkan petualangan?</string>
+    <string name="script_play_auto">Majukan otomatis</string>
 </resources>

@@ -60,6 +60,9 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     /** 本轮待附加的图片引用，只随下一次请求发送。 */
     private var mPendingImages: List<LLMImageReference> = emptyList()
 
+    /** 本轮导入沙箱的文本文件名，用于在消息里补一句提示。 */
+    private var mImportedFileNames: List<String> = emptyList()
+
     /** 会话内存副本；与磁盘保持同步。 */
     private val mMessages = mutableListOf<AssistantMessage>()
 
@@ -106,7 +109,8 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         }
 
         // 先落用户消息，保证中断后历史仍然完整
-        val prepared = buildAttachmentPayload(state.attachments, rawText)
+        val prepared = buildAttachmentPayload(state.attachments, rawText, mImportedFileNames)
+        mImportedFileNames = emptyList()
         mMessages += AssistantMessage(role = ROLE_USER, content = prepared.text)
         state.copy(
             items = mMessages.toItems(),
@@ -179,24 +183,49 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
 
 
     /** 选择附件：记录 URI 与显示名，发送时才真正读取内容。 */
+    /**
+     * 选择文件：图片作为附件随消息发送，文本直接复制进沙箱。
+     *
+     * 文本塞进消息正文会迅速吃光上下文，多个 txt 一起选更是如此，
+     * 所以文本一律进沙箱，由助手的 list_files / read_file 按需读取。
+     */
     @UiIntentObserver(AssistantUiIntent.AttachFiles::class)
-    private fun onAttachFiles(intent: AssistantUiIntent.AttachFiles) {
+    private suspend fun onAttachFiles(intent: AssistantUiIntent.AttachFiles) {
         val state = getOrNull<AssistantUiState.Ready>() ?: return
-        val added = intent.uris.mapNotNull { uri ->
+        val images = mutableListOf<AssistantAttachment>()
+        val textUris = mutableListOf<Uri>()
+        intent.uris.forEach { uri ->
             val name = queryDisplayName(uri)
-            if (name.isBlank()) return@mapNotNull null
+            if (name.isBlank()) return@forEach
             val mime = mContext.contentResolver.getType(uri).orEmpty()
-            AssistantAttachment(
-                uri = uri.toString(),
-                name = name,
-                isImage = mime.startsWith("image/"),
-                mimeType = mime,
-                byteCount = querySize(uri)
-            )
+            if (mime.startsWith("image/")) {
+                images += AssistantAttachment(
+                    uri = uri.toString(),
+                    name = name,
+                    isImage = true,
+                    mimeType = mime,
+                    byteCount = querySize(uri)
+                )
+            } else {
+                textUris += uri
+            }
         }
-        // 同一文件重复选择时按 URI 去重，避免同图发多次
-        val merged = (state.attachments + added).distinctBy { it.uri }
-        state.copy(attachments = merged).setup()
+
+        // 文本立刻落进沙箱，界面上只留一条导入结果提示
+        var importedNames = emptyList<String>()
+        if (textUris.isNotEmpty()) {
+            val result = mStore.importFiles(textUris)
+            importedNames = textUris.mapNotNull { uri ->
+                queryDisplayName(uri).ifBlank { null }
+            }.take(result.importedCount)
+            mImportedFileNames = importedNames
+        }
+
+        val merged = (state.attachments + images).distinctBy { it.uri }
+        state.copy(
+            attachments = merged,
+            sandboxHint = mStore.sandboxSummary()
+        ).setup()
     }
 
     /** 移除一条待发送附件。 */
@@ -213,29 +242,31 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
      * 文本附件直接拼进正文，图片附件转成多模态块暂存，
      * 由 [buildRequestMessages] 附加到最后一条用户消息上。
      */
+    /**
+     * 把附件整理成一条待发送内容。
+     *
+     * 图片转成多模态块随消息发送；文本文件在选取时就已经复制进沙箱，
+     * 这里只补一句沙箱清单提示，不再把全文塞进正文——
+     * 正文塞满多个 txt 会把上下文吃光，表现就是对话突然断掉。
+     */
     private suspend fun buildAttachmentPayload(
         attachments: List<AssistantAttachment>,
-        rawText: String
+        rawText: String,
+        importedFileNames: List<String>
     ): PreparedPayload {
         val textParts = mutableListOf<String>()
         if (rawText.isNotBlank()) textParts += rawText
-        val images = mutableListOf<LLMImageReference>()
-        attachments.forEach { attachment ->
-            val uri = Uri.parse(attachment.uri)
-            if (attachment.isImage) {
-                val uuid = runCatching { mFileRepository.saveFile(uri) }.getOrNull()
-                if (uuid != null) buildImageReference(uuid)?.let(images::add)
-            } else {
-                val content = runCatching {
-                    mContext.contentResolver.openInputStream(uri)?.bufferedReader()
-                        ?.use { it.readText() }
-                }.getOrNull()
-                if (!content.isNullOrBlank()) {
-                    textParts += "【附件：${attachment.name}】" + nlLiteral() + content.take(MAX_ATTACHMENT_CHARS)
-                }
-            }
+        if (importedFileNames.isNotEmpty()) {
+            textParts += "（已导入 ${importedFileNames.size} 个文件到沙箱：" +
+                importedFileNames.joinToString("、") + "，可用 list_files / read_file 查看）"
         }
-        mPendingImages = images
+        mPendingImages = attachments
+            .filter { it.isImage }
+            .mapNotNull { attachment ->
+                runCatching {
+                    mFileRepository.saveFile(Uri.parse(attachment.uri))
+                }.getOrNull()?.let { uuid -> buildImageReference(uuid) }
+            }
         return PreparedPayload(textParts.joinToString(nlLiteral().repeat(2)))
     }
 

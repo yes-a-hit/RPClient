@@ -1390,4 +1390,5 @@
     <string name="story_sort_reverse">Обратный порядок</string>
     <string name="adventure_short">Приключение</string>
     <string name="adventure_last_hint">Продолжить приключение?</string>
+    <string name="script_play_auto">Автопродолжение</string>
 </resources>

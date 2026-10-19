@@ -1389,4 +1389,5 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="story_sort_reverse">Inverter ordem</string>
     <string name="adventure_short">Aventura</string>
     <string name="adventure_last_hint">Continuar a aventura?</string>
+    <string name="script_play_auto">Avanço automático</string>
 </resources>

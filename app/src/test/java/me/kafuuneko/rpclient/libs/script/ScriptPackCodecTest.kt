@@ -324,4 +324,95 @@ class ScriptPackCodecTest {
         assertEquals(120.5f, scene.layout?.x ?: 0f, 0.01f)
         assertEquals(-40f, scene.layout?.y ?: 0f, 0.01f)
     }
+
+    @Test
+    fun `rejects dead loop without loop enabled`() {
+        // A -> B -> A 且两者都不允许循环，属于场景堆砌产生的死循环
+        val json = """
+            {
+              "id": "loop", "name": "死循环",
+              "scenes": [
+                {"id": "a", "name": "甲", "nextSceneIds": ["b"]},
+                {"id": "b", "name": "乙", "nextSceneIds": ["a"]}
+              ]
+            }
+        """.trimIndent()
+
+        val result = codec.decode(json)
+
+        assertTrue(result is ScriptPackParseResult.Failure)
+        assertEquals(ScriptPackError.BrokenReference, (result as ScriptPackParseResult.Failure).error)
+    }
+
+    @Test
+    fun `allows loop when scene opts in`() {
+        // 环上有 loopEnabled 的场景时按有意的循环处理
+        val json = """
+            {
+              "id": "loop-ok", "name": "有意循环", "mode": "Loop",
+              "scenes": [
+                {"id": "a", "name": "甲", "nextSceneIds": ["b"], "loopEnabled": true},
+                {"id": "b", "name": "乙", "nextSceneIds": ["a", "end"]},
+                {"id": "end", "name": "终点"}
+              ]
+            }
+        """.trimIndent()
+
+        assertTrue(codec.decode(json) is ScriptPackParseResult.Success)
+    }
+
+    @Test
+    fun `rejects isolated scenes`() {
+        // 典型坏剧本：多个场景各自独立，没有任何连接
+        val json = """
+            {
+              "id": "islands", "name": "孤岛剧本", "startSceneId": "s1",
+              "scenes": [
+                {"id": "s1", "name": "序章"},
+                {"id": "s2", "name": "孤岛甲"},
+                {"id": "s3", "name": "孤岛乙"}
+              ]
+            }
+        """.trimIndent()
+
+        val result = codec.decode(json)
+
+        assertTrue(result is ScriptPackParseResult.Failure)
+        assertEquals(ScriptPackError.BrokenReference, (result as ScriptPackParseResult.Failure).error)
+        assertTrue(result.detail.contains("s2") && result.detail.contains("s3"))
+    }
+
+    @Test
+    fun `accepts scenes connected by unlock relation`() {
+        // unlockedBy 也是通路：解锁关系能到达的场景不算孤岛
+        val json = """
+            {
+              "id": "unlock-chain", "name": "解锁链", "startSceneId": "s1",
+              "scenes": [
+                {"id": "s1", "name": "序章"},
+                {"id": "s2", "name": "支线", "unlockedBy": ["s1"]},
+                {"id": "s3", "name": "终章", "unlockedBy": ["s2"]}
+              ]
+            }
+        """.trimIndent()
+
+        assertTrue(codec.decode(json) is ScriptPackParseResult.Success)
+    }
+
+    @Test
+    fun `accepts multi entry reaching all scenes`() {
+        // 多入口时，只要入口集合覆盖所有场景即可
+        val json = """
+            {
+              "id": "multi", "name": "多入口",
+              "startSceneIds": ["a", "b"],
+              "scenes": [
+                {"id": "a", "name": "甲线"},
+                {"id": "b", "name": "乙线"}
+              ]
+            }
+        """.trimIndent()
+
+        assertTrue(codec.decode(json) is ScriptPackParseResult.Success)
+    }
 }

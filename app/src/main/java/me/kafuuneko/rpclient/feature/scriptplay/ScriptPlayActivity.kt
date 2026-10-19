@@ -25,7 +25,7 @@ class ScriptPlayActivity : CoreActivityWithEvent() {
     private val mScriptStore by inject<ScriptStore>()
 
     /** 剧本 ID 由入口传入。 */
-    private val mPackId: String by lazy { intent.getStringExtra(EXTRA_PACK_ID).orEmpty() }
+    private val mPackId: String by lazy { intent.getStringExtra(EXTRA_PLAY_PACK_ID).orEmpty() }
 
     /** 一局一存档，ID 由剧本 ID 加时间戳生成，避免覆盖旧局。 */
     private val mPlayId: String by lazy {
@@ -78,13 +78,15 @@ class ScriptPlayActivity : CoreActivityWithEvent() {
     }
 
     companion object {
-        private const val EXTRA_PACK_ID = "extra_play_pack_id"
-        private const val EXTRA_PLAY_ID = "extra_play_id"
+        /** 剧本 ID 参数名，供首页直达某一局使用。 */
+        const val EXTRA_PLAY_PACK_ID = "extra_play_pack_id"
+        /** 存档 ID 参数名。 */
+        const val EXTRA_PLAY_ID = "extra_play_id"
 
         /** 开始或继续一局剧本。 */
         fun intentOf(context: Context, packId: String, playId: String = ""): Intent =
             Intent(context, ScriptPlayActivity::class.java).apply {
-                putExtra(EXTRA_PACK_ID, packId)
+                putExtra(EXTRA_PLAY_PACK_ID, packId)
                 if (playId.isNotBlank()) putExtra(EXTRA_PLAY_ID, playId)
             }
     }

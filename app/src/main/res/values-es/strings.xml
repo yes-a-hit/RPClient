@@ -1387,4 +1387,5 @@
     <string name="story_sort_reverse">Invertir orden</string>
     <string name="adventure_short">Aventura</string>
     <string name="adventure_last_hint">¿Continuar la aventura?</string>
+    <string name="script_play_auto">Avance automático</string>
 </resources>

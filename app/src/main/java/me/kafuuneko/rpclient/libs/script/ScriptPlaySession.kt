@@ -151,6 +151,15 @@ object ScriptPlayPromptBuilder {
         if (pack.enableGm) {
             builder.append("\n【主持要求】以旁白推进场景，描写环境与角色反应，不要替玩家做决定。\n")
         }
+        // 要求分段输出：角色台词带名字，界面才能配头像气泡
+        builder.append("\n【输出格式】每段以【旁白】或【角色名】开头，一段一件事：\n")
+        builder.append("【旁白】描写环境与动作。\n【角色名】「这个角色说的话」。\n")
+        builder.append("不要在段首之外再写名字，也不要替玩家发言。\n")
+
+        // 让模型在本轮末尾给候选行动，玩家点一下就能继续，不用自己想输入什么
+        builder.append("\n【候选行动】在本轮正文之后另起一段，输出 2 到 3 个玩家可以立刻执行的行动，")
+        builder.append("用下列格式包住，正文里不要重复这些选项：\n")
+        builder.append("<<<OPTIONS\n1. 行动一\n2. 行动二\n>>>\n")
         if (remainingRounds > 0) {
             builder.append("【进度】已进行 $roundCount 轮，本场景还剩 $remainingRounds 轮。\n")
         } else if (scene.maxRounds == 0) {

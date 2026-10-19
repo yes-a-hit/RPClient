@@ -175,6 +175,97 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
             return ScriptPackError.BrokenReference to
                 "角色同时出现在允许与禁止名单：${conflicts.distinct().joinToString(", ")}"
         }
+        // 后继图不允许出现死循环：环上没有 loopEnabled 场景时直接拒绝，
+        // 否则玩家会在一组场景里反复空转，永远走不到终点
+        findDeadLoop(pack)?.let { loop ->
+            return ScriptPackError.BrokenReference to
+                "场景后继构成死循环：${loop.joinToString(" → ")}（如需循环请给环上场景开启 loopEnabled）"
+        }
+        // 可达性：每个场景都必须能从入口走过去。
+        // 常见坏剧本是一堆互不相连的场景，运行时除了第一个其余永远进不去。
+        val unreachable = findUnreachableScenes(pack)
+        if (unreachable.isNotEmpty()) {
+            return ScriptPackError.BrokenReference to
+                "这些场景从入口无法到达：${unreachable.joinToString(", ")}" +
+                "（用 nextSceneIds 或 unlockedBy 把它们接进来）"
+        }
+        return null
+    }
+
+    /**
+     * 找出从入口出发走不到的场景。
+     *
+     * 后继与解锁关系都算连接：`unlockedBy` 表示「经历过前置才解锁」，
+     * 两个方向都意味着玩家能在这两个场景之间移动。
+     *
+     * @return 不可达场景的 ID；全部可达时返回空列表
+     */
+    private fun findUnreachableScenes(pack: ScriptPack): List<String> {
+        if (pack.scenes.isEmpty()) return emptyList()
+        val entries = buildSet {
+            addAll(pack.startSceneIds)
+            if (pack.startSceneId.isNotBlank()) add(pack.startSceneId)
+            if (isEmpty()) add(pack.scenes.first().id)
+        }
+        // 构造成邻接表，后继与解锁互为通路
+        val adjacency = mutableMapOf<String, MutableSet<String>>()
+        pack.scenes.forEach { scene ->
+            adjacency.getOrPut(scene.id) { mutableSetOf() }.addAll(scene.nextSceneIds)
+            scene.unlockedBy.forEach { source ->
+                adjacency.getOrPut(scene.id) { mutableSetOf() }.add(source)
+                adjacency.getOrPut(source) { mutableSetOf() }.add(scene.id)
+            }
+        }
+        val visited = entries.toMutableSet()
+        val queue = ArrayDeque(entries)
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            adjacency[current].orEmpty().forEach { next ->
+                if (visited.add(next)) queue.add(next)
+            }
+        }
+        return pack.scenes.map { it.id }.filterNot { it in visited }
+    }
+
+    /**
+     * 在场景后继图里找一条死循环。
+     *
+     * 只有环上存在允许循环的场景时才放过，其余情况视为剧本缺陷。
+     *
+     * @return 构成环的场景 ID 序列；没有死循环时返回 null
+     */
+    private fun findDeadLoop(pack: ScriptPack): List<String>? {
+        val byId = pack.scenes.associateBy { it.id }
+        val visited = mutableSetOf<String>()
+        val stack = mutableListOf<String>()
+
+        fun walk(sceneId: String): List<String>? {
+            if (sceneId in stack) {
+                // 环起点到当前位置即为循环路径
+                return stack.drop(stack.indexOf(sceneId)) + sceneId
+            }
+            if (!visited.add(sceneId)) return null
+            val scene = byId[sceneId] ?: return null
+            stack.add(sceneId)
+            for (next in scene.nextSceneIds) {
+                val loop = walk(next)
+                if (loop != null) {
+                    // 环上只要有一个允许循环的场景，就当作有意的设计
+                    val loopsAllowed = loop.any { byId[it]?.loopEnabled == true }
+                    if (!loopsAllowed) {
+                        stack.removeAt(stack.lastIndex)
+                        return loop.mapNotNull { byId[it]?.name ?: it }
+                    }
+                    return null
+                }
+            }
+            stack.removeAt(stack.lastIndex)
+            return null
+        }
+
+        pack.scenes.forEach { scene ->
+            walk(scene.id)?.let { return it }
+        }
         return null
     }
 

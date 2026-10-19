@@ -27,6 +27,9 @@ sealed class MainUiIntent {
     /** 打开剧情冒险：开新局或继续存档。 */
     data object OpenAdventure : MainUiIntent()
 
+    /** 直接继续某一局冒险。 */
+    data class ContinueAdventure(val packId: String, val playId: String) : MainUiIntent()
+
     /** 打开剧本库。 */
     data object OpenScriptLibrary : MainUiIntent()
 

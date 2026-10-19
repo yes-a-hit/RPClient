@@ -90,6 +90,15 @@ object AssistantToolCatalog {
 - `get_script` `{"id":"script-1"}`：读取某个剧本的完整 JSON。
 - `create_script` `{"json":"{...}"}`：保存一份剧本 JSON，会做完整校验。
 
+用 `create_script` 生成剧本时必须遵守这几条，否则会被校验直接拒绝：
+
+- **每个场景都要有存在的理由**：写清它承接上一个场景的什么结果，又为下一个场景留下什么悬念。不要罗列互不相干的场景。
+- **后继必须推进**：时间、地点、目标至少有一项发生变化。如果某个场景结束后又回到前面的场景，除非那是有意的循环（给环上场景开 `loopEnabled`），否则会构成死循环并被拒绝导入。
+- **终点必须可达**：主线末端场景的 `nextSceneIds` 留空，不要把所有场景串成一个闭环。
+- **条件要可判定**：`failConditions` 与 `completionCondition` 用关键词或轮次，不要写「玩家感到害怕」这种无法判定的描述。
+- 生成后先用 `list_scripts` 确认落库，再向用户说明结局有哪几种走法。
+
+
 `update_character` 仅接受这些字段：name、description、personality、scenario、firstMessages、
 postHistoryInstructions、creatorNotes、systemPrompt。未提供的字段保持原值。
 

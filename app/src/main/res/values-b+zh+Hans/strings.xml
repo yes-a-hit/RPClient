@@ -1382,4 +1382,5 @@
     <string name="story_sort_reverse">反转当前顺序</string>
     <string name="adventure_short">冒险</string>
     <string name="adventure_last_hint">上次的冒险？</string>
+    <string name="script_play_auto">自动推进</string>
 </resources>

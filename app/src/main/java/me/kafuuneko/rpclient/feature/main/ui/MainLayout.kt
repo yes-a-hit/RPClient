@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.SmartToy
@@ -830,7 +831,7 @@ private fun LazyListScope.homeEntryItems(
             )
             HomeEntryTile(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Rounded.PlayCircle,
+                icon = Icons.Rounded.Explore,
                 title = stringResource(R.string.adventure_short),
                 onClick = { MainUiIntent.OpenAdventure.emit() }
             )
@@ -894,6 +895,14 @@ private fun LazyListScope.homeContentSection(
                             MainUiIntent.SelectHomeContentTab(MainHomeContentTab.Story).emit()
                         },
                         label = { Text(stringResource(R.string.home_content_filter_story)) }
+                    )
+                    // 冒险单独一档，便于直接找进行中的那一局
+                    FilterChip(
+                        selected = state.selectedContentTab == MainHomeContentTab.Adventure,
+                        onClick = {
+                            MainUiIntent.SelectHomeContentTab(MainHomeContentTab.Adventure).emit()
+                        },
+                        label = { Text(stringResource(R.string.adventure_short)) }
                     )
                 }
             }
@@ -2944,7 +2953,7 @@ private fun RecentAdventureCard(
             iconContainerColor = AccentVioletColor.copy(alpha = 0.14f),
             title = item.title,
             subtitle = item.preview,
-            onClick = { emit(MainUiIntent.OpenAdventure) },
+            onClick = { emit(MainUiIntent.ContinueAdventure(item.packId, item.playId)) },
             trailing = {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -2998,7 +3007,7 @@ private fun HomeEntryTile(
 private fun RecentAdventureEntryCard(onClick: () -> Unit) {
     RpSettingsGroup {
         RpSettingsTile(
-            icon = Icons.Rounded.PlayCircle,
+            icon = Icons.Rounded.Explore,
             iconColor = AccentVioletColor,
             iconContainerColor = AccentVioletColor.copy(alpha = 0.14f),
             title = stringResource(R.string.adventure_last_hint),

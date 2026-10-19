@@ -19,6 +19,12 @@ sealed class ScriptPlayUiState {
         val generating: Boolean = false,
         /** 本局已结束时的提示。 */
         val finishedReason: String = "",
+        /** 本轮给出的推荐行动。 */
+        val options: List<String> = emptyList(),
+
+        /** 自动推进：回复后自动选第一个推荐行动继续。 */
+        val autoPlay: Boolean = false,
+
         /** 一次性状态提示。 */
         val statusText: String = ""
     ) : ScriptPlayUiState() {
@@ -48,6 +54,12 @@ sealed class ScriptPlayUiIntent {
     data object RestartScene : ScriptPlayUiIntent()
 
     /** 返回。 */
+    /** 选择一个推荐行动直接发送。 */
+    data class SelectOption(val text: String) : ScriptPlayUiIntent()
+
+    /** 切换自动推进。 */
+    data object ToggleAutoPlay : ScriptPlayUiIntent()
+
     data object Back : ScriptPlayUiIntent()
 }
 
