@@ -64,6 +64,8 @@ class ScriptPlayActivity : CoreActivityWithEvent() {
         ScriptPlayLayout(
             uiState = uiState,
             sceneNames = mSceneNames,
+            avatarOf = mViewModel::avatarOf,
+            loadAvatar = mViewModel::loadAvatarBitmap,
             emit = { mViewModel.emit(this) },
             onBack = { mViewModel.emit(ScriptPlayUiIntent.Back) }
         )

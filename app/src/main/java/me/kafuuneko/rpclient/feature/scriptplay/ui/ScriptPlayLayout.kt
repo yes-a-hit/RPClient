@@ -27,6 +27,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import me.kafuuneko.rpclient.libs.script.ScriptPlayLineParser
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -49,6 +59,8 @@ import me.kafuuneko.rpclient.ui.widgets.AppTopBar
 fun ScriptPlayLayout(
     uiState: ScriptPlayUiState,
     sceneNames: Map<String, String>,
+    avatarOf: (String) -> String?,
+    loadAvatar: suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?,
     emit: ScriptPlayUiIntent.() -> Unit,
     onBack: () -> Unit
 ) {
@@ -93,26 +105,21 @@ fun ScriptPlayLayout(
             ) {
                 items(state.messages) { message ->
                     val fromPlayer = message.speaker == PLACEHOLDER_PLAYER
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(if (fromPlayer) 0.85f else 0.95f),
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (fromPlayer) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        tonalElevation = 1.dp
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            Text(
-                                text = message.speaker,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = message.content,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                    if (fromPlayer) {
+                        PlayerBubble(message.content)
+                    } else {
+                        // 旁白与角色台词分开渲染：角色台词带头像，旁白保持素文本
+                        ScriptPlayLineParser.parse(message.content).forEach { line ->
+                            if (line.isNarration) {
+                                NarrationBlock(line.text)
+                            } else {
+                                CharacterBubble(
+                                    name = line.speaker.orEmpty(),
+                                    text = line.text,
+                                    avatarUuid = avatarOf(line.speaker.orEmpty()),
+                                    loadAvatar = loadAvatar
+                                )
+                            }
                         }
                     }
                 }
@@ -236,3 +243,111 @@ private fun InputBar(
 
 /** 玩家发言者在存档中的标识。 */
 private const val PLACEHOLDER_PLAYER = "玩家"
+
+/** 玩家气泡：右对齐、主色底。 */
+@Composable
+private fun PlayerBubble(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(0.85f),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Text(
+                text = text,
+                modifier = Modifier.padding(10.dp),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+/** 旁白：无头像、无角色名，弱化显示，与台词区分开。 */
+@Composable
+private fun NarrationBlock(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/** 角色台词：左侧头像 + 名字 + 气泡。 */
+@Composable
+private fun CharacterBubble(
+    name: String,
+    text: String,
+    avatarUuid: String?,
+    loadAvatar: suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        CharacterAvatar(name = name, avatarUuid = avatarUuid, loadAvatar = loadAvatar)
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 1.dp
+            ) {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(10.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+/** 角色头像：有角色卡就加载图片，没有则用名字首字占位。 */
+@Composable
+private fun CharacterAvatar(
+    name: String,
+    avatarUuid: String?,
+    loadAvatar: suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?
+) {
+    val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, avatarUuid) {
+        value = withContext(Dispatchers.IO) {
+            val uuid = avatarUuid
+            if (uuid.isNullOrBlank()) return@withContext null
+            runCatching { loadAvatar(uuid) }.getOrNull()
+        }
+    }
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        val image = bitmap
+        if (image != null) {
+            Image(
+                bitmap = image,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Text(
+                text = name.take(1),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+    }
+}
