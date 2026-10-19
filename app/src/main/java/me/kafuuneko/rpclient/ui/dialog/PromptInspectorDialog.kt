@@ -490,6 +490,8 @@ private fun PromptSource.label(): String {
             PromptSourceKind.WorldInfo -> R.string.prompt_source_world_info
             PromptSourceKind.UserPersona -> R.string.prompt_source_user_persona
             PromptSourceKind.CharacterDescription -> R.string.prompt_source_character_description
+            PromptSourceKind.CharacterProfile -> R.string.prompt_source_character_profile
+            PromptSourceKind.Skill -> R.string.prompt_source_skill
             PromptSourceKind.CharacterPersonality -> R.string.prompt_source_character_personality
             PromptSourceKind.Scenario -> R.string.prompt_source_scenario
             PromptSourceKind.Summary -> R.string.prompt_source_summary

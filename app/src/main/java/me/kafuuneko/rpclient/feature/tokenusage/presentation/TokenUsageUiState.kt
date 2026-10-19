@@ -46,6 +46,10 @@ sealed class TokenUsageUiState {
         val groups: List<TokenUsageGroupItem>,
         /** Token 用量页最近请求记录列表。 */
         val recentRecords: List<TokenUsageRecordItem>,
+        /** 当前周期按报价折算的金额估算。 */
+        val cost: TokenUsageCostState = TokenUsageCostState(),
+        /** 当前模型配置对应的账户余额。 */
+        val balance: TokenUsageBalanceState = TokenUsageBalanceState.Hidden,
         /** 当前页面互斥展示的对话框状态。 */
         val dialogState: TokenUsageDialogState = TokenUsageDialogState.None
     ) : TokenUsageUiState()

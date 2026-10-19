@@ -9,6 +9,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.character.CharacterCardRepository
+import me.kafuuneko.rpclient.libs.assistant.AssistantStore
+import me.kafuuneko.rpclient.libs.assistant.AssistantToolExecutor
+import me.kafuuneko.rpclient.libs.billing.PricingRepository
+import me.kafuuneko.rpclient.libs.billing.ProviderBalanceClient
+import me.kafuuneko.rpclient.libs.billing.UsageCostCalculator
+import me.kafuuneko.rpclient.libs.story.NovelImportRepository
+import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenClient
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
+import me.kafuuneko.rpclient.libs.skill.SkillPromptBuilder
+import me.kafuuneko.rpclient.libs.skill.SkillRepository
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveCodec
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveImageStore
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
@@ -150,6 +161,8 @@ internal val appModules = module {
     singleOf(::StoryArchiveCodec)
     singleOf(::StoryArchiveRepository)
     singleOf(::RegexScriptCodec)
+    // 角色扩展档案编解码器：Prompt 构建器与角色编辑页共用同一实例
+    single { CharacterProfileCodec(get()) }
     singleOf(::RegexScriptEngine)
     singleOf(::RegexScriptRuntime)
     singleOf(::RegexMessageProcessor)
@@ -190,5 +203,25 @@ internal val appModules = module {
     singleOf(::GroupChatRepository)
     singleOf(::RegexScriptRepository)
     singleOf(::StoryRepository)
+
+    // 外接生图链路：客户端负责协议收发，仓库负责把结果落成可提交的文件凭据
+    singleOf(::ImageGenClient)
+    singleOf(::ImageGenRepository)
+
+    // 助手 Skill：文件式能力包仓库 + 无状态 Prompt 渲染器
+    single { SkillRepository(androidContext()) }
+    singleOf(::SkillPromptBuilder)
+
+    // 助手会话：沙箱内文件工具与角色卡编辑工具
+    single { AssistantStore(androidContext()) }
+    single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get()) }
+
+    // 计费：模型报价快照与服务商余额查询
+    single { PricingRepository(get(), get()) }
+    single { ProviderBalanceClient(get(), get()) }
+    single { UsageCostCalculator(get()) }
+
+    // 本地小说导入：文本读取与分章建故事
+    single { NovelImportRepository(androidContext(), get()) }
 
 }

@@ -47,6 +47,16 @@ class MainActivity : CoreActivityWithEvent() {
         mViewModel.emit(MainUiIntent.ImportChatResult(uri))
     }
 
+    /**
+     * 聊天背景图选择结果。
+     *
+     * 背景图按原始比例使用，不进入方形裁剪流程，因此直接把 URI 交给 ViewModel 保存。
+     */
+    private val mChatBackgroundPickerLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { mViewModel.emit(MainUiIntent.ChatBackgroundPicked(it)) }
+        }
+
     /** 只将本次授权目录回传 ViewModel，不自动保存长期 URI 授权。 */
     private val mChatImageDirectoryLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -84,6 +94,8 @@ class MainActivity : CoreActivityWithEvent() {
         super.onReceivedViewEvent(viewEvent)
         when (viewEvent) {
             MainViewEvent.OpenUserAvatarPicker -> mUserAvatarPickerLauncher.launch("image/*")
+            MainViewEvent.OpenChatBackgroundPicker ->
+                mChatBackgroundPickerLauncher.launch("image/*")
             MainViewEvent.OpenChatImageDirectory -> mChatImageDirectoryLauncher.launch(null)
             MainViewEvent.OpenChatImporter -> mChatImportLauncher.launch(
                 arrayOf(

@@ -1,5 +1,8 @@
 package me.kafuuneko.rpclient.feature.characteredit
 
+import com.google.gson.Gson
+import android.content.Context
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.graphics.asImageBitmap
@@ -7,7 +10,24 @@ import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterEditForm
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterLorebookItem
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterProviderItem
+import me.kafuuneko.rpclient.feature.characteredit.model.CharacterWizardStep
+import me.kafuuneko.rpclient.feature.characteredit.model.CharacterWizardUiState
 import me.kafuuneko.rpclient.feature.characteredit.model.hasUnsavedChangesFrom
+import me.kafuuneko.rpclient.feature.characteredit.model.mergeWizardDraft
+import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.character.CharacterWizardCodec
+import me.kafuuneko.rpclient.libs.character.CharacterWizardDraft
+import me.kafuuneko.rpclient.libs.character.CharacterWizardLorebook
+import me.kafuuneko.rpclient.libs.character.CharacterWizardPromptBuilder
+import me.kafuuneko.rpclient.libs.character.CharacterWizardSeed
+import me.kafuuneko.rpclient.libs.character.withProfileFlag
+import me.kafuuneko.rpclient.libs.character.withProfileText
+import me.kafuuneko.rpclient.libs.llm.model.LLMContentBlock
+import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationOptions
+import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
+import me.kafuuneko.rpclient.libs.llm.model.LLMImageReference
+import me.kafuuneko.rpclient.libs.llm.model.LLMMessage
+import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
 import me.kafuuneko.rpclient.feature.characteredit.presentation.CharacterEditDialogState
 import me.kafuuneko.rpclient.feature.characteredit.presentation.CharacterEditLoadState
 import me.kafuuneko.rpclient.feature.characteredit.presentation.CharacterEditMode
@@ -20,12 +40,14 @@ import me.kafuuneko.rpclient.libs.core.AppViewEvent
 import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
 import me.kafuuneko.rpclient.libs.room.entity.Character
+import me.kafuuneko.rpclient.libs.room.entity.LorebookEntry
 import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
 import me.kafuuneko.rpclient.libs.room.repository.FileRepository
 import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
 import me.kafuuneko.rpclient.libs.room.repository.LLMRepository
 import me.kafuuneko.rpclient.utils.orSingleBlank
 import me.kafuuneko.rpclient.utils.removeAtOrSelf
+import me.kafuuneko.rpclient.utils.toJsonString
 import me.kafuuneko.rpclient.utils.updateAt
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -47,6 +69,11 @@ class CharacterEditViewModel : CoreViewModelWithEvent<CharacterEditUiIntent, Cha
     private val mFileRepository by inject<FileRepository>()
     private val mLorebookRepository by inject<LorebookRepository>()
     private val mLLMRepository by inject<LLMRepository>()
+    private val mContext by inject<Context>()
+
+    /** 角色卡生成向导的 Prompt 构建器与输出解析器；两者均无状态，可安全复用。 */
+    private val mWizardPromptBuilder = CharacterWizardPromptBuilder()
+    private val mWizardCodec = CharacterWizardCodec(Gson())
 
     /** 初始化编辑页，拉取候选世界书与提供商列表，并加载目标角色或新建空表单。 */
     @UiIntentObserver(CharacterEditUiIntent.Init::class)
@@ -311,6 +338,310 @@ class CharacterEditViewModel : CoreViewModelWithEvent<CharacterEditUiIntent, Cha
     @UiIntentObserver(CharacterEditUiIntent.ChangeExtensionsJson::class)
     private fun onChangeExtensionsJson(intent: CharacterEditUiIntent.ChangeExtensionsJson) =
         updateForm { copy(extensionsJson = intent.value) }
+
+    /** 修改扩展档案中的文本字段，字段定位由枚举保证与数据模型一致。 */
+    @UiIntentObserver(CharacterEditUiIntent.ChangeProfileText::class)
+    private fun onChangeProfileText(intent: CharacterEditUiIntent.ChangeProfileText) =
+        updateForm { copy(profile = profile.withProfileText(intent.field, intent.value)) }
+
+    /** 修改扩展档案中的三态布尔字段；null 表示用户选择「未设定」。 */
+    @UiIntentObserver(CharacterEditUiIntent.ChangeProfileFlag::class)
+    private fun onChangeProfileFlag(intent: CharacterEditUiIntent.ChangeProfileFlag) =
+        updateForm { copy(profile = profile.withProfileFlag(intent.field, intent.value)) }
+
+    /** 修改角色当前感情状态。 */
+    @UiIntentObserver(CharacterEditUiIntent.ChangeRelationshipStatus::class)
+    private fun onChangeRelationshipStatus(intent: CharacterEditUiIntent.ChangeRelationshipStatus) =
+        updateForm { copy(profile = profile.copy(relationshipStatus = intent.status)) }
+
+    /** 更新向导弹窗状态；向导未打开时直接忽略，避免无谓的状态重建。 */
+    private fun updateWizard(block: CharacterWizardUiState.() -> CharacterWizardUiState) {
+        val uiState = getOrNull<CharacterEditUiState.Normal>() ?: return
+        uiState.copy(wizardState = uiState.wizardState.block()).setup()
+    }
+
+    /** 打开角色卡生成向导，重置为输入步骤并清空上一次的错误提示。 */
+    @UiIntentObserver(CharacterEditUiIntent.OpenCharacterWizard::class)
+    private fun onOpenCharacterWizard() = updateWizard {
+        copy(
+            visible = true,
+            step = CharacterWizardStep.Input,
+            errorResId = null,
+            // 沿用上次选择的识图模型，避免每次打开都要重新指定
+            wizardProviderId = AppModel.characterWizardProvider
+        )
+    }
+
+    /** 关闭向导并丢弃未应用的草稿与参考图引用。 */
+    @UiIntentObserver(CharacterEditUiIntent.CloseCharacterWizard::class)
+    private fun onCloseCharacterWizard() {
+        val uiState = getOrNull<CharacterEditUiState.Normal>() ?: return
+        uiState.copy(wizardState = CharacterWizardUiState()).setup()
+    }
+
+    @UiIntentObserver(CharacterEditUiIntent.ChangeWizardName::class)
+    private fun onChangeWizardName(intent: CharacterEditUiIntent.ChangeWizardName) =
+        updateWizard { copy(seedName = intent.value) }
+
+    @UiIntentObserver(CharacterEditUiIntent.ChangeWizardConcept::class)
+    private fun onChangeWizardConcept(intent: CharacterEditUiIntent.ChangeWizardConcept) =
+        updateWizard { copy(seedConcept = intent.value) }
+
+    @UiIntentObserver(CharacterEditUiIntent.ChangeWizardRequirements::class)
+    private fun onChangeWizardRequirements(intent: CharacterEditUiIntent.ChangeWizardRequirements) =
+        updateWizard { copy(seedRequirements = intent.value) }
+
+    @UiIntentObserver(CharacterEditUiIntent.ToggleWizardLorebook::class)
+    private fun onToggleWizardLorebook(intent: CharacterEditUiIntent.ToggleWizardLorebook) =
+        updateWizard { copy(includeLorebook = intent.enabled) }
+
+    /**
+     * 选择向导使用的模型配置并立即持久化。
+     *
+     * 识图精度与对话文风往往是两种不同的模型优势，因此该选择独立于角色的默认模型绑定，
+     * 只在角色卡生成流程内生效。非法 ID 直接忽略，防止外部传入已删除的配置。
+     */
+    @UiIntentObserver(CharacterEditUiIntent.SelectWizardProvider::class)
+    private fun onSelectWizardProvider(intent: CharacterEditUiIntent.SelectWizardProvider) {
+        val uiState = getOrNull<CharacterEditUiState.Normal>() ?: return
+        val isKnown = intent.providerId == 0L ||
+            uiState.availableProviders.any { it.id == intent.providerId }
+        if (!isKnown) return
+        AppModel.characterWizardProvider = intent.providerId
+        updateWizard { copy(wizardProviderId = intent.providerId) }
+    }
+
+    /** 请求 Activity 打开系统图片选择器；图片保存由后续 Intent 完成。 */
+    @UiIntentObserver(CharacterEditUiIntent.PickWizardReferenceImage::class)
+    private fun onPickWizardReferenceImage() {
+        if (!isStateOf<CharacterEditUiState.Normal>()) return
+        CharacterEditViewEvent.OpenWizardReferencePicker.tryEmit()
+    }
+
+    /**
+     * 保存向导参考图并生成预览。
+     *
+     * 参考图按原始比例保存，只做采样解码用于预览与尺寸上报；更换图片时删除不再被引用的旧文件。
+     */
+    @UiIntentObserver(CharacterEditUiIntent.WizardReferencePicked::class)
+    private suspend fun onWizardReferencePicked(intent: CharacterEditUiIntent.WizardReferencePicked) {
+        val current = getOrNull<CharacterEditUiState.Normal>() ?: return
+        val previousUuid = current.wizardState.referenceImageUuid
+        // 复制到应用私有存储，避免依赖系统返回的一次性 URI 授权
+        val fileUuid = runCatching {
+            withContext(Dispatchers.IO) { mFileRepository.saveFile(intent.uri) }
+        }.getOrElse {
+            updateWizard { copy(errorResId = R.string.character_wizard_reference_failed) }
+            return
+        }
+        val preview = withContext(Dispatchers.IO) {
+            mFileRepository.loadSampledBitmap(
+                uuid = fileUuid,
+                requestedWidthPx = WIZARD_REFERENCE_MAX_EDGE,
+                requestedHeightPx = WIZARD_REFERENCE_MAX_EDGE
+            )
+        }
+        // 新引用就绪后再清理旧参考图，避免中途失败导致预览丢失
+        if (previousUuid.isNotBlank() && previousUuid != fileUuid) {
+            runCatching {
+                withContext(Dispatchers.IO) { mFileRepository.deleteFile(previousUuid) }
+            }
+        }
+        updateWizard {
+            copy(
+                referenceImageUuid = fileUuid,
+                referenceImage = preview?.asImageBitmap(),
+                errorResId = null
+            )
+        }
+    }
+
+    /** 清除向导参考图并删除对应文件。 */
+    @UiIntentObserver(CharacterEditUiIntent.ClearWizardReference::class)
+    private suspend fun onClearWizardReference() {
+        val current = getOrNull<CharacterEditUiState.Normal>() ?: return
+        val previousUuid = current.wizardState.referenceImageUuid
+        if (previousUuid.isNotBlank()) {
+            runCatching {
+                withContext(Dispatchers.IO) { mFileRepository.deleteFile(previousUuid) }
+            }
+        }
+        updateWizard { copy(referenceImageUuid = "", referenceImage = null) }
+    }
+
+    /**
+     * 请求模型生成角色卡草稿。
+     *
+     * - 模型选择优先使用向导专用配置，未单独指定时回落到当前全局配置。
+     * - 附带参考图时以多模态消息发送，由视觉模型自行提取外貌特征。
+     * - 解析失败与请求失败给出不同提示，便于用户判断是重试还是改模型。
+     */
+    @UiIntentObserver(CharacterEditUiIntent.GenerateCharacterDraft::class)
+    private suspend fun onGenerateCharacterDraft() {
+        val uiState = getOrNull<CharacterEditUiState.Normal>() ?: return
+        val wizard = uiState.wizardState
+        if (wizard.generating) return
+        updateWizard { copy(generating = true, errorResId = null) }
+        try {
+            val draft = requestCharacterDraft(wizard)
+            updateWizard {
+                copy(
+                    generating = false,
+                    draft = draft,
+                    step = CharacterWizardStep.Preview
+                )
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: CharacterWizardParseFailure) {
+            updateWizard {
+                copy(generating = false, errorResId = R.string.character_wizard_parse_failed)
+            }
+        } catch (error: Exception) {
+            updateWizard {
+                copy(generating = false, errorResId = R.string.character_wizard_generate_failed)
+            }
+        }
+    }
+
+    /** 把草稿合并进编辑表单并关闭向导；世界书草稿会在此刻落库并绑定角色。 */
+    @UiIntentObserver(CharacterEditUiIntent.ApplyCharacterDraft::class)
+    private suspend fun onApplyCharacterDraft() {
+        val uiState = getOrNull<CharacterEditUiState.Normal>() ?: return
+        val draft = uiState.wizardState.draft ?: return
+        // 用户在向导中显式填写过名称时才覆盖表单名称
+        val preferDraftName = uiState.wizardState.seedName.isBlank()
+        var mergedForm = uiState.form.mergeWizardDraft(draft, preferDraftName)
+        // 世界书草稿在应用时创建，失败不阻断角色卡应用
+        draft.lorebook?.let { lorebookDraft ->
+            val lorebookId = createWizardLorebook(lorebookDraft, mergedForm.name)
+            if (lorebookId != 0L) {
+                mergedForm = mergedForm.copy(characterLorebookId = lorebookId)
+            }
+        }
+        uiState.copy(
+            form = mergedForm,
+            wizardState = CharacterWizardUiState()
+        ).setup()
+    }
+
+    /**
+     * 将向导世界书草稿写入数据库。
+     *
+     * - 世界书名称优先使用草稿提供的名称，缺失时回退到角色名，再回退到通用标题。
+     * - 条目按草稿顺序写入 insertion order，保证关键词命中优先级与生成顺序一致。
+     * - 任一步骤失败返回 0，由调用方保留角色卡其余内容，避免整体应用失败。
+     *
+     * @param draft 世界书草稿
+     * @param characterName 当前角色名，用于生成兜底世界书名
+     * @return 新建世界书 ID；失败时返回 0
+     */
+    private suspend fun createWizardLorebook(
+        draft: CharacterWizardLorebook,
+        characterName: String
+    ): Long {
+        return runCatching {
+            val fallbackName = characterName.ifBlank {
+                mContext.getString(R.string.character_wizard_field_lorebook)
+            }
+            val lorebookId = mLorebookRepository.createLorebook(
+                draft.name.ifBlank { fallbackName }
+            )
+            draft.entries.forEachIndexed { index, entry ->
+                mLorebookRepository.saveEntry(
+                    LorebookEntry(
+                        lorebookId = lorebookId,
+                        name = entry.name.ifBlank { entry.keywords.firstOrNull().orEmpty() },
+                        keywords = Gson().toJsonString(entry.keywords),
+                        secondaryKeywords = "[]",
+                        order = index,
+                        depth = 4,
+                        category = "[]",
+                        content = entry.content
+                    )
+                )
+            }
+            lorebookId
+        }.getOrDefault(0L)
+    }
+
+    /**
+     * 组装并发送角色卡生成请求。
+     *
+     * @param wizard 当前向导状态
+     * @return 解析成功的角色卡草稿
+     * @throws CharacterWizardParseFailure 模型输出无法解析为结构化草稿
+     */
+    private suspend fun requestCharacterDraft(wizard: CharacterWizardUiState): CharacterWizardDraft {
+        // 向导内选择优先，其次是全局保存的识图配置，最后才回落到当前对话模型
+        val providerId = wizard.wizardProviderId
+            .takeIf { it != 0L }
+            ?: AppModel.characterWizardProvider.takeIf { it != 0L }
+            ?: AppModel.currentLLMProvider
+        val provider = mLLMRepository.getProviderById(providerId)
+            ?: throw IllegalStateException("No provider available for character wizard")
+        val seed = CharacterWizardSeed(
+            name = wizard.seedName,
+            concept = wizard.seedConcept,
+            requirements = wizard.seedRequirements,
+            referenceImageAttached = wizard.referenceImageUuid.isNotBlank(),
+            includeLorebook = wizard.includeLorebook
+        )
+        // 参考图与文本放在同一条用户消息内，保持图文顺序
+        val userBlocks = buildList {
+            add(LLMContentBlock.Text(mWizardPromptBuilder.buildUserPrompt(seed)))
+            if (wizard.referenceImageUuid.isNotBlank()) {
+                buildImageReference(wizard.referenceImageUuid)?.let {
+                    add(LLMContentBlock.Image(it))
+                }
+            }
+        }
+        val request = LLMGenerationRequest(
+            messages = listOf(
+                LLMMessage(
+                    role = LLMMessageRole.System,
+                    content = mWizardPromptBuilder.buildSystemPrompt(seed.includeLorebook)
+                ),
+                LLMMessage(
+                    role = LLMMessageRole.User,
+                    content = userBlocks.filterIsInstance<LLMContentBlock.Text>()
+                        .joinToString("\n\n") { it.text },
+                    blocks = userBlocks
+                )
+            ),
+            options = LLMGenerationOptions(temperature = WIZARD_TEMPERATURE)
+        )
+        val response = mLLMRepository.generate(provider.id, request)
+        return mWizardCodec.parse(response.content) ?: throw CharacterWizardParseFailure()
+    }
+
+    /**
+     * 构造参考图引用，供多模态请求使用。
+     *
+     * 宽高与字节数用于适配器的图片预算估算；文件缺失时返回 null，
+     * 此时请求降级为纯文本，不影响生成流程。
+     */
+    private suspend fun buildImageReference(uuid: String): LLMImageReference? {
+        val entity = mFileRepository.getFileEntity(uuid) ?: return null
+        val file = mFileRepository.getFile(uuid)
+        val bitmap = mFileRepository.loadSampledBitmap(
+            uuid = uuid,
+            requestedWidthPx = WIZARD_REFERENCE_MAX_EDGE,
+            requestedHeightPx = WIZARD_REFERENCE_MAX_EDGE
+        )
+        val reference = LLMImageReference(
+            uuid = uuid,
+            mimeType = entity.mimeType ?: "image/jpeg",
+            width = bitmap?.width ?: 0,
+            height = bitmap?.height ?: 0,
+            byteCount = file?.length() ?: 0L
+        )
+        bitmap?.recycle()
+        return reference
+    }
+
+    /** 模型输出无法解析为结构化草稿时使用的内部异常。 */
+    private class CharacterWizardParseFailure : Exception("Character wizard output is not valid JSON")
 
     /** 打开长文本字段的全屏 Prompt 编辑器弹窗。 */
     @UiIntentObserver(CharacterEditUiIntent.ShowPromptEditor::class)
@@ -583,3 +914,9 @@ class CharacterEditViewModel : CoreViewModelWithEvent<CharacterEditUiIntent, Cha
     }
 
 }
+
+/** 向导参考图解码的最大边长；兼顾视觉模型识别精度与内存占用。 */
+private const val WIZARD_REFERENCE_MAX_EDGE = 1280
+
+/** 角色卡生成的采样温度：需要一定发散度，但过高会导致 JSON 结构不稳定。 */
+private const val WIZARD_TEMPERATURE = 0.9f

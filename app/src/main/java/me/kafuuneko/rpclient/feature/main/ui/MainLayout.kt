@@ -48,6 +48,7 @@ import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
@@ -64,6 +65,7 @@ import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Stream
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -390,6 +392,8 @@ private fun DialogSwitch(
             state = dialogState,
             emit = emit
         )
+
+        is MainDialogState.ImportSkill -> SkillImportDialog(dialogState, emit)
     }
 }
 
@@ -595,7 +599,7 @@ private fun HeroEntryCard(
     }
 }
 
-/** 顶部快捷行动双栏卡片（群聊与故事创作）。 */
+/** 顶部快捷行动卡片（群聊、故事创作与助手）。 */
 @Composable
 private fun HomeQuickActionCard(
     modifier: Modifier = Modifier,
@@ -617,17 +621,17 @@ private fun HomeQuickActionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 10.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RpIconBubble(icon = icon, modifier = Modifier.size(36.dp))
-            Spacer(modifier = Modifier.width(10.dp))
+            RpIconBubble(icon = icon, modifier = Modifier.size(32.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -812,6 +816,12 @@ private fun LazyListScope.homeEntryItems(
                 icon = Icons.Rounded.AutoStories,
                 title = stringResource(R.string.story_create_story),
                 onClick = { MainUiIntent.OpenCreateStory.emit() }
+            )
+            HomeQuickActionCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Rounded.SmartToy,
+                title = stringResource(R.string.assistant_entry_title),
+                onClick = { MainUiIntent.OpenAssistant.emit() }
             )
         }
     }
@@ -1483,6 +1493,8 @@ private fun SettingsPage(
         item { WorldInfoBudgetPanel(state.worldInfoBudgetState, emit) }
         item { SummaryPanel(state.summaryState, emit) }
         item { ImageSendPanel(state.imageSendState, emit) }
+        item { ImageGenPanel(state.imageGenState, emit) }
+        item { SkillPanel(state.skillState, emit) }
 
         // ================= 4. 数据与系统 =================
         item {
@@ -1501,6 +1513,7 @@ private fun AppearancePanel(
     state: MainAppearanceSettingsState,
     emit: MainUiIntent.() -> Unit
 ) {
+    val backgroundState = state.backgroundState
     RpSettingsGroup {
         RpSettingsTile(
             icon = Icons.Rounded.Palette,
@@ -1526,6 +1539,51 @@ private fun AppearancePanel(
                     shape = RoundedCornerShape(10.dp)
                 )
             }
+        }
+        RpSettingsDivider(startIndent = false)
+        // 聊天背景入口：点击即打开系统图片选择器更换背景
+        RpSettingsTile(
+            icon = Icons.Rounded.Wallpaper,
+            iconColor = AccentSkyColor,
+            iconContainerColor = AccentSkyColor.copy(alpha = 0.14f),
+            title = stringResource(R.string.chat_background_title),
+            subtitle = stringResource(
+                if (backgroundState.hasImage) {
+                    R.string.chat_background_configured
+                } else {
+                    R.string.chat_background_desc
+                }
+            ),
+            onClick = { MainUiIntent.PickChatBackgroundClick.emit() },
+            trailing = {
+                if (backgroundState.hasImage) {
+                    TextButton(onClick = { MainUiIntent.ClearChatBackground.emit() }) {
+                        Text(stringResource(R.string.chat_background_clear))
+                    }
+                }
+            }
+        )
+        // 已配置背景时才展示预览与遮罩调节，避免未启用时出现无效控件
+        if (backgroundState.hasImage) {
+            backgroundState.preview?.let { preview ->
+                Image(
+                    bitmap = preview,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(120.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            RpPercentageSlider(
+                title = stringResource(R.string.chat_background_dim_title),
+                value = backgroundState.dimPercent,
+                helper = stringResource(R.string.chat_background_dim_helper),
+                onValueChange = { MainUiIntent.SetChatBackgroundDim(it).emit() },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 }

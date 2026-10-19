@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.feature.storycreate
 
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +16,15 @@ import me.kafuuneko.rpclient.libs.core.CoreActivityWithEvent
 class StoryCreateActivity : CoreActivityWithEvent() {
     private val mViewModel by viewModels<StoryCreateViewModel>()
 
+    /** 小说文件选择：既支持选整本，也支持多选散装的章节文件。 */
+    private val mNovelPicker = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (!uris.isNullOrEmpty()) {
+            mViewModel.emit(StoryCreateUiIntent.NovelFilesPicked(uris))
+        }
+    }
+
     override fun getViewEventFlow() = mViewModel.viewEventFlow
 
     @Composable
@@ -27,7 +37,12 @@ class StoryCreateActivity : CoreActivityWithEvent() {
 
         StoryCreateLayout(
             uiState = uiState,
-            emit = { mViewModel.emit(this) }
+            emit = { mViewModel.emit(this) },
+            onPickNovelFiles = {
+                mNovelPicker.launch(
+                    arrayOf("text/plain", "text/markdown", "application/octet-stream")
+                )
+            }
         )
     }
 

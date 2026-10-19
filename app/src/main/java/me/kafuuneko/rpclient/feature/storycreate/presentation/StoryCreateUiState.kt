@@ -1,8 +1,10 @@
 package me.kafuuneko.rpclient.feature.storycreate.presentation
 
+import me.kafuuneko.rpclient.feature.storycreate.model.NovelImportPreview
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterItem
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateForm
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateLorebookGroupItem
+import me.kafuuneko.rpclient.feature.storycreate.model.StoryImportState
 
 /** 新建 Story 页面状态树。 */
 sealed class StoryCreateUiState {
@@ -24,7 +26,11 @@ sealed class StoryCreateUiState {
         /** 按世界书分组后的条目列表。 */
         val lorebookGroups: List<StoryCreateLorebookGroupItem> = emptyList(),
         /** 按搜索条件过滤后实际展示的世界书分组。 */
-        val visibleLorebookGroups: List<StoryCreateLorebookGroupItem> = lorebookGroups
+        val visibleLorebookGroups: List<StoryCreateLorebookGroupItem> = lorebookGroups,
+        /** 本地小说导入的阶段性状态。 */
+        val importState: StoryImportState = StoryImportState.Idle,
+        /** 已解析的小说预览；为空时按普通方式创建故事。 */
+        val importPreview: NovelImportPreview? = null
     ) : StoryCreateUiState() {
         val selectedCharacterCount: Int
             get() = form.selectedCharacterIds.size

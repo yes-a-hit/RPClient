@@ -3,6 +3,8 @@ package me.kafuuneko.rpclient.feature.main.presentation
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.ImageBitmap
 import me.kafuuneko.rpclient.feature.main.model.MainProviderItem
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenAspect
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
 import me.kafuuneko.rpclient.libs.media.ImageSendMode
 import me.kafuuneko.rpclient.libs.media.ImageSendSettings
 import me.kafuuneko.rpclient.libs.prompt.model.ExampleDialogueBehavior
@@ -30,13 +32,102 @@ data class MainSettingsState(
     /** 设置页中调试功能区域的状态。 */
     val debugState: MainDebugSettingsState,
     /** 设置页中图片发送方式和自定义参数草稿。 */
-    val imageSendState: MainImageSendState = MainImageSendState()
+    val imageSendState: MainImageSendState = MainImageSendState(),
+    /** 设置页中外接生图服务的连接与默认参数。 */
+    val imageGenState: MainImageGenSettingsState = MainImageGenSettingsState(),
+    /** 设置页中已安装的助手 Skill 列表。 */
+    val skillState: MainSkillSettingsState = MainSkillSettingsState()
 )
+
+/**
+ * 助手 Skill 管理面板状态。
+ *
+ * [skills] 为空既可能表示尚未安装，也可能表示全部包文件损坏，
+ * 因此界面统一展示为空态并引导用户导入。
+ */
+data class MainSkillSettingsState(
+    /** 已安装的 Skill 列表，按名称排序。 */
+    val skills: List<MainSkillItem> = emptyList()
+) {
+    /** 已启用的 Skill 数量，用于面板副标题。 */
+    val enabledCount: Int
+        get() = skills.count { it.enabled }
+}
+
+/** 单个 Skill 在管理面板中的展示项。 */
+data class MainSkillItem(
+    /** Skill 稳定标识。 */
+    val id: String,
+    /** 展示名称。 */
+    val name: String,
+    /** 用途说明。 */
+    val description: String,
+    /** 触发词摘要；常驻 Skill 使用占位标记。 */
+    val triggerSummary: String,
+    /** 是否参与激活判定。 */
+    val enabled: Boolean,
+    /** 是否常驻激活。 */
+    val alwaysOn: Boolean
+)
+
+/**
+ * 外接生图服务配置面板状态。
+ *
+ * 字段修改即时写入偏好，因此不再保留独立的保存按钮与脏标记；
+ * [isConfigured] 用于提示用户当前是否具备发起请求的最低配置。
+ */
+data class MainImageGenSettingsState(
+    /** 服务基础地址。 */
+    val baseUrl: String = ImageGenSettings.DEFAULT_BASE_URL,
+    /** 接口鉴权 API Key。 */
+    val apiKey: String = "",
+    /** 服务端模型名。 */
+    val model: String = ImageGenSettings.DEFAULT_MODEL,
+    /** 默认画幅。 */
+    val aspect: ImageGenAspect = ImageGenAspect.Square
+) {
+    /** 是否已具备发起请求的最低配置。 */
+    val isConfigured: Boolean
+        get() = baseUrl.isNotBlank() && model.isNotBlank()
+
+    companion object {
+        /**
+         * 从已持久化配置创建面板状态。
+         *
+         * @param settings 解析后的生图配置
+         * @return 可直接渲染的面板状态
+         */
+        fun from(settings: ImageGenSettings): MainImageGenSettingsState =
+            MainImageGenSettingsState(
+                baseUrl = settings.baseUrl,
+                apiKey = settings.apiKey,
+                model = settings.model,
+                aspect = settings.aspect
+            )
+    }
+}
 
 /** 应用外观设置面板状态。 */
 data class MainAppearanceSettingsState(
     /** 用户当前选择的配色主题模式。 */
-    val themeMode: AppThemeMode
+    val themeMode: AppThemeMode,
+    /** 聊天背景图片与遮罩强度。 */
+    val backgroundState: MainChatBackgroundState = MainChatBackgroundState()
+)
+
+/**
+ * 聊天背景设置状态。
+ *
+ * [preview] 允许为空，用于区分「未配置背景」与「已配置但文件暂时无法解码」两种情况：
+ * 前者隐藏清除入口，后者仍允许用户清除失效引用。
+ */
+data class MainChatBackgroundState(
+    /** 已解码的背景预览图；为空表示未配置背景或图片无法解码。 */
+    val preview: ImageBitmap? = null,
+    /** 背景遮罩不透明度（0-100），数值越高背景越淡。 */
+    val dimPercent: Int = 35,
+    /** 是否已保存背景图 UUID；用于在解码失败时仍提供清除入口。 */
+    val hasImage: Boolean = false
 )
 
 /** 用户名称、描述和头像面板状态。 */

@@ -1,5 +1,7 @@
 package me.kafuuneko.rpclient.libs.prompt
 
+import com.google.gson.Gson
+import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationOptions
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
@@ -25,6 +27,7 @@ import me.kafuuneko.rpclient.libs.regex.RegexScriptRuntime
 import me.kafuuneko.rpclient.libs.room.entity.ChatMessage
 import me.kafuuneko.rpclient.libs.room.entity.LLMProvider
 import me.kafuuneko.rpclient.libs.room.entity.LorebookEntry
+import me.kafuuneko.rpclient.libs.skill.SkillPromptBuilder
 import me.kafuuneko.rpclient.utils.stripThinkBlocks
 
 /**
@@ -48,7 +51,15 @@ class ChatPromptBuilder(
     private val mRequestFinalizer: PromptRequestFinalizer = PromptRequestFinalizer(),
     private val mExampleDialogueBehaviorProvider: ExampleDialogueBehaviorProvider =
         ExampleDialogueBehaviorProvider { ExampleDialogueBehavior.default },
-    private val mRegexProcessor: RegexMessageProcessor = RegexMessageProcessor(mRegexRuntime)
+    private val mRegexProcessor: RegexMessageProcessor = RegexMessageProcessor(mRegexRuntime),
+    /**
+     * 角色扩展档案编解码器，用于把感情经历与关系边界注入 Prompt。
+     *
+     * 默认值直接构造，保证未显式注册 Koin 的调用方（含单元测试）无需改动即可运行。
+     */
+    private val mProfileCodec: CharacterProfileCodec = CharacterProfileCodec(Gson()),
+    /** Skill 片段渲染器；无状态，默认构造即可供未注册 Koin 的调用方使用。 */
+    private val mSkillPromptBuilder: SkillPromptBuilder = SkillPromptBuilder()
 ) {
     /**
      * 构建最终提交给模型的请求。
@@ -321,6 +332,26 @@ class ChatPromptBuilder(
             context.character.description,
             PromptSourceKind.CharacterDescription
         )
+        // 注入角色扩展档案（感情经历、关系边界等）；未填写时不产生空片段
+        val profileFragment = mProfileCodec.toPromptFragment(
+            mProfileCodec.extract(context.character.extensionsJson)
+        )
+        if (profileFragment.isNotBlank()) {
+            beforeHistory += PromptPiece.required(
+                LLMMessageRole.System,
+                profileFragment,
+                PromptSourceKind.CharacterProfile
+            )
+        }
+        // 注入本轮激活的助手 Skill；未命中任何触发词时不产生空片段
+        val skillFragment = mSkillPromptBuilder.build(context.activeSkills)
+        if (skillFragment.isNotBlank()) {
+            beforeHistory += PromptPiece.required(
+                LLMMessageRole.System,
+                skillFragment,
+                PromptSourceKind.Skill
+            )
+        }
         beforeHistory += PromptPiece.required(
             LLMMessageRole.System,
             formatPersonality(context.character.personality),

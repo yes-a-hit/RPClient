@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.feature.chat.presentation
 
 import android.net.Uri
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenAspect
 import me.kafuuneko.rpclient.libs.media.MessageImageAction
 
 /** 单聊页面可接收的全部用户意图和生命周期事件。 */
@@ -59,6 +60,16 @@ sealed class ChatUiIntent {
     data object OpenChatSettings : ChatUiIntent()
 
     data object OpenPromptInspector : ChatUiIntent()
+
+    /** 打开生图对话框；提示词以最近一条角色消息预填。 */
+    data object OpenImageGen : ChatUiIntent()
+
+    data class ChangeImageGenPrompt(val value: String) : ChatUiIntent()
+
+    data class ChangeImageGenAspect(val aspect: ImageGenAspect) : ChatUiIntent()
+
+    /** 按当前提示词请求外接生图服务，并把结果作为角色图片消息插入会话。 */
+    data object GenerateImage : ChatUiIntent()
 
     data class CopyPromptItem(val text: String) : ChatUiIntent()
 

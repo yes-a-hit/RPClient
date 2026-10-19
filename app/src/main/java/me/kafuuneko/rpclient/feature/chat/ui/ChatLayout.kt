@@ -144,6 +144,7 @@ import me.kafuuneko.rpclient.ui.widgets.AppTopBar
 import me.kafuuneko.rpclient.ui.widgets.MarkdownMessageText
 import me.kafuuneko.rpclient.ui.widgets.NoProviderBanner
 import me.kafuuneko.rpclient.ui.widgets.RpAvatar
+import me.kafuuneko.rpclient.ui.widgets.chatBackgroundLayer
 import me.kafuuneko.rpclient.ui.widgets.RpIconBubble
 import me.kafuuneko.rpclient.ui.widgets.RpLazyColumn
 import me.kafuuneko.rpclient.ui.widgets.RpMetaPill
@@ -278,7 +279,10 @@ private fun ChatNormal(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .chatBackgroundLayer(
+                state = state.backgroundState,
+                scrimColor = MaterialTheme.colorScheme.background
+            )
     ) {
         CustomChatTopBar(
             session = state.session,
@@ -515,6 +519,17 @@ private fun CustomChatTopBar(
                     modifier = Modifier.size(20.dp),
                     tint = if (sessionLoreDialogVisible) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                )
+            }
+            IconButton(
+                onClick = { ChatUiIntent.OpenImageGen.emit() },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.ImageIcon,
+                    contentDescription = stringResource(R.string.image_gen_title),
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
                 )
             }
             IconButton(
@@ -1669,6 +1684,12 @@ private fun DialogSwitch(
                 ChatUiIntent.ImageAction(MessageImageAction.Preview(ids, index))
                     .emit()
             }
+        )
+
+        is ChatDialogState.ImageGen -> ChatImageGenDialog(
+            state = dialogState,
+            onDismiss = { ChatUiIntent.DismissDialog.emit() },
+            emit = emit
         )
 
         is ChatDialogState.DeleteSessionConfirm -> AppDangerDialog(

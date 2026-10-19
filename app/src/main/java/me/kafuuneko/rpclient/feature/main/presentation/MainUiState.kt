@@ -103,6 +103,21 @@ sealed class MainDialogState {
         val resolvedImageCount: Int = 0,
         val isResolvingImages: Boolean = false
     ) : MainDialogState()
+
+    /**
+     * Skill 导入对话框。
+     *
+     * 用户粘贴 JSON 后一次性解析，[errorResId] 保留在对话框内提示解析失败原因，
+     * 避免失败后草稿被清空。
+     */
+    data class ImportSkill(
+        /** 尚未提交的 JSON 草稿。 */
+        val draftText: String = "",
+        /** 是否正在写入磁盘。 */
+        val isImporting: Boolean = false,
+        /** 导入失败时的提示文案。 */
+        val errorResId: Int? = null
+    ) : MainDialogState()
 }
 
 /** 首页底部导航对应的一级页面。 */

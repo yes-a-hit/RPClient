@@ -9,6 +9,7 @@ import me.kafuuneko.rpclient.libs.groupchat.model.GroupChatActivationStrategy
 import me.kafuuneko.rpclient.libs.groupchat.model.GroupChatCharacterCardMode
 import me.kafuuneko.rpclient.libs.groupchat.model.GroupChatLorebookGroupItem
 import me.kafuuneko.rpclient.libs.prompt.model.PromptInspection
+import me.kafuuneko.rpclient.ui.widgets.ChatBackgroundUiState
 
 /** 群聊页面状态树，统一承载会话、成员、消息、设置草稿和生成状态。 */
 sealed class GroupChatUiState {
@@ -45,7 +46,9 @@ sealed class GroupChatUiState {
         /** 当前是否存在可用于生成的模型配置。 */
         val hasAvailableProvider: Boolean = true,
         /** 当前页面互斥展示的对话框状态。 */
-        val dialogState: GroupChatDialogState = GroupChatDialogState.None
+        val dialogState: GroupChatDialogState = GroupChatDialogState.None,
+        /** 聊天页背景配置，与单聊共用同一份全局背景设置。 */
+        val backgroundState: ChatBackgroundUiState = ChatBackgroundUiState()
     ) : GroupChatUiState()
 
     data class Finished(val previous: GroupChatUiState) : GroupChatUiState()

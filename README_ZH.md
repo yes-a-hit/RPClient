@@ -18,8 +18,86 @@
     </a>
   </p>
 
-  [项目简介](#项目简介) · [界面展示](#界面展示) · [功能特性](#功能特性) · [快速开始](#快速开始) · [参与贡献](#参与贡献)
+  [定制版改动](#定制版改动) · [项目简介](#项目简介) · [界面展示](#界面展示) · [功能特性](#功能特性) · [快速开始](#快速开始) · [参与贡献](#参与贡献)
 </div>
+
+## 定制版改动
+
+本仓库是 [RPClient](https://github.com/KafuuNeko/RPClient) 的个人定制分支，基线为上游 `2026.3.1`（提交 `c3ed325`）。除下列改动外，其余功能与上游保持一致。
+
+### 应用名称与包名
+
+- 应用显示名改为 `RPClient UV`（UV 取 Unoffical Version 之意），`app_name` 与关于页的 `about_brand_name` 同步修改，debug 构建不再追加 `(Dev)` 字样。
+- `applicationId` 改为 `me.kafuuneko.rpclient.uv`，debug 构建为 `me.kafuuneko.rpclient.uv.dev`。与官方版 `me.kafuuneko.rpclient` 完全隔离，可同时安装、互不覆盖。
+- 包名变更后不继承旧版应用内数据，从官方版或早期定制版升级时需重新导入角色卡、世界书与模型配置。
+- 代码包名 `namespace` 保持 `me.kafuuneko.rpclient` 不变，源码目录结构未调整。
+
+### 关于页
+
+- 新增「定制版」分组：显示改版作者 `yes a hit`，并提供「定制版说明」导出入口。
+- 说明文档内置在 `assets/README_UV.md`，导出走系统文件选择器（`ACTION_CREATE_DOCUMENT`），不需要存储权限，也不依赖应用私有目录可见性。
+
+### 本地小说导入
+
+新建故事页增加「导入本地小说」，与故事编辑器里既有的单文件导入互补：
+
+- **整本自动分章**：`NovelChapterParser` 识别 `第X章/回/节/篇/卷/话`、`Chapter N`、Markdown `#` 标题以及 `序章`、`楔子`、`番外` 等固定词，按标题切段。
+- **散装多文件**：一次可多选，按文件名自然排序合并（`chapter2` 排在 `chapter10` 之前），单文件没有标题时用文件名兜底。
+- **不误判正文**：标题行长度上限 40 字符，正文里提到「第三章」的长句不会被当成标题。
+- **编码兜底**：按 UTF-8 读取，出现大量替换字符时回退 GB18030，避免中文 TXT 乱码。
+- **接入续写**：导入后按原样建立章节骨架并写入正文，直接在故事编辑器里续写、生成摘要与使用世界书。
+- 导入模式与角色、世界书选择共存，创建时一并关联。
+
+### 默认语言
+
+- 默认资源集 `res/values/strings.xml` 整体替换为简体中文，因此系统语言不在支持列表内时（含英文系统）界面仍显示中文。
+- 其余 12 个语言目录保持上游内容，对应语言的系统仍会显示各自翻译。
+- 搬运时逐条校验过格式化占位符，可与中文翻译对齐的 1263 条全部一致；XML 良构性与条目数量（1265 条 `string`、3 个 `plurals`）均已校验。
+
+### 助手
+
+首页快捷区新增「助手」入口，进入后是一个独立会话页面，与角色聊天、群聊、故事创作并列，不占用角色卡与会话数据。
+
+- **独立会话**：消息保存在 `filesDir/assistant/session.json`，单会话、可一键清空；不写入 Room，因此不涉及数据库迁移。
+- **沙箱权限**：助手只能访问 `filesDir/assistant/sandbox` 目录内的文件，可用 `list_files`、`read_file`、`write_file`、`move_file`、`delete_file`。路径经规范化后越界即拒绝。
+- **角色卡编辑**：`list_characters`、`get_character`、`update_character` 三个工具可读写角色卡，仅允许修改 `name`、`description`、`personality`、`scenario`、`firstMessages`、`postHistoryInstructions`、`creatorNotes`、`systemPrompt` 八个字段，不支持删除角色或改动绑定关系。
+- **世界书整理**：`list_worldbooks`、`create_worldbook`、`add_worldbook_entry`、`get_worldbook_entries` 四个工具可以把沙箱里的零散设定文件转成世界书。既可以新建一本，也可以追加到已有世界书；没有关键词的条目按常驻写入。
+- **工具协议**：不使用各供应商互不兼容的 function calling，而是约定模型在正文输出 `<tool name="...">{...}</tool>`，由应用解析执行并以 `<tool_result>` 回填，单轮回复最多连续执行 5 次调用；OpenAI Compatible、Gemini、Anthropic 三种协议均可使用。
+- **提示词双模式**：助手页右上角可切换「继承全局主提示词」或「使用独立提示词」。继承时沿用设置里的 Main Prompt，并自动把 `{{char}}` 解析为 Assistant、`{{user}}` 解析为当前用户名；独立模式使用单独保存的提示词。两种模式都会追加助手身份边界与工具说明。
+- **模型依赖**：助手沿用当前全局模型配置，需先在「设置 > 模型配置」启用一个配置才能对话。
+
+### 消耗统计增强
+
+在原有 Token 统计基础上增加了金额与余额两个维度，金额以人民币结算。
+
+- **人民币计价**：国内服务商按官方人民币牌价，境外模型按美元报价乘以汇率折算（默认 7.2，存于偏好可改），界面统一显示 `¥`。
+- **峰谷分档**：硅基流动 DeepSeek V4 Flash（0731）内置官方档位——2–8 点缓存命中 ¥0.150/输入 ¥1.500/输出 ¥4.500 每百万 Token，其余时段 ¥0.300/¥3.000/¥9.000。金额按每条请求的发生时间逐条折算，因为聚合后的总量无法区分峰谷。
+- **缓存命中单独计价**：命中缓存的输入走缓存档单价，不与普通输入混算。
+- **站点绑定**：内置价目绑定站点主机名（如 `siliconflow.cn`），只在请求确实打到该站点时生效——同一个模型在不同服务商的价目并不相同，不跨站套价。站点或模型未收录时回退 OpenRouter 实时报价并按汇率折算。
+- **在线报价**：收录不到的模型从 OpenRouter 公开模型列表实时拉取（`https://openrouter.ai/api/v1/models`），结果缓存在本地，离线沿用上次快照；卡片同时显示覆盖率与未定价模型。
+- **模型名归一化**：请求写法与报价表键名经常不一致（`openai/gpt-4o-2024-08-06`、`claude-3-5-sonnet@20240620`），匹配时依次去供应商前缀、去明确版本尾巴；只裁剪版本标记，不会把 `gemini-2.5-flash` 的 `-flash` 误当版本。
+- **账户余额**：接入服务商官方余额接口。OpenRouter 走 `GET /api/v1/credits`（余额 = 累计充值 − 累计用量），DeepSeek 走 `GET /user/balance`（直接返回可用、赠送、充值余额）。其他服务商没有公开接口，页面显示说明而不是错误。
+- **状态区分**：余额区分「未查询 / 查询中 / 可用 / 服务商不支持 / 查询失败」，不用 0 或占位符混淆这些情况。
+
+> 智谱、月之暗面等站点暂未内置人民币价目：公开渠道只有第三方按美元折算的参考值，与官方牌价未必一致，与其写一个可能算错的数字，不如交给 OpenRouter 实时报价兜底。需要精确账单时以服务商控制台为准。
+
+
+- `feature/characteredit/ui/CharacterEditLayout.kt` 补齐 `androidx.compose.foundation.layout.ExperimentalLayoutApi` 导入。该文件使用了 `FlowRow` 却缺少对应 opt-in 导入，在上游当前 Compose BOM 下无法通过编译。
+
+### 验证
+
+- `assembleDebug` 通过。
+- `testDebugUnitTest` 通过：原有 279 项测试全绿，另新增 23 项（8 项助手工具协议解析、8 项报价匹配与计价、7 项小说分章解析）。
+- 构建环境：JDK 17、Android SDK（platform 36.1 + build-tools 36.1.0）、AGP 9.0.1、Gradle 9.5、Kotlin 2.0.21。
+
+### 附带脚本
+
+不参与应用构建，仅用于本地维护：
+
+- `tools/localize-default-zh.py`：把 `values-b+zh+Hans` 的翻译合并回默认资源集。上游更新文案后重跑一次即可。
+- `tools/backup/`：中文化之前的原始 `strings.xml` 备份。
+- `tools/run-emulator.ps1`：启动 AVD 并把窗口摆进可见桌面，可选自动安装 APK。模拟器窗口尺寸按设备像素高计算，在高分屏缩放环境下会溢出屏幕，脚本负责纠正。
+- `dist/`：debug 安装包与界面截图，本地产物，已在 `.gitignore` 中排除。
 
 ## 项目简介
 

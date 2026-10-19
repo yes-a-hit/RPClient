@@ -1,6 +1,8 @@
 package me.kafuuneko.rpclient.feature.characteredit.model
 
 import com.google.gson.Gson
+import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
+import me.kafuuneko.rpclient.libs.character.CharacterProfileExtra
 import me.kafuuneko.rpclient.libs.room.entity.Character
 import me.kafuuneko.rpclient.utils.trimmedNotBlank
 import me.kafuuneko.rpclient.utils.toJsonString
@@ -55,7 +57,14 @@ data class CharacterEditForm(
     /** 角色卡直接绑定的世界书 ID；未绑定时为 0。 */
     val characterLorebookId: Long = 0L,
     /** 角色默认关联的模型配置 ID；未关联时为空。 */
-    val llmProviderId: Long = 0L
+    val llmProviderId: Long = 0L,
+    /**
+     * 角色扩展档案：身份信息、感情经历与亲密关系边界。
+     *
+     * 该数据保存在 [extensionsJson] 的 rpclient_profile 命名空间内，表单层以结构化对象维护，
+     * 保存时再写回 JSON，从而在不新增数据库列的前提下随 V2 角色卡一起导出。
+     */
+    val profile: CharacterProfileExtra = CharacterProfileExtra()
 ) {
     /** ID 为 0 表示尚未写入数据库的新角色。 */
     val isNew: Boolean
@@ -88,7 +97,9 @@ data class CharacterEditForm(
             depthPromptDepth = character.depthPromptDepth.toString(),
             depthPromptRole = character.depthPromptRole.toString(),
             characterLorebookId = character.characterLorebookId,
-            llmProviderId = llmProviderId
+            llmProviderId = llmProviderId,
+            // 扩展档案从角色卡 extensions 中解析，导入的第三方角色卡同样可读
+            profile = CharacterProfileCodec(Gson()).extract(character.extensionsJson)
         )
     }
 
@@ -112,7 +123,11 @@ data class CharacterEditForm(
             creator = creator.trim(),
             characterVersion = characterVersion.trim(),
             alternateGreetings = Gson().toJsonString(alternateGreetings.trimmedNotBlank()),
-            extensionsJson = extensionsJson.trim().ifBlank { "{}" },
+            // 先把扩展档案写回 extensions 再落库，保证导出 V2 角色卡时随卡携带
+            extensionsJson = CharacterProfileCodec(Gson()).inject(
+                extensionsJson = extensionsJson.trim().ifBlank { "{}" },
+                profile = profile
+            ),
             depthPromptPrompt = depthPromptPrompt.trim(),
             depthPromptDepth = depthPromptDepth.trim().toIntOrNull()?.coerceAtLeast(0) ?: 4,
             depthPromptRole = depthPromptRole.trim().toIntOrNull()?.coerceIn(0, 2) ?: 0,
@@ -144,7 +159,11 @@ fun CharacterEditForm.toComparableForm(): CharacterEditForm {
         postHistoryInstructions = postHistoryInstructions.trim(),
         systemPrompt = systemPrompt.trim(),
         alternateGreetings = alternateGreetings.trimmedNotBlank(),
-        extensionsJson = extensionsJson.trim().ifBlank { "{}" },
+        // 扩展档案需要先写回 extensions，否则仅修改感情史等字段时无法被未保存变更检测捕获
+        extensionsJson = CharacterProfileCodec(Gson()).inject(
+            extensionsJson = extensionsJson.trim().ifBlank { "{}" },
+            profile = profile
+        ),
         depthPromptPrompt = depthPromptPrompt.trim(),
         depthPromptDepth = depthPromptDepth.trim(),
         depthPromptRole = depthPromptRole.trim()

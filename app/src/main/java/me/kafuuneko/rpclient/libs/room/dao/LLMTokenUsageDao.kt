@@ -74,6 +74,16 @@ interface LLMTokenUsageDao : MutableDao<LLMTokenUsageRecord> {
     )
     suspend fun getRecentRecords(startTime: Long, limit: Int): List<LLMTokenUsageRecord>
 
+    /** 读取时间范围内的全部记录，用于按峰谷价目逐条折算金额。 */
+    @Query(
+        """
+        SELECT * FROM llm_token_usage_records
+        WHERE createTime >= :startTime
+        ORDER BY createTime DESC, id DESC
+        """
+    )
+    suspend fun getRecords(startTime: Long): List<LLMTokenUsageRecord>
+
     /** 清空全部 Token 用量统计。 */
     @Query("DELETE FROM llm_token_usage_records")
     suspend fun deleteAll()

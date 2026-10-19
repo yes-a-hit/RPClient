@@ -56,7 +56,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.kafuuneko.rpclient.R
+import me.kafuuneko.rpclient.feature.storycreate.model.NovelImportPreview
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterActivationMode
+import me.kafuuneko.rpclient.feature.storycreate.model.StoryImportState
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterItem
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateForm
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateLorebookEntryItem
@@ -80,22 +82,24 @@ import me.kafuuneko.rpclient.ui.widgets.StoryUserPersonaCard
 @Composable
 fun StoryCreateLayout(
     uiState: StoryCreateUiState,
-    emit: StoryCreateUiIntent.() -> Unit
+    emit: StoryCreateUiIntent.() -> Unit,
+    onPickNovelFiles: () -> Unit
 ) {
     BackHandler(enabled = uiState is StoryCreateUiState.Normal) {
         StoryCreateUiIntent.Back.emit()
     }
     when (uiState) {
         StoryCreateUiState.None -> Unit
-        is StoryCreateUiState.Normal -> StoryCreateNormal(uiState, emit)
-        is StoryCreateUiState.Finished -> StoryCreateLayout(uiState.previous) {}
+        is StoryCreateUiState.Normal -> StoryCreateNormal(uiState, emit, onPickNovelFiles)
+        is StoryCreateUiState.Finished -> StoryCreateLayout(uiState.previous, {}, onPickNovelFiles)
     }
 }
 
 @Composable
 private fun StoryCreateNormal(
     state: StoryCreateUiState.Normal,
-    emit: StoryCreateUiIntent.() -> Unit
+    emit: StoryCreateUiIntent.() -> Unit,
+    onPickNovelFiles: () -> Unit
 ) {
     var expandedLorebookIds by remember { mutableStateOf(emptySet<Long>()) }
     val searchingLorebooks = state.lorebookQuery.isNotBlank()
@@ -136,6 +140,7 @@ private fun StoryCreateNormal(
                 item { LoadingRow() }
             } else {
                 item { StoryTitleField(state.form, controlsEnabled, emit) }
+                item { NovelImportSection(state, controlsEnabled, onPickNovelFiles, emit) }
                 item { UserPersonaOption(state.form, controlsEnabled, emit) }
                 item {
                     RpSectionHeader(
@@ -239,6 +244,127 @@ private fun StoryCreateNormal(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * 本地小说导入区块。
+ *
+ * 同一入口承担两种来源：整本文件由解析器自动分章，散装章节文件按文件名排序合并。
+ * 解析结果只做预览，正文保存在 UiState 的预览对象里，创建故事时一次性写入。
+ */
+@Composable
+private fun NovelImportSection(
+    state: StoryCreateUiState.Normal,
+    enabled: Boolean,
+    onPickNovelFiles: () -> Unit,
+    emit: StoryCreateUiIntent.() -> Unit
+) {
+    val preview = state.importPreview
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoStories,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.story_import_title),
+                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Text(
+                text = stringResource(R.string.story_import_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            when {
+                state.importState == StoryImportState.Reading -> ImportReadingRow()
+                preview != null -> ImportPreviewContent(preview, onPickNovelFiles, emit)
+                else -> Button(
+                    onClick = onPickNovelFiles,
+                    enabled = enabled
+                ) {
+                    Text(stringResource(R.string.story_import_pick))
+                }
+            }
+        }
+    }
+}
+
+/** 解析中的占位提示。 */
+@Composable
+private fun ImportReadingRow() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+        Text(
+            text = stringResource(R.string.story_import_reading),
+            modifier = Modifier.padding(start = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/** 已解析内容的统计、章节标题预览与后续操作。 */
+@Composable
+private fun ImportPreviewContent(
+    preview: NovelImportPreview,
+    onPickNovelFiles: () -> Unit,
+    emit: StoryCreateUiIntent.() -> Unit
+) {
+    Text(
+        text = stringResource(
+            R.string.novel_import_summary,
+            preview.fileCount,
+            preview.chapterCount,
+            preview.characterCount
+        ),
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.SemiBold
+    )
+    preview.chapterTitles.forEach { title ->
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+    // 章节数超过预览上限时补一行提示，避免误以为只导入了这些
+    val hidden = preview.chapterCount - preview.chapterTitles.size
+    if (hidden > 0) {
+        Text(
+            text = stringResource(R.string.story_import_more_chapters, hidden),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    Text(
+        text = stringResource(R.string.story_import_mode_hint),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = onPickNovelFiles) {
+            Text(stringResource(R.string.story_import_replace))
+        }
+        Button(onClick = { StoryCreateUiIntent.ClearImportedNovel.emit() }) {
+            Text(stringResource(R.string.story_import_clear))
         }
     }
 }
@@ -746,7 +872,8 @@ private fun StoryCreateLayoutPreview() {
                 lorebookGroups = listOf(lorebookGroup),
                 visibleLorebookGroups = listOf(lorebookGroup)
             ),
-            emit = {}
+            emit = {},
+            onPickNovelFiles = {}
         )
     }
 }

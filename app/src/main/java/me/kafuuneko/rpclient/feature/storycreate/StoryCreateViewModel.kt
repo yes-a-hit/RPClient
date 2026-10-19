@@ -5,11 +5,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.R
+import me.kafuuneko.rpclient.feature.storycreate.model.NovelImportPreview
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterActivationMode
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterItem
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateForm
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateLorebookEntryItem
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateLorebookGroupItem
+import me.kafuuneko.rpclient.feature.storycreate.model.StoryImportState
 import me.kafuuneko.rpclient.feature.storycreate.presentation.StoryCreateLoadState
 import me.kafuuneko.rpclient.feature.storycreate.presentation.StoryCreateUiIntent
 import me.kafuuneko.rpclient.feature.storycreate.presentation.StoryCreateUiState
@@ -25,6 +27,7 @@ import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
 import me.kafuuneko.rpclient.libs.room.repository.StoryCharacterSelection
 import me.kafuuneko.rpclient.libs.room.repository.StoryLorebookEntrySelection
 import me.kafuuneko.rpclient.libs.room.repository.StoryRepository
+import me.kafuuneko.rpclient.libs.story.NovelImportRepository
 import me.kafuuneko.rpclient.utils.toDefaultChatTitle
 import me.kafuuneko.rpclient.utils.filterLorebookGroups
 import me.kafuuneko.rpclient.utils.toggle
@@ -46,6 +49,7 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
     private val mCharacterRepository by inject<CharacterRepository>()
     private val mLorebookRepository by inject<LorebookRepository>()
     private val mStoryRepository by inject<StoryRepository>()
+    private val mNovelImportRepository by inject<NovelImportRepository>()
 
     /** 初始化页面，拉取数据库中的角色列表与世界书条目候选数据。 */
     @UiIntentObserver(StoryCreateUiIntent.Init::class)
@@ -191,6 +195,47 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
         }
     }
 
+    /** 读取选中的小说文件并切分章节；只生成预览，落库留到创建时执行。 */
+    @UiIntentObserver(StoryCreateUiIntent.NovelFilesPicked::class)
+    private suspend fun onNovelFilesPicked(intent: StoryCreateUiIntent.NovelFilesPicked) {
+        val uiState = readyState() ?: return
+        if (intent.uris.isEmpty()) return
+        // 标记读取中，避免用户重复触发选择
+        uiState.copy(importState = StoryImportState.Reading).setup()
+        val chapters = runCatching { mNovelImportRepository.readChapters(intent.uris) }
+            .getOrElse {
+                val current = getOrNull<StoryCreateUiState.Normal>() ?: return
+                current.copy(importState = StoryImportState.Idle).setup()
+                AppViewEvent.PopupToastMessageByResId(R.string.story_import_failed).tryEmit()
+                return
+            }
+        val current = getOrNull<StoryCreateUiState.Normal>() ?: return
+        if (chapters.isEmpty()) {
+            current.copy(importState = StoryImportState.Idle).setup()
+            AppViewEvent.PopupToastMessageByResId(R.string.story_import_empty).tryEmit()
+            return
+        }
+        // 预览只带统计与前几章标题，完整正文留在预览对象内部供创建使用
+        val preview = NovelImportPreview(
+            sourceName = intent.uris.first().lastPathSegment.orEmpty(),
+            fileCount = intent.uris.size,
+            chapterCount = chapters.size,
+            characterCount = chapters.sumOf { it.content.length },
+            chapterTitles = chapters.take(PREVIEW_CHAPTER_LIMIT).mapIndexed { index, chapter ->
+                chapter.title.ifBlank { "#${index + 1}" }
+            },
+            chapters = chapters
+        )
+        current.copy(importState = StoryImportState.Ready, importPreview = preview).setup()
+    }
+
+    /** 放弃已解析的小说，回到普通创建流程。 */
+    @UiIntentObserver(StoryCreateUiIntent.ClearImportedNovel::class)
+    private fun onClearImportedNovel() {
+        val uiState = readyState() ?: return
+        uiState.copy(importState = StoryImportState.Idle, importPreview = null).setup()
+    }
+
     /** Story 与初始引用必须在同一事务中创建，避免配置校验失败后留下空 Story。 */
     @UiIntentObserver(StoryCreateUiIntent.CreateStory::class)
     private suspend fun onCreateStory() {
@@ -200,25 +245,38 @@ class StoryCreateViewModel : CoreViewModelWithEvent<StoryCreateUiIntent, StoryCr
         // 进入创建中状态
         uiState.copy(loadState = StoryCreateLoadState.Creating).setup()
         try {
-            // 在 IO 线程原子事务创建故事、参演角色与关联世界书条目
+            // 关联选择只计算一次，导入与普通创建共用同一份
+            val lorebookSelections = uiState.form.selectedLorebookEntryIds
+                .sorted()
+                .map(::StoryLorebookEntrySelection)
+            val characterSelections = uiState.characters
+                .filter { it.id in uiState.form.selectedCharacterIds }
+                .map { character ->
+                    StoryCharacterSelection(
+                        characterId = character.id,
+                        activationMode = uiState.form
+                            .activationModeOf(character.id)
+                            .toStorageValue()
+                    )
+                }
+            // 在 IO 线程原子事务创建故事；导入模式会同时写入各章正文
             val storyId = withContext(Dispatchers.IO) {
-                mStoryRepository.createStoryWithConfiguration(
-                    title = title,
-                    includeUserPersona = uiState.form.includeUserPersona,
-                    lorebookSelections = uiState.form.selectedLorebookEntryIds
-                        .sorted()
-                        .map(::StoryLorebookEntrySelection),
-                    characterSelections = uiState.characters
-                        .filter { it.id in uiState.form.selectedCharacterIds }
-                        .map { character ->
-                            StoryCharacterSelection(
-                                characterId = character.id,
-                                activationMode = uiState.form
-                                    .activationModeOf(character.id)
-                                    .toStorageValue()
-                            )
-                        }
-                )
+                val preview = uiState.importPreview
+                if (preview != null) {
+                    mNovelImportRepository.createStoryFromNovel(
+                        title = title,
+                        chapters = preview.chapters,
+                        lorebookSelections = lorebookSelections,
+                        characterSelections = characterSelections
+                    )
+                } else {
+                    mStoryRepository.createStoryWithConfiguration(
+                        title = title,
+                        includeUserPersona = uiState.form.includeUserPersona,
+                        lorebookSelections = lorebookSelections,
+                        characterSelections = characterSelections
+                    )
+                }
             }
             // 启动故事编辑器页面并等待返回
             AppViewEvent.StartActivity(
@@ -337,3 +395,6 @@ private fun StoryCreateCharacterActivationMode.toStorageValue(): Int {
         StoryCreateCharacterActivationMode.Auto -> StoryCharacter.ACTIVATION_AUTO
     }
 }
+
+/** 导入预览里最多展示的章节标题数量。 */
+private const val PREVIEW_CHAPTER_LIMIT = 8

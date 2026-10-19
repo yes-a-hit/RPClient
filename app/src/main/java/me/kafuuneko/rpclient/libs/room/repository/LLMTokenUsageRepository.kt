@@ -45,6 +45,16 @@ class LLMTokenUsageRepository(
         mLLMTokenUsageDao.deleteAll()
     }
 
+    /**
+     * 读取时间范围内的原始记录。
+     *
+     * 峰值与谷值单价不同，金额必须按每条请求的发生时间分别折算，
+     * 因此这里不返回聚合值，由计价层逐条计算后汇总。
+     */
+    suspend fun getRecordsSince(startTime: Long): List<LLMTokenUsageRecord> {
+        return mLLMTokenUsageDao.getRecords(startTime)
+    }
+
     private companion object {
         const val DEFAULT_RECENT_LIMIT = 50
     }

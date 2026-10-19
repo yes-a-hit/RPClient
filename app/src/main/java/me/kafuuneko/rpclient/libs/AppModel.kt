@@ -20,6 +20,18 @@ object AppModel : KotprefModel(), PromptPreferences {
     // 仓库地址。
     const val GITHUB_REPO = "https://github.com/KafuuNeko/RPClient"
 
+    // 默认美元兑人民币汇率，用于把美元报价折算成人民币展示。
+    const val DEFAULT_USD_TO_CNY = "7.2"
+
+    // 定制分支作者署名，展示在关于页。
+    const val UV_AUTHOR = "yes a hit"
+
+    /** 定制说明文档在 assets 中的文件名。 */
+    const val UV_README_ASSET = "README_UV.md"
+
+    /** 导出定制说明时建议使用的文件名。 */
+    const val UV_README_FILE_NAME = "RPClient-UV-README.md"
+
     /** 普通生成默认最多读取的最近历史消息数。 */
     const val DEFAULT_MAX_PROMPT_HISTORY_MESSAGES = 500
 
@@ -33,6 +45,13 @@ object AppModel : KotprefModel(), PromptPreferences {
     const val DEFAULT_MAIN_PROMPT = """
 Write {{char}}'s next reply in a fictional chat between {{char}} and {{user}}.
 Write one reply only. Do not decide what {{user}} says or does.
+"""
+
+    // 默认助手提示词：助手管理应用自身资源，不参与角色扮演。
+    const val DEFAULT_ASSISTANT_PROMPT = """
+You are the built-in assistant of RPClient, an Android roleplay chat client.
+You help the user manage the app's own resources: character cards, world books, and files inside your sandbox.
+Answer in the user's language, be concise and factual, and never describe file contents you have not read.
 """
 
     // 默认摘要提示词，用于把未摘要聊天历史压缩为会话记忆。
@@ -167,6 +186,14 @@ Treat it as an instruction, not as manuscript text. Do not quote, repeat, explai
     // 摘要专用模型配置 ID；0 表示跟随当前全局模型配置。
     var summaryLLMProvider by longPref()
 
+    /**
+     * 角色卡生成向导专用模型配置 ID；0 表示跟随当前全局模型配置。
+     *
+     * 向导需要读图与结构化输出，能力要求与日常对话模型不同，因此单独选择；
+     * 用户可指定一个专门的视觉模型，避免用识别精度不足的对话模型生成角色。
+     */
+    var characterWizardProvider by longPref()
+
     // 默认模型配置模板是否已完成首次初始化，防止用户删除全部配置后被自动重建。
     var llmDefaultProvidersInitialized by booleanPref(default = false)
 
@@ -233,6 +260,65 @@ Treat it as an instruction, not as manuscript text. Do not quote, repeat, explai
 
     // 全部图片发送参数以一个值保存，避免并发请求读到混合配置。
     var imageSendSettings by stringPref(default = "auto:2048:1536:1536")
+
+    // 聊天背景图片，存储文件 UUID；为空时聊天页使用主题纯色背景。
+    var chatBackgroundImage by stringPref(default = "")
+
+    // 聊天背景遮罩不透明度（0-100）。数值越高背景越淡，用于保证正文与气泡的可读性。
+    var chatBackgroundDim by intPref(default = 35)
+
+    /**
+     * 外接生图服务的完整配置，以 JSON 串整体保存。
+     *
+     * 生图与对话是两条独立链路，接口地址、鉴权与模型名通常并不相同，
+     * 因此不复用 [currentLLMProvider] 的配置，而是单独持久化一份。
+     */
+    var imageGenSettings by stringPref(default = "")
+
+    /**
+     * 示例 Skill 是否已写入过。
+     *
+     * 用于避免用户主动删除示例后又被自动重建；只在首次读取 Skill 列表时写入一次。
+     */
+    var skillStarterInitialized by booleanPref(default = false)
+
+    /**
+     * 助手是否继承全局主提示词。
+     *
+     * 继承时直接沿用 [mainPrompt]，关闭后改用 [assistantSystemPrompt]，
+     * 便于给助手一套与角色扮演完全无关的独立指令。
+     */
+    var assistantInheritGlobalPrompt by booleanPref(default = true)
+
+    // 助手独立系统提示词；仅在 [assistantInheritGlobalPrompt] 为 false 时生效。
+    var assistantSystemPrompt by stringPref(default = DEFAULT_ASSISTANT_PROMPT)
+
+    /**
+     * 模型报价快照，按 JSON 保存「模型 ID → 单价」。
+     *
+     * 报价来自 OpenRouter 公开模型列表，离线时继续使用上次结果，
+     * 因此不需要在应用内硬编码一份会过期的价格表。
+     */
+    var pricingSnapshotJson by stringPref(default = "")
+
+    // 报价快照的抓取时间戳（毫秒），用于判断是否过期。
+    var pricingFetchedAt by longPref(default = 0L)
+
+    // 报价快照来源地址，便于界面注明出处。
+    var pricingSourceUrl by stringPref(default = "")
+
+    /**
+     * 美元兑人民币汇率。
+     *
+     * 内置人民币价目覆盖不到的模型仍按 OpenRouter 美元报价取价，
+     * 这里保存折算汇率，避免在计费代码里写死一个会过期的数字。
+     */
+    var usdToCnyRate by stringPref(default = DEFAULT_USD_TO_CNY)
+
+    /** 解析后的汇率；空值或非法输入回落到默认值。 */
+    val resolvedUsdToCnyRate: Double
+        get() = usdToCnyRate.trim().toDoubleOrNull()?.takeIf { it > 0.0 }
+            ?: DEFAULT_USD_TO_CNY.toDouble()
 
     // 是否启用流式响应。
     var streamEnabled by booleanPref(default = true)

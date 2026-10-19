@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,28 @@ import me.kafuuneko.rpclient.libs.core.CoreActivity
 
 /** 关于页面宿主，负责提供版本、社区反馈和项目联系信息。 */
 class AboutActivity : CoreActivity() {
+    /**
+     * 定制说明导出。
+     *
+     * 使用系统文件选择器让用户决定落盘位置，因此不需要申请存储权限；
+     * 文档正文来自 assets，写入失败时只提示重试，不改变页面状态。
+     */
+    private val mReadmeSaver = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/markdown")
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        val saved = runCatching {
+            contentResolver.openOutputStream(uri)?.use { output ->
+                assets.open(AppModel.UV_README_ASSET).use { it.copyTo(output) }
+            } != null
+        }.getOrDefault(false)
+        Toast.makeText(
+            this,
+            if (saved) R.string.uv_readme_saved else R.string.uv_readme_failed,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     /** 提供安装包元数据，并将页面操作交给宿主执行。 */
     @Composable
     override fun ViewContent() {
@@ -50,7 +73,8 @@ class AboutActivity : CoreActivity() {
                 onCopyDeveloperEmail = { copyDeveloperEmail(uiState.developerEmail) },
                 onOpenRepository = { safeOpenUrl(uiState.githubRepoUrl) },
                 onRateApp = { openGooglePlay() },
-                onOpenFeedback = { safeOpenUrl(uiState.githubIssuesUrl) }
+                onOpenFeedback = { safeOpenUrl(uiState.githubIssuesUrl) },
+                onDownloadReadme = { mReadmeSaver.launch(AppModel.UV_README_FILE_NAME) }
             )
         }
     }

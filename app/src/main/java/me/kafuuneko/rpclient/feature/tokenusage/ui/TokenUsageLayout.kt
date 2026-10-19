@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.tokenusage.ui
 
+import java.util.Locale
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -37,12 +38,15 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Numbers
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Stream
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -72,7 +76,9 @@ import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageGroupItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageRecordItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageSummaryItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageTrendPoint
+import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageBalanceState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageChartMode
+import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageCostState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageDialogState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsagePeriod
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageUiIntent
@@ -190,6 +196,7 @@ private fun UsageContent(
         }
         item { PeriodFilters(uiState.selectedPeriod, emit) }
         item { HeroSummaryCard(uiState.summary) }
+        item { BillingOverviewCard(uiState.cost, uiState.balance, emit) }
 
         // 空周期保留筛选和总览，只省略趋势、排行与请求明细。
         if (hasRecords) {
@@ -341,6 +348,154 @@ private fun PeriodFilters(
 }
 
 /** 组合当前周期的总量、占比与细分指标。 */
+/**
+ * 计费总览：当前周期的金额估算与账户余额。
+ *
+ * 金额来自报价快照，余额来自服务商接口，两者都可能拿不到；
+ * 因此这里分别显示「有报价 / 无报价」「可用 / 不支持 / 失败」，不使用统一的占位数字。
+ */
+@Composable
+private fun BillingOverviewCard(
+    cost: TokenUsageCostState,
+    balance: TokenUsageBalanceState,
+    emit: TokenUsageUiIntent.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            BillingHeader(
+                icon = Icons.Rounded.Payments,
+                title = stringResource(R.string.token_usage_cost_title),
+                onRefresh = { TokenUsageUiIntent.RefreshPricing.emit() },
+                refreshing = false
+            )
+            Text(
+                text = if (cost.hasPrice) formatCny(cost.totalCny) else PLACEHOLDER_VALUE,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = costSummaryText(cost),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f))
+
+            BillingHeader(
+                icon = Icons.Rounded.Savings,
+                title = stringResource(R.string.token_usage_balance_title),
+                onRefresh = { TokenUsageUiIntent.RefreshBalance.emit() },
+                refreshing = balance is TokenUsageBalanceState.Loading
+            )
+            Text(
+                text = balanceText(balance),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+/** 计费分区标题行：图标 + 标题 + 右侧刷新按钮。 */
+@Composable
+private fun BillingHeader(
+    icon: ImageVector,
+    title: String,
+    onRefresh: () -> Unit,
+    refreshing: Boolean
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = title,
+            modifier = Modifier.padding(start = 8.dp),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        if (refreshing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
+            IconButton(onClick = onRefresh, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    imageVector = Icons.Rounded.Refresh,
+                    contentDescription = stringResource(R.string.token_usage_refresh),
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/** 金额说明：覆盖比例与未定价模型。 */
+@Composable
+private fun costSummaryText(cost: TokenUsageCostState): String {
+    val percent = (cost.coverage * 100).toInt()
+    return when {
+        !cost.hasPrice -> stringResource(R.string.token_usage_cost_no_price)
+        cost.unpricedModels.isNotEmpty() -> stringResource(
+            R.string.token_usage_cost_unpriced,
+            percent,
+            cost.unpricedModels.joinToString(", ")
+        )
+
+        else -> stringResource(R.string.token_usage_cost_coverage, percent)
+    }
+}
+
+/** 余额说明；不支持与失败分别给出不同文案。 */
+@Composable
+private fun balanceText(balance: TokenUsageBalanceState): String = when (balance) {
+    TokenUsageBalanceState.Hidden -> stringResource(R.string.token_usage_balance_unknown)
+    TokenUsageBalanceState.Loading -> stringResource(R.string.token_usage_balance_loading)
+    is TokenUsageBalanceState.Available -> {
+        val amount = formatAmount(balance.remaining)
+        "${balance.providerName} · ${currencyPrefix(balance.currency)}$amount"
+    }
+
+    is TokenUsageBalanceState.Unsupported -> balance.reason
+    is TokenUsageBalanceState.Failed -> balance.reason
+}
+
+/** 人民币金额格式化：小额保留四位小数，便于观察单次请求成本。 */
+private fun formatCny(value: Double): String =
+    if (value < 0.01) String.format(Locale.US, "¥%.4f", value)
+    else String.format(Locale.US, "¥%.2f", value)
+
+/** 余额金额格式化，统一两位小数。 */
+private fun formatAmount(value: Double): String = String.format(Locale.US, "%.2f", value)
+
+/** 币种前缀；无法识别时回退成币种代码。 */
+private fun currencyPrefix(currency: String): String = when (currency.uppercase()) {
+    "USD" -> "US$"
+    "CNY", "RMB" -> "¥"
+    else -> "$currency "
+}
+
+/** 缺失数值的统一占位符，避免把「暂无数据」渲染成 0。 */
+private const val PLACEHOLDER_VALUE = "—"
+
 @Composable
 private fun HeroSummaryCard(summary: TokenUsageSummaryItem) {
     // 分区组件直接沿用此处的间距，保持总览卡片布局稳定。

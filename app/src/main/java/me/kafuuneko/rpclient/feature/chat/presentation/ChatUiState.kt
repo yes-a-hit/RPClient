@@ -5,8 +5,10 @@ import me.kafuuneko.rpclient.feature.chat.model.ChatGenerationState
 import me.kafuuneko.rpclient.feature.chat.model.ChatLorebookGroupItem
 import me.kafuuneko.rpclient.feature.chat.model.ChatMessageUiModel
 import me.kafuuneko.rpclient.feature.chat.model.ChatSessionItem
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenAspect
 import me.kafuuneko.rpclient.libs.media.MessageImageState
 import me.kafuuneko.rpclient.libs.prompt.model.PromptInspection
+import me.kafuuneko.rpclient.ui.widgets.ChatBackgroundUiState
 
 /** 单聊页面状态树，覆盖会话加载、聊天、设置、编辑和对话框状态。 */
 sealed class ChatUiState {
@@ -35,7 +37,9 @@ sealed class ChatUiState {
         /** 当前是否存在可用于生成的模型配置。 */
         val hasAvailableProvider: Boolean = true,
         /** 当前页面互斥展示的对话框状态。 */
-        val dialogState: ChatDialogState = ChatDialogState.None
+        val dialogState: ChatDialogState = ChatDialogState.None,
+        /** 聊天页背景配置，由全局偏好解析出的已解码位图。 */
+        val backgroundState: ChatBackgroundUiState = ChatBackgroundUiState()
     ) : ChatUiState()
 
     data class Finished(val previous: ChatUiState) : ChatUiState()
@@ -136,6 +140,27 @@ sealed class ChatDialogState {
         /** 需要展示或传递的消息内容。 */
         val message: String
     ) : ChatDialogState()
+
+    /**
+     * 外接生图对话框状态。
+     *
+     * 提示词草稿与画幅选择保存在对话框自身状态内，关闭即丢弃；
+     * [errorMessage] 直接展示在对话框内，避免生成失败时弹窗被系统 Toast 覆盖。
+     */
+    data class ImageGen(
+        /** 尚未提交的提示词草稿。 */
+        val prompt: String = "",
+        /** 当前选中的画幅。 */
+        val aspect: ImageGenAspect = ImageGenAspect.Square,
+        /** 是否正在等待服务端返回。 */
+        val generating: Boolean = false,
+        /** 生成失败时的错误信息。 */
+        val errorMessage: String? = null
+    ) : ChatDialogState() {
+        /** 提示词非空且没有正在进行的请求时才允许提交。 */
+        val canGenerate: Boolean
+            get() = prompt.isNotBlank() && !generating
+    }
 }
 
 /**

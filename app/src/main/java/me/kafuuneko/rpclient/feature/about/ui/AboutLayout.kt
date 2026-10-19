@@ -13,9 +13,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Numbers
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.ViewInAr
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.about.presentation.AboutAppInfoState
 import me.kafuuneko.rpclient.feature.about.presentation.AboutUiState
+import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.ui.theme.AccentSkyColor
 import me.kafuuneko.rpclient.ui.theme.AccentVioletColor
 import me.kafuuneko.rpclient.ui.theme.AppTheme
@@ -45,7 +49,8 @@ fun AboutLayout(
     onCopyDeveloperEmail: () -> Unit,
     onOpenRepository: () -> Unit,
     onRateApp: () -> Unit,
-    onOpenFeedback: () -> Unit
+    onOpenFeedback: () -> Unit,
+    onDownloadReadme: () -> Unit
 ) {
     // 装饰与正文共享背景，系统栏和内容避让仍由 Scaffold 处理。
     Box(modifier = Modifier.fillMaxSize()) {
@@ -60,6 +65,7 @@ fun AboutLayout(
                 onOpenRepository = onOpenRepository,
                 onRateApp = onRateApp,
                 onOpenFeedback = onOpenFeedback,
+                onDownloadReadme = onDownloadReadme,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -73,6 +79,7 @@ private fun AboutViewContent(
     onOpenRepository: () -> Unit,
     onRateApp: () -> Unit,
     onOpenFeedback: () -> Unit,
+    onDownloadReadme: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -90,11 +97,39 @@ private fun AboutViewContent(
         ) {
             AboutHeroHeader(uiState.appInfo.isDevelopmentBuild)
             AboutRatingCard(onRateApp)
+            AboutCustomSection(onDownloadReadme)
             AboutCommunitySection(uiState.githubRepoName, onOpenFeedback, onOpenRepository)
             AboutSupportSection(uiState.developerEmail, onCopyDeveloperEmail, onOpenRepository)
             AboutAppInfoSection(uiState.appInfo)
             AboutFooter()
         }
+    }
+}
+
+/**
+ * 定制版分组：展示改版作者并提供定制说明文档的导出入口。
+ *
+ * 说明文档随包内置在 assets 中，导出走系统文件选择器，
+ * 因此不需要存储权限，也不依赖应用私有目录的可见性。
+ */
+@Composable
+private fun AboutCustomSection(onDownloadReadme: () -> Unit) {
+    AboutSection(stringResource(R.string.section_custom_build)) {
+        AboutInfoRow(
+            icon = Icons.Rounded.Person,
+            label = stringResource(R.string.uv_author_label),
+            value = AppModel.UV_AUTHOR
+        )
+        AboutDivider()
+        AboutActionRow(
+            icon = Icons.Rounded.Description,
+            accent = AccentVioletColor,
+            title = stringResource(R.string.uv_readme_label),
+            subtitle = stringResource(R.string.uv_readme_desc),
+            action = stringResource(R.string.uv_readme_download),
+            actionIcon = Icons.Rounded.Download,
+            onClick = onDownloadReadme
+        )
     }
 }
 
@@ -214,6 +249,7 @@ private fun AboutPreviewContent() {
         onCopyDeveloperEmail = {},
         onOpenRepository = {},
         onRateApp = {},
-        onOpenFeedback = {}
+        onOpenFeedback = {},
+        onDownloadReadme = {}
     )
 }

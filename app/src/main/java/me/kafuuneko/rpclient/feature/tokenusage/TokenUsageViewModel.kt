@@ -8,14 +8,25 @@ import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageGroupItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageRecordItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageSummaryItem
 import me.kafuuneko.rpclient.feature.tokenusage.model.TokenUsageTrendPoint
+import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageBalanceState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageChartMode
+import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageCostState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageDialogState
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsagePeriod
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageUiIntent
 import me.kafuuneko.rpclient.feature.tokenusage.presentation.TokenUsageUiState
+import me.kafuuneko.rpclient.libs.billing.BalanceResult
+import me.kafuuneko.rpclient.libs.billing.ModelPriceMatcher
+import me.kafuuneko.rpclient.libs.billing.PricingRepository
+import me.kafuuneko.rpclient.libs.billing.PricingSnapshot
+import me.kafuuneko.rpclient.libs.billing.ProviderBalanceClient
+import me.kafuuneko.rpclient.libs.billing.UsageCostCalculator
 import me.kafuuneko.rpclient.libs.core.CoreViewModel
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
+import me.kafuuneko.rpclient.libs.llm.LLMProviderSelectionResolver
 import me.kafuuneko.rpclient.libs.room.entity.LLMTokenUsageRecord
+import me.kafuuneko.rpclient.libs.room.entity.toConfig
 import me.kafuuneko.rpclient.libs.room.model.LLMTokenUsageDailyStat
 import me.kafuuneko.rpclient.libs.room.model.LLMTokenUsageGroup
 import me.kafuuneko.rpclient.libs.room.repository.LLMTokenUsageRepository
@@ -36,12 +47,35 @@ class TokenUsageViewModel : CoreViewModel<TokenUsageUiIntent, TokenUsageUiState>
     TokenUsageUiState.None
 ), KoinComponent {
     private val mRepository by inject<LLMTokenUsageRepository>()
+    private val mPricingRepository by inject<PricingRepository>()
+    private val mCostCalculator by inject<UsageCostCalculator>()
+    private val mBalanceClient by inject<ProviderBalanceClient>()
+    private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
 
     /** 初始化页面并默认展示近七天统计。 */
     @UiIntentObserver(TokenUsageUiIntent.Init::class)
     private suspend fun onInit() {
         if (!isStateOf<TokenUsageUiState.None>()) return
         loadDashboard(TokenUsagePeriod.LastSevenDays)
+        // 余额只在进入页面时自动取一次，失败不阻塞主统计
+        refreshBalance()
+    }
+
+    /** 手动刷新账户余额。 */
+    @UiIntentObserver(TokenUsageUiIntent.RefreshBalance::class)
+    private suspend fun onRefreshBalance() {
+        if (getOrNull<TokenUsageUiState.Normal>() == null) return
+        updateBalance(TokenUsageBalanceState.Loading)
+        refreshBalance()
+    }
+
+    /** 拉取最新报价并就地重算金额，不重新查库。 */
+    @UiIntentObserver(TokenUsageUiIntent.RefreshPricing::class)
+    private suspend fun onRefreshPricing() {
+        val uiState = getOrNull<TokenUsageUiState.Normal>() ?: return
+        // 先拉最新美元报价，再按当前周期的原始记录重算金额
+        runCatching { mPricingRepository.refresh() }
+        uiState.copy(cost = buildCost(uiState.selectedPeriod)).setup()
     }
 
     /** 切换时间范围并重新查询聚合结果。 */
@@ -132,8 +166,86 @@ class TokenUsageViewModel : CoreViewModel<TokenUsageUiIntent, TokenUsageUiState>
             selectedPointKey = null,
             chartMode = previousChartMode,
             groups = groupItems,
-            recentRecords = dashboard.recentRecords.map { it.toUiModel() }
+            recentRecords = dashboard.recentRecords.map { it.toUiModel() },
+            // 金额基于上次报价快照即时折算，未获取过报价时显示为未定价
+            cost = buildCost(period)
         ).setup()
+    }
+
+    /** 查询当前全局模型配置的账户余额，结果写入页面状态。 */
+    private suspend fun refreshBalance() {
+        val resolved = runCatching {
+            val provider = mProviderSelectionResolver.requireDefaultProvider()
+            provider.name to mBalanceClient.query(provider.toConfig())
+        }.getOrNull()
+        if (resolved == null) {
+            updateBalance(TokenUsageBalanceState.Failed("没有已启用的模型配置"))
+            return
+        }
+        val (providerName, result) = resolved
+        updateBalance(
+            when (result) {
+                is BalanceResult.Available -> TokenUsageBalanceState.Available(
+                    providerName = providerName,
+                    currency = result.currency,
+                    remaining = result.remaining,
+                    granted = result.granted,
+                    toppedUp = result.toppedUp,
+                    used = result.used
+                )
+
+                is BalanceResult.Unsupported -> TokenUsageBalanceState.Unsupported(result.reason)
+                is BalanceResult.Failed -> TokenUsageBalanceState.Failed(result.reason)
+            }
+        )
+    }
+
+    /** 写入余额状态；页面已结束时直接丢弃。 */
+    private fun updateBalance(balance: TokenUsageBalanceState) {
+        val uiState = getOrNull<TokenUsageUiState.Normal>() ?: return
+        uiState.copy(balance = balance).setup()
+    }
+
+    /**
+     * 按真实请求时间逐条折算人民币金额。
+     *
+     * 国内服务商存在夜间折扣，聚合后的模型总量无法区分峰谷，
+     * 因此这里回到原始记录逐条计价：命中官方人民币价目按牌价计算，
+     * 未收录的模型回退美元报价并按汇率折算；两者都没有的计入未定价。
+     *
+     * @param period 当前统计周期
+     * @return 金额汇总与覆盖率
+     */
+    private suspend fun buildCost(period: TokenUsagePeriod): TokenUsageCostState {
+        val records = mRepository.getRecordsSince(period.startTimeMillis())
+        val usdToCny = AppModel.resolvedUsdToCnyRate
+        var totalCny = 0.0
+        var pricedInput = 0L
+        var pricedOutput = 0L
+        var localPriced = 0
+        val unpriced = mutableListOf<String>()
+        records.forEach { record ->
+            val cost = mCostCalculator.costOf(record, usdToCny)
+            if (cost == null) {
+                if (record.inputTokens + record.outputTokens > 0L) unpriced += record.effectiveModel
+            } else {
+                totalCny += cost.amountCny
+                pricedInput += record.inputTokens
+                pricedOutput += record.outputTokens
+                if (cost.fromLocalPricing) localPriced++
+            }
+        }
+        val snapshot = mPricingRepository.cached()
+        return TokenUsageCostState(
+            totalCny = totalCny,
+            pricedInputTokens = pricedInput,
+            pricedOutputTokens = pricedOutput,
+            totalTokens = records.sumOf { it.inputTokens + it.outputTokens },
+            unpricedModels = unpriced.distinct(),
+            localPricedRequests = localPriced,
+            pricedAt = snapshot.fetchedAt,
+            priceSource = snapshot.sourceUrl
+        )
     }
 
     /**

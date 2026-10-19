@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.about.AboutActivity
 import me.kafuuneko.rpclient.feature.characterlist.CharacterListActivity
+import me.kafuuneko.rpclient.feature.assistant.AssistantActivity
 import me.kafuuneko.rpclient.feature.chat.ChatActivity
 import me.kafuuneko.rpclient.feature.chatcreate.ChatCreateActivity
 import me.kafuuneko.rpclient.feature.groupchat.GroupChatActivity
@@ -32,6 +33,7 @@ import me.kafuuneko.rpclient.feature.main.model.items.MainChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainGroupChatSessionItem
 import me.kafuuneko.rpclient.feature.main.model.items.MainStoryItem
 import me.kafuuneko.rpclient.feature.main.presentation.MainAppearanceSettingsState
+import me.kafuuneko.rpclient.feature.main.presentation.MainChatBackgroundState
 import me.kafuuneko.rpclient.feature.main.presentation.MainChatDataManagementState
 import me.kafuuneko.rpclient.feature.main.presentation.MainDebugSettingsState
 import me.kafuuneko.rpclient.feature.main.presentation.MainDialogState
@@ -39,6 +41,7 @@ import me.kafuuneko.rpclient.feature.main.presentation.MainGenerationParametersS
 import me.kafuuneko.rpclient.feature.main.presentation.MainHomeResourceState
 import me.kafuuneko.rpclient.feature.main.presentation.MainHomeSelectionState
 import me.kafuuneko.rpclient.feature.main.presentation.MainHomeState
+import me.kafuuneko.rpclient.feature.main.presentation.MainImageGenSettingsState
 import me.kafuuneko.rpclient.feature.main.presentation.MainImageSendState
 import me.kafuuneko.rpclient.feature.main.presentation.MainPage
 import me.kafuuneko.rpclient.feature.main.presentation.MainPromptBehaviorState
@@ -70,6 +73,10 @@ import me.kafuuneko.rpclient.feature.storyeditor.StoryEditorActivity
 import me.kafuuneko.rpclient.feature.tokenusage.TokenUsageActivity
 import me.kafuuneko.rpclient.feature.worldbooklist.WorldBookListActivity
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.feature.main.presentation.MainSkillItem
+import me.kafuuneko.rpclient.feature.main.presentation.MainSkillSettingsState
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
+import me.kafuuneko.rpclient.libs.skill.SkillRepository
 import me.kafuuneko.rpclient.libs.chat.ChatArchive
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
 import me.kafuuneko.rpclient.libs.chat.ChatCharacterMatcher
@@ -127,6 +134,7 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
     private val mFileRepository by inject<FileRepository>()
     private val mChatArchiveRepository by inject<ChatArchiveRepository>()
     private val mAppThemeManager by inject<AppThemeManager>()
+    private val mSkillRepository by inject<SkillRepository>()
     private val mContext by inject<Context>()
 
     /** 文件解析结果只在用户确认角色前暂存，不进入可持久状态或数据库。 */
@@ -705,6 +713,13 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         AppViewEvent.StartActivity(StoryCreateActivity::class.java).tryEmit()
     }
 
+    /** 打开助手会话页。 */
+    @UiIntentObserver(MainUiIntent.OpenAssistant::class)
+    private fun onOpenAssistant() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(AssistantActivity::class.java).tryEmit()
+    }
+
     /** 打开角色管理列表页。 */
     @UiIntentObserver(MainUiIntent.OpenCharacterManager::class)
     private fun onOpenCharacterManager() {
@@ -900,6 +915,77 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         ).setup()
     }
 
+    /** 请求打开系统图片选择器挑选聊天背景图。 */
+    @UiIntentObserver(MainUiIntent.PickChatBackgroundClick::class)
+    private fun onPickChatBackgroundClick() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        MainViewEvent.OpenChatBackgroundPicker.tryEmit()
+    }
+
+    /**
+     * 保存用户选定的聊天背景图并替换旧背景。
+     *
+     * - 背景图按原始比例保存，不经过方形裁剪，避免横向构图被裁掉主体。
+     * - 新引用写入偏好后再删除旧文件，中途失败时用户仍保留原背景。
+     * - 保存失败时给出可本地化的提示，不向界面暴露内部异常原文。
+     */
+    @UiIntentObserver(MainUiIntent.ChatBackgroundPicked::class)
+    private suspend fun onChatBackgroundPicked(intent: MainUiIntent.ChatBackgroundPicked) {
+        if (!isStateOf<MainUiState.Normal>()) return
+        // 将系统返回的图片复制到应用私有存储，后续不再依赖原始 URI 授权
+        val fileUuid = runCatching {
+            withContext(Dispatchers.IO) { mFileRepository.saveFile(intent.uri) }
+        }.getOrElse {
+            AppViewEvent.PopupToastMessageByResId(R.string.chat_background_save_failed).tryEmit()
+            return
+        }
+        val oldBackground = AppModel.chatBackgroundImage
+        AppModel.chatBackgroundImage = fileUuid
+        // 新引用写入成功后再清理旧背景文件
+        if (oldBackground.isNotBlank() && oldBackground != fileUuid) {
+            runCatching {
+                withContext(Dispatchers.IO) { mFileRepository.deleteFile(oldBackground) }
+            }
+        }
+        refreshChatBackgroundState()
+    }
+
+    /** 清除聊天背景并删除对应本地文件。 */
+    @UiIntentObserver(MainUiIntent.ClearChatBackground::class)
+    private suspend fun onClearChatBackground() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        val oldBackground = AppModel.chatBackgroundImage
+        AppModel.chatBackgroundImage = ""
+        // 背景引用清空后再删除物理文件，异常不影响偏好状态
+        if (oldBackground.isNotBlank()) {
+            runCatching {
+                withContext(Dispatchers.IO) { mFileRepository.deleteFile(oldBackground) }
+            }
+        }
+        refreshChatBackgroundState()
+    }
+
+    /** 调整背景遮罩不透明度，仅更新偏好并刷新设置面板。 */
+    @UiIntentObserver(MainUiIntent.SetChatBackgroundDim::class)
+    private suspend fun onSetChatBackgroundDim(intent: MainUiIntent.SetChatBackgroundDim) {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppModel.chatBackgroundDim = intent.percent.coerceIn(0, 100)
+        refreshChatBackgroundState()
+    }
+
+    /** 重新解析背景预览图并写回外观设置状态。 */
+    private suspend fun refreshChatBackgroundState() {
+        val backgroundState = resolveChatBackgroundState()
+        val current = getOrNull<MainUiState.Normal>() ?: return
+        current.copy(
+            settingsState = current.settingsState.copy(
+                appearanceState = current.settingsState.appearanceState.copy(
+                    backgroundState = backgroundState
+                )
+            )
+        ).setup()
+    }
+
     /** 打开全局 Prompt 提示词预设页。 */
     @UiIntentObserver(MainUiIntent.OpenPromptPreset::class)
     private fun onOpenPromptPreset() {
@@ -1075,6 +1161,116 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
                 )
             )
         ).setup()
+    }
+
+    /**
+     * 按当前生图配置派生出新的配置并立即持久化。
+     *
+     * 生图配置整体以 JSON 串保存，因此每次修改都重新编码完整对象，
+     * 避免并发读取时拿到部分更新的混合状态。
+     */
+    private fun updateImageGenSettings(
+        block: ImageGenSettings.() -> ImageGenSettings
+    ) {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val next = ImageGenSettings.decode(AppModel.imageGenSettings).block()
+        AppModel.imageGenSettings = next.encode()
+        uiState.copy(
+            settingsState = uiState.settingsState.copy(
+                imageGenState = MainImageGenSettingsState.from(next)
+            )
+        ).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ChangeImageGenBaseUrl::class)
+    private fun onChangeImageGenBaseUrl(intent: MainUiIntent.ChangeImageGenBaseUrl) =
+        updateImageGenSettings { copy(baseUrl = intent.value.trim()) }
+
+    @UiIntentObserver(MainUiIntent.ChangeImageGenApiKey::class)
+    private fun onChangeImageGenApiKey(intent: MainUiIntent.ChangeImageGenApiKey) =
+        updateImageGenSettings { copy(apiKey = intent.value.trim()) }
+
+    @UiIntentObserver(MainUiIntent.ChangeImageGenModel::class)
+    private fun onChangeImageGenModel(intent: MainUiIntent.ChangeImageGenModel) =
+        updateImageGenSettings { copy(model = intent.value.trim()) }
+
+    @UiIntentObserver(MainUiIntent.SelectImageGenAspect::class)
+    private fun onSelectImageGenAspect(intent: MainUiIntent.SelectImageGenAspect) =
+        updateImageGenSettings { copy(aspect = intent.aspect) }
+
+    /** 只刷新 Skill 列表，避免每次启停都重读整页设置。 */
+    private suspend fun refreshSkillState() {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        uiState.copy(
+            settingsState = uiState.settingsState.copy(skillState = buildSkillState())
+        ).setup()
+    }
+
+    /** 切换 Skill 启用状态；Skill 文件不存在时列表保持不变。 */
+    @UiIntentObserver(MainUiIntent.ToggleSkill::class)
+    private suspend fun onToggleSkill(intent: MainUiIntent.ToggleSkill) {
+        mSkillRepository.setEnabled(intent.id, intent.enabled)
+        refreshSkillState()
+    }
+
+    /** 删除 Skill 包文件。 */
+    @UiIntentObserver(MainUiIntent.DeleteSkill::class)
+    private suspend fun onDeleteSkill(intent: MainUiIntent.DeleteSkill) {
+        mSkillRepository.delete(intent.id)
+        refreshSkillState()
+    }
+
+    /** 打开 Skill 导入对话框，草稿与错误提示每次重新初始化。 */
+    @UiIntentObserver(MainUiIntent.OpenSkillImport::class)
+    private fun onOpenSkillImport() {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        if (!uiState.canOpenDialog()) return
+        uiState.copy(dialogState = MainDialogState.ImportSkill()).setup()
+    }
+
+    /** 更新导入草稿；用户继续输入时清除上一次的错误提示。 */
+    @UiIntentObserver(MainUiIntent.ChangeSkillImportDraft::class)
+    private fun onChangeSkillImportDraft(intent: MainUiIntent.ChangeSkillImportDraft) {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.ImportSkill ?: return
+        uiState.copy(
+            dialogState = dialog.copy(draftText = intent.value, errorResId = null)
+        ).setup()
+    }
+
+    /**
+     * 提交 Skill 导入草稿。
+     *
+     * 解析失败时保留草稿并提示，成功后才关闭对话框并刷新列表，
+     * 避免用户粘贴内容被误清空。
+     */
+    @UiIntentObserver(MainUiIntent.ConfirmSkillImport::class)
+    private suspend fun onConfirmSkillImport() {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.ImportSkill ?: return
+        if (dialog.isImporting) return
+        if (dialog.draftText.isBlank()) {
+            uiState.copy(
+                dialogState = dialog.copy(errorResId = R.string.skill_import_empty)
+            ).setup()
+            return
+        }
+        uiState.copy(dialogState = dialog.copy(isImporting = true, errorResId = null)).setup()
+        val imported = runCatching { mSkillRepository.importSkills(dialog.draftText) }
+            .getOrDefault(emptyList())
+        if (imported.isEmpty()) {
+            val latest = getOrNull<MainUiState.Normal>() ?: return
+            latest.copy(
+                dialogState = dialog.copy(
+                    isImporting = false,
+                    errorResId = R.string.skill_import_failed
+                )
+            ).setup()
+            return
+        }
+        val latest = getOrNull<MainUiState.Normal>() ?: return
+        latest.copy(dialogState = MainDialogState.None).setup()
+        refreshSkillState()
     }
 
     /** 修改自动总结的触发消息轮数阈值。 */
@@ -1469,7 +1665,8 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         return MainSettingsState(
             imageSendState = MainImageSendState.from(ImageSendSettings.decode(AppModel.imageSendSettings)),
             appearanceState = MainAppearanceSettingsState(
-                themeMode = mAppThemeManager.themeModeFlow.value
+                themeMode = mAppThemeManager.themeModeFlow.value,
+                backgroundState = resolveChatBackgroundState()
             ),
             identityState = MainUserIdentityState(
                 userName = AppModel.resolvedUserName,
@@ -1515,7 +1712,27 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
             ),
             debugState = MainDebugSettingsState(
                 enabled = AppModel.debugModeEnabled
-            )
+            ),
+            imageGenState = MainImageGenSettingsState.from(
+                ImageGenSettings.decode(AppModel.imageGenSettings)
+            ),
+            skillState = buildSkillState()
+        )
+    }
+
+    /** 读取磁盘上的 Skill 包并映射为面板列表。 */
+    private suspend fun buildSkillState(): MainSkillSettingsState {
+        return MainSkillSettingsState(
+            skills = mSkillRepository.listSkills().map { skill ->
+                MainSkillItem(
+                    id = skill.id,
+                    name = skill.name,
+                    description = skill.description,
+                    triggerSummary = skill.triggerSummary,
+                    enabled = skill.enabled,
+                    alwaysOn = skill.alwaysOn
+                )
+            }
         )
     }
 
@@ -1603,6 +1820,36 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
                 }
             }
 
+    /**
+     * 解析聊天背景设置状态，包含设置页预览图与遮罩强度。
+     *
+     * - 未配置背景图时返回未启用状态，设置面板隐藏清除与强度调节入口。
+     * - 已配置但文件无法解码时仍标记 [MainChatBackgroundState.hasImage]，
+     *   使用户能够清除失效引用而不是被困在无法编辑的状态。
+     *
+     * @return 设置页聊天背景面板状态
+     */
+    private suspend fun resolveChatBackgroundState(): MainChatBackgroundState {
+        val backgroundUuid = AppModel.chatBackgroundImage
+        val dimPercent = AppModel.chatBackgroundDim.coerceIn(0, 100)
+        if (backgroundUuid.isBlank()) {
+            return MainChatBackgroundState(preview = null, dimPercent = dimPercent, hasImage = false)
+        }
+        // 设置页只展示缩略预览，按较小尺寸采样以降低内存占用
+        val preview = withContext(Dispatchers.IO) {
+            mFileRepository.loadSampledBitmap(
+                uuid = backgroundUuid,
+                requestedWidthPx = CHAT_BACKGROUND_PREVIEW_WIDTH,
+                requestedHeightPx = CHAT_BACKGROUND_PREVIEW_HEIGHT
+            )?.asImageBitmap()
+        }
+        return MainChatBackgroundState(
+            preview = preview,
+            dimPercent = dimPercent,
+            hasImage = true
+        )
+    }
+
     /** 从当前首页状态中按 ID 查找故事。 */
     private fun MainHomeState.findStory(storyId: Long): MainStoryItem? {
         val content = recentStoriesState as? MainRecentStoriesState.Content ?: return null
@@ -1664,3 +1911,9 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         )
     }
 }
+
+/** 设置页聊天背景预览图的解码目标宽度。 */
+private const val CHAT_BACKGROUND_PREVIEW_WIDTH = 720
+
+/** 设置页聊天背景预览图的解码目标高度。 */
+private const val CHAT_BACKGROUND_PREVIEW_HEIGHT = 1280

@@ -9,6 +9,7 @@ import me.kafuuneko.rpclient.libs.room.entity.ChatSession
 import me.kafuuneko.rpclient.libs.room.entity.LLMProvider
 import me.kafuuneko.rpclient.libs.room.entity.Lorebook
 import me.kafuuneko.rpclient.libs.room.entity.LorebookEntry
+import me.kafuuneko.rpclient.libs.skill.SkillManifest
 
 /**
  * 单角色聊天 Prompt 构建所需的完整只读快照。
@@ -51,6 +52,13 @@ data class PromptBuildContext(
     val generationMode: PromptGenerationMode = PromptGenerationMode.Normal,
     /** 当前对象关联或允许执行的正则脚本列表。 */
     val regexScripts: List<ScopedRegexScript> = emptyList(),
+    /**
+     * 本轮激活的助手 Skill 列表。
+     *
+     * 激活判定依赖磁盘上的 Skill 包，因此由调用方（ViewModel）在构建前完成，
+     * 构建器本身保持同步与无 IO 依赖。
+     */
+    val activeSkills: List<SkillManifest> = emptyList(),
     val messageImages: Map<Long, List<LLMImageReference>> = emptyMap(),
     val unavailableImages: Map<Long, List<UnavailablePromptImage>> = emptyMap()
 )

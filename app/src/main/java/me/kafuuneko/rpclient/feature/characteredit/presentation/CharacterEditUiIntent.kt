@@ -1,5 +1,10 @@
 package me.kafuuneko.rpclient.feature.characteredit.presentation
 
+import android.net.Uri
+import me.kafuuneko.rpclient.libs.character.CharacterProfileFlagField
+import me.kafuuneko.rpclient.libs.character.CharacterProfileTextField
+import me.kafuuneko.rpclient.libs.character.RelationshipStatus
+
 /** 角色创建/编辑页面的字段变更、文件选择、保存与删除意图。 */
 sealed class CharacterEditUiIntent {
     data class Init(val characterId: Long?) : CharacterEditUiIntent()
@@ -59,6 +64,59 @@ sealed class CharacterEditUiIntent {
     data class DeleteAlternateGreeting(val index: Int) : CharacterEditUiIntent()
 
     data class ChangeExtensionsJson(val value: String) : CharacterEditUiIntent()
+
+    /** 修改扩展档案中的文本字段（身份、感情史、边界等）。 */
+    data class ChangeProfileText(
+        val field: CharacterProfileTextField,
+        val value: String
+    ) : CharacterEditUiIntent()
+
+    /** 修改扩展档案中的三态布尔字段；null 表示回到未设定。 */
+    data class ChangeProfileFlag(
+        val field: CharacterProfileFlagField,
+        val value: Boolean?
+    ) : CharacterEditUiIntent()
+
+    /** 修改角色当前感情状态。 */
+    data class ChangeRelationshipStatus(
+        val status: RelationshipStatus
+    ) : CharacterEditUiIntent()
+
+    /** 打开角色卡生成向导。 */
+    data object OpenCharacterWizard : CharacterEditUiIntent()
+
+    /** 关闭向导并丢弃未应用的草稿。 */
+    data object CloseCharacterWizard : CharacterEditUiIntent()
+
+    /** 修改向导中的角色名种子。 */
+    data class ChangeWizardName(val value: String) : CharacterEditUiIntent()
+
+    /** 修改向导中的角色概念描述。 */
+    data class ChangeWizardConcept(val value: String) : CharacterEditUiIntent()
+
+    /** 修改向导中的额外要求。 */
+    data class ChangeWizardRequirements(val value: String) : CharacterEditUiIntent()
+
+    /** 切换是否同时生成世界书。 */
+    data class ToggleWizardLorebook(val enabled: Boolean) : CharacterEditUiIntent()
+
+    /** 选择向导生成使用的模型配置；0 表示跟随全局模型。 */
+    data class SelectWizardProvider(val providerId: Long) : CharacterEditUiIntent()
+
+    /** 请求打开系统图片选择器挑选参考图。 */
+    data object PickWizardReferenceImage : CharacterEditUiIntent()
+
+    /** 参考图已选定，携带系统返回的图片 URI。 */
+    data class WizardReferencePicked(val uri: Uri) : CharacterEditUiIntent()
+
+    /** 清除已选择的参考图。 */
+    data object ClearWizardReference : CharacterEditUiIntent()
+
+    /** 请求模型生成角色卡草稿。 */
+    data object GenerateCharacterDraft : CharacterEditUiIntent()
+
+    /** 把当前草稿应用到角色编辑表单。 */
+    data object ApplyCharacterDraft : CharacterEditUiIntent()
 
     data class ShowPromptEditor(val field: CharacterPromptField) : CharacterEditUiIntent()
 

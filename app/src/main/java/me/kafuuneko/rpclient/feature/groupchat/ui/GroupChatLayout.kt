@@ -142,6 +142,7 @@ import me.kafuuneko.rpclient.ui.widgets.AppTopBar
 import me.kafuuneko.rpclient.ui.widgets.MarkdownMessageText
 import me.kafuuneko.rpclient.ui.widgets.NoProviderBanner
 import me.kafuuneko.rpclient.ui.widgets.RpAvatar
+import me.kafuuneko.rpclient.ui.widgets.chatBackgroundLayer
 import me.kafuuneko.rpclient.ui.widgets.RpLazyColumn
 import me.kafuuneko.rpclient.ui.widgets.RpScrollableOutlinedTextField
 import me.kafuuneko.rpclient.ui.widgets.RpSectionHeader
@@ -257,6 +258,10 @@ private fun GroupChatNormalView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .chatBackgroundLayer(
+                    state = state.backgroundState,
+                    scrimColor = MaterialTheme.colorScheme.background
+                )
                 .padding(padding)
         ) {
             if (!state.hasAvailableProvider) {
@@ -880,7 +885,8 @@ private fun GroupMemberSettingsRow(
             RpAvatar(
                 text = member.name.take(1),
                 color = getMacaronColor(member.name),
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(38.dp),
+                image = member.avatarImage
             )
             Text(
                 text = member.name,
@@ -1078,7 +1084,8 @@ private fun MemberChip(
             RpAvatar(
                 text = member.name.firstOrNull()?.uppercase() ?: "?",
                 color = accent,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(38.dp),
+                image = member.avatarImage
             )
             Text(
                 text = member.name,
@@ -1357,7 +1364,8 @@ private fun MessageBubble(
             RpAvatar(
                 text = message.speakerName.firstOrNull()?.uppercase() ?: "?",
                 color = accent,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(38.dp),
+                image = message.avatarImage
             )
             Spacer(modifier = Modifier.width(9.dp))
         }

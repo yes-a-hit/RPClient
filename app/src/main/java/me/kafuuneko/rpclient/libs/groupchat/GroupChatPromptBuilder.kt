@@ -1,5 +1,7 @@
 package me.kafuuneko.rpclient.libs.groupchat
 
+import com.google.gson.Gson
+import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationOptions
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMImageReference
@@ -45,6 +47,8 @@ import me.kafuuneko.rpclient.libs.room.entity.GroupChatSession
 import me.kafuuneko.rpclient.libs.room.entity.LLMProvider
 import me.kafuuneko.rpclient.libs.room.entity.Lorebook
 import me.kafuuneko.rpclient.libs.room.entity.LorebookEntry
+import me.kafuuneko.rpclient.libs.skill.SkillManifest
+import me.kafuuneko.rpclient.libs.skill.SkillPromptBuilder
 import me.kafuuneko.rpclient.libs.room.repository.GroupChatMemberData
 import me.kafuuneko.rpclient.utils.stripThinkBlocks
 
@@ -80,7 +84,9 @@ data class GroupChatPromptContext(
     val regexScripts: List<ScopedRegexScript> = emptyList(),
     val messageImages: Map<Long, List<LLMImageReference>> = emptyMap(),
     val unavailableImages: Map<Long, List<UnavailablePromptImage>> = emptyMap(),
-    val protectedUserMessageId: Long? = null
+    val protectedUserMessageId: Long? = null,
+    /** 本轮激活的助手 Skill 列表，由调用方在构建前完成触发词判定。 */
+    val activeSkills: List<SkillManifest> = emptyList()
 )
 
 /** 群聊回复的生成模式。 */
@@ -129,7 +135,11 @@ class GroupChatPromptBuilder(
     private val mRequestFinalizer: PromptRequestFinalizer = PromptRequestFinalizer(),
     private val mExampleDialogueBehaviorProvider: ExampleDialogueBehaviorProvider =
         ExampleDialogueBehaviorProvider { ExampleDialogueBehavior.default },
-    private val mRegexProcessor: RegexMessageProcessor = RegexMessageProcessor(mRegexRuntime)
+    private val mRegexProcessor: RegexMessageProcessor = RegexMessageProcessor(mRegexRuntime),
+    /** 角色扩展档案编解码器，用于把各成员的感情经历与关系边界合并注入。 */
+    private val mProfileCodec: CharacterProfileCodec = CharacterProfileCodec(Gson()),
+    /** Skill 片段渲染器；无状态，默认构造即可供未注册 Koin 的调用方使用。 */
+    private val mSkillPromptBuilder: SkillPromptBuilder = SkillPromptBuilder()
 ) {
     /**
      * 构建可直接发送给模型的群聊生成请求。
@@ -417,6 +427,10 @@ class GroupChatPromptBuilder(
         )
         // 注入合并后的成员角色卡
         before += buildCharacterCards(context)
+        // 注入本轮激活的助手 Skill；群聊与单聊共用同一套能力包
+        mSkillPromptBuilder.build(context.activeSkills).takeIf { it.isNotBlank() }?.let {
+            before += requiredSystem(it, PromptSourceKind.Skill)
+        }
         // 注入辅助提示词
         mPreferences.auxiliaryPrompt.takeIf { it.isNotBlank() }?.let {
             before += optionalSystem(
@@ -493,6 +507,10 @@ class GroupChatPromptBuilder(
     private fun buildCharacterCards(context: GroupChatPromptContext): List<PromptMessageDraft> {
         val members = context.cardMembers()
         val description = context.combineCharacterField(members) { it.description }
+        // 扩展档案按成员逐个提取，再交给同一合并逻辑标注所属角色
+        val profile = context.combineCharacterField(members) {
+            mProfileCodec.toPromptFragment(mProfileCodec.extract(it.extensionsJson))
+        }
         val personality = context.combineCharacterField(members) { it.personality }
         val scenario = context.session.scenario
             .takeIf { it.isNotBlank() }
@@ -502,6 +520,9 @@ class GroupChatPromptBuilder(
         return buildList {
             description.takeIf { it.isNotBlank() }?.let {
                 add(requiredSystem(it, PromptSourceKind.CharacterDescription))
+            }
+            profile.takeIf { it.isNotBlank() }?.let {
+                add(requiredSystem(it, PromptSourceKind.CharacterProfile))
             }
             personality.takeIf { it.isNotBlank() }?.let {
                 add(

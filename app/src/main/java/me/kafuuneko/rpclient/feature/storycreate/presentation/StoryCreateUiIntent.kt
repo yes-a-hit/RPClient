@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.storycreate.presentation
 
+import android.net.Uri
 import me.kafuuneko.rpclient.feature.storycreate.model.StoryCreateCharacterActivationMode
 
 /** 新建 Story 页面的表单操作和提交意图。 */
@@ -17,5 +18,12 @@ sealed class StoryCreateUiIntent {
     data class ChangeLorebookQuery(val value: String) : StoryCreateUiIntent()
     data class ToggleLorebook(val lorebookId: Long) : StoryCreateUiIntent()
     data class ToggleLorebookEntry(val entryId: Long) : StoryCreateUiIntent()
+
+    /** 用户选中了本地小说文件，开始读取并切分。 */
+    data class NovelFilesPicked(val uris: List<Uri>) : StoryCreateUiIntent()
+
+    /** 放弃已解析的小说，回到普通创建流程。 */
+    data object ClearImportedNovel : StoryCreateUiIntent()
+
     data object CreateStory : StoryCreateUiIntent()
 }

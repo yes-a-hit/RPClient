@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.ui.widgets
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,8 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,12 +108,25 @@ fun RpSectionHeader(
 }
 
 /** 项目统一的文字占位头像，采用现代化柔和 Squircle 圆角与微弱高光边框。 */
+/**
+ * 统一的角色头像展示组件。
+ *
+ * - [image] 非空时优先渲染真实头像并按 [shape] 裁切，图片缺失或解码失败时自动回退到文字头像。
+ * - 文字头像使用角色名首字与按名称派生的强调色，保证同一角色在不同页面配色稳定。
+ *
+ * @param text 无图片时展示的文字缩写
+ * @param color 头像强调色，同时用于文字颜色、底色与描边
+ * @param image 已解码的角色头像位图，为空时展示文字头像
+ * @param modifier 外部尺寸与布局修饰符
+ * @param shape 头像外形，群聊消息气泡使用圆角矩形，顶栏可使用圆形
+ */
 @Composable
 fun RpAvatar(
     text: String,
     color: Color,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp)
+    shape: Shape = RoundedCornerShape(16.dp),
+    image: ImageBitmap? = null
 ) {
     Surface(
         modifier = modifier.size(46.dp),
@@ -117,16 +134,28 @@ fun RpAvatar(
         color = color.copy(alpha = 0.14f),
         border = BorderStroke(0.5.dp, color.copy(alpha = 0.28f))
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = text,
-                color = color,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+        if (image != null) {
+            // 图片按容器尺寸裁切填充，避免非正方形头像被拉伸变形
+            Image(
+                bitmap = image,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape),
+                contentScale = ContentScale.Crop
             )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = text,
+                    color = color,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

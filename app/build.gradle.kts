@@ -27,7 +27,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "me.kafuuneko.rpclient"
+        // 定制分支使用独立 applicationId，与官方版互不覆盖，可同时安装。
+        applicationId = "me.kafuuneko.rpclient.uv"
         minSdk = 26
         targetSdk = 36
         versionCode = 20260301

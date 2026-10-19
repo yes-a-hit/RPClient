@@ -3,6 +3,7 @@ package me.kafuuneko.rpclient.feature.characteredit.presentation
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterEditForm
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterLorebookItem
 import me.kafuuneko.rpclient.feature.characteredit.model.CharacterProviderItem
+import me.kafuuneko.rpclient.feature.characteredit.model.CharacterWizardUiState
 import androidx.compose.ui.graphics.ImageBitmap
 
 /** 角色创建/编辑页面状态树。 */
@@ -31,7 +32,9 @@ sealed class CharacterEditUiState {
         /** 当前页面允许选择的世界书列表。 */
         val availableLorebooks: List<CharacterLorebookItem> = emptyList(),
         /** 当前页面允许选择的模型配置列表。 */
-        val availableProviders: List<CharacterProviderItem> = emptyList()
+        val availableProviders: List<CharacterProviderItem> = emptyList(),
+        /** 角色卡生成向导的弹窗状态。 */
+        val wizardState: CharacterWizardUiState = CharacterWizardUiState()
     ) : CharacterEditUiState()
 
     data class Finished(val previous: CharacterEditUiState) : CharacterEditUiState()

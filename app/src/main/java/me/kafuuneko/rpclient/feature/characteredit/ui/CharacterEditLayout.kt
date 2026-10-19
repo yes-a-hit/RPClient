@@ -1,6 +1,7 @@
 package me.kafuuneko.rpclient.feature.characteredit.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +32,7 @@ import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
@@ -97,6 +100,9 @@ import me.kafuuneko.rpclient.ui.widgets.RpChipInputField
 import me.kafuuneko.rpclient.ui.widgets.RpJsonCodeEditorField
 import me.kafuuneko.rpclient.ui.widgets.RpMacroActionBar
 import me.kafuuneko.rpclient.ui.widgets.RpScrollableOutlinedTextField
+import me.kafuuneko.rpclient.libs.character.CharacterProfileFlagField
+import me.kafuuneko.rpclient.libs.character.CharacterProfileTextField
+import me.kafuuneko.rpclient.libs.character.RelationshipStatus
 import me.kafuuneko.rpclient.ui.widgets.rememberBoundTextFieldState
 import me.kafuuneko.rpclient.ui.widgets.RpPageTitle
 import me.kafuuneko.rpclient.ui.widgets.RpLazyColumn
@@ -123,6 +129,13 @@ fun CharacterEditLayout(
         is CharacterEditUiState.Normal -> {
             CharacterEditNormal(uiState, emit)
             DialogSwitch(uiState.dialogState, emit)
+            // 生成向导独立于业务对话框状态，可与其他弹窗并存而不互相覆盖
+            CharacterWizardDialog(
+                state = uiState.wizardState,
+                providers = uiState.availableProviders,
+                onDismiss = { CharacterEditUiIntent.CloseCharacterWizard.emit() },
+                emit = emit
+            )
         }
     }
 }
@@ -197,6 +210,7 @@ private fun CharacterEditNormal(
                 when (selectedTab) {
                     CharacterEditTab.Profile -> {
                         item { ProfileBasicPanel(state.form, emit) }
+                        item { ProfileBackstoryPanel(state.form, emit) }
                         item { TagsPanel(state.form.tags, emit) }
                     }
                     CharacterEditTab.Dialogue -> {
@@ -468,6 +482,21 @@ private fun ProfileBasicPanel(
 ) {
     Panel {
         RpSectionHeader(title = stringResource(R.string.basic_info))
+        // 生成向导入口：用少量种子信息快速产出整张角色卡，再回到表单继续微调
+        TextButton(
+            onClick = { CharacterEditUiIntent.OpenCharacterWizard.emit() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = stringResource(R.string.character_wizard_entry),
+                modifier = Modifier.padding(start = 6.dp)
+            )
+        }
         FormTextField(stringResource(R.string.name), form.name) {
             CharacterEditUiIntent.ChangeName(it).emit()
         }
@@ -504,12 +533,189 @@ private fun ProfileBasicPanel(
     }
 }
 
+/**
+ * 角色扩展档案面板：感情经历、亲密关系边界与身份补充。
+ *
+ * 这些字段保存在角色卡 extensions 的 rpclient_profile 命名空间内，随 V2 角色卡一起导入导出，
+ * 因此面板不做独立持久化，全部通过表单 Intent 更新，由保存动作统一写回。
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProfileBackstoryPanel(
+    form: CharacterEditForm,
+    emit: CharacterEditUiIntent.() -> Unit
+) {
+    val profile = form.profile
+    Panel {
+        RpSectionHeader(title = stringResource(R.string.character_backstory_section))
+        // 当前感情状态为单选，未设定时不会向 Prompt 注入该维度
+        ProfileOptionRow(
+            label = stringResource(R.string.character_relationship_status),
+            options = RelationshipStatus.entries.toList(),
+            selected = profile.relationshipStatus,
+            labelOf = { stringResource(it.titleRes()) },
+            onSelect = {
+                CharacterEditUiIntent.ChangeRelationshipStatus(it).emit()
+            }
+        )
+        // 三态布尔用于区分「明确没有」与「作者未填写」，避免模型自行补完经历
+        ProfileTriStateRow(
+            label = stringResource(R.string.character_has_romantic_history),
+            value = profile.hasRomanticHistory,
+            onValueChange = {
+                CharacterEditUiIntent.ChangeProfileFlag(
+                    CharacterProfileFlagField.HasRomanticHistory,
+                    it
+                ).emit()
+            }
+        )
+        FormTextField(
+            label = stringResource(R.string.character_romantic_history),
+            value = profile.romanticHistory,
+            minLines = 3,
+            onChange = {
+                CharacterEditUiIntent.ChangeProfileText(
+                    CharacterProfileTextField.RomanticHistory,
+                    it
+                ).emit()
+            }
+        )
+        ProfileTriStateRow(
+            label = stringResource(R.string.character_has_sexual_history),
+            value = profile.hasSexualHistory,
+            onValueChange = {
+                CharacterEditUiIntent.ChangeProfileFlag(
+                    CharacterProfileFlagField.HasSexualHistory,
+                    it
+                ).emit()
+            }
+        )
+        FormTextField(
+            label = stringResource(R.string.character_sexual_history),
+            value = profile.sexualHistory,
+            minLines = 3,
+            onChange = {
+                CharacterEditUiIntent.ChangeProfileText(
+                    CharacterProfileTextField.SexualHistory,
+                    it
+                ).emit()
+            }
+        )
+        // 关系边界会直接进入 Prompt，模型扮演时需要显式遵守
+        FormTextField(
+            label = stringResource(R.string.character_boundaries),
+            value = profile.boundaries,
+            minLines = 2,
+            onChange = {
+                CharacterEditUiIntent.ChangeProfileText(
+                    CharacterProfileTextField.Boundaries,
+                    it
+                ).emit()
+            }
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FormTextField(
+                label = stringResource(R.string.character_likes),
+                value = profile.likes,
+                modifier = Modifier.weight(1f),
+                onChange = {
+                    CharacterEditUiIntent.ChangeProfileText(
+                        CharacterProfileTextField.Likes,
+                        it
+                    ).emit()
+                }
+            )
+            FormTextField(
+                label = stringResource(R.string.character_dislikes),
+                value = profile.dislikes,
+                modifier = Modifier.weight(1f),
+                onChange = {
+                    CharacterEditUiIntent.ChangeProfileText(
+                        CharacterProfileTextField.Dislikes,
+                        it
+                    ).emit()
+                }
+            )
+        }
+    }
+}
+
+/** 扩展档案中的通用单选行：标签加一组可换行的选项芯片。 */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> ProfileOptionRow(
+    label: String,
+    options: List<T>,
+    selected: T,
+    labelOf: @Composable (T) -> String,
+    onSelect: (T) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            options.forEach { option ->
+                FilterChip(
+                    selected = option == selected,
+                    onClick = { onSelect(option) },
+                    label = { Text(labelOf(option)) },
+                    shape = RoundedCornerShape(10.dp)
+                )
+            }
+        }
+    }
+}
+
+/** 扩展档案中的三态布尔行：未设定、有、无。 */
+@Composable
+private fun ProfileTriStateRow(
+    label: String,
+    value: Boolean?,
+    onValueChange: (Boolean?) -> Unit
+) {
+    ProfileOptionRow(
+        label = label,
+        options = listOf<Boolean?>(null, true, false),
+        selected = value,
+        labelOf = {
+            stringResource(
+                when (it) {
+                    null -> R.string.profile_flag_unspecified
+                    true -> R.string.profile_flag_yes
+                    false -> R.string.profile_flag_no
+                }
+            )
+        },
+        onSelect = onValueChange
+    )
+}
+
+/** 感情状态对应的界面文案资源。 */
+@StringRes
+private fun RelationshipStatus.titleRes(): Int = when (this) {
+    RelationshipStatus.Unspecified -> R.string.relationship_unspecified
+    RelationshipStatus.Single -> R.string.relationship_single
+    RelationshipStatus.Dating -> R.string.relationship_dating
+    RelationshipStatus.Married -> R.string.relationship_married
+    RelationshipStatus.Divorced -> R.string.relationship_divorced
+    RelationshipStatus.Widowed -> R.string.relationship_widowed
+    RelationshipStatus.Complicated -> R.string.relationship_complicated
+}
+
 @Composable
 private fun TagsPanel(
     tags: List<String>,
     emit: CharacterEditUiIntent.() -> Unit
-) {
-    RpChipInputField(
+) {    RpChipInputField(
         title = stringResource(R.string.character_tags),
         chips = tags,
         onChipsChanged = { CharacterEditUiIntent.SetTags(it).emit() },

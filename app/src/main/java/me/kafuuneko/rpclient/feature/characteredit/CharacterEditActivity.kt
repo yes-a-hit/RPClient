@@ -37,6 +37,16 @@ class CharacterEditActivity : CoreActivityWithEvent() {
         }
     }
 
+    /**
+     * 角色卡生成向导的参考图选择结果。
+     *
+     * 参考图只用于视觉模型识别外貌，不做方形裁剪，因此直接把 URI 交给 ViewModel 保存。
+     */
+    private val mWizardReferenceLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { mViewModel.emit(CharacterEditUiIntent.WizardReferencePicked(it)) }
+        }
+
     override fun getViewEventFlow() = mViewModel.viewEventFlow
 
     @Composable
@@ -68,6 +78,8 @@ class CharacterEditActivity : CoreActivityWithEvent() {
         super.onReceivedViewEvent(viewEvent)
         when (viewEvent) {
             CharacterEditViewEvent.OpenAvatarPicker -> mAvatarPickerLauncher.launch("image/*")
+            CharacterEditViewEvent.OpenWizardReferencePicker ->
+                mWizardReferenceLauncher.launch("image/*")
             is CharacterEditViewEvent.CopyText -> {
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(

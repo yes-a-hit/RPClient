@@ -120,6 +120,43 @@ class ChatRepository(
         }
     }
 
+    /**
+     * 以角色身份原子保存正文与图片附件。
+     *
+     * 用于外接生图等由角色产出图片的场景：正文允许为空（纯图片消息），
+     * 但至少要有图片，避免写入空消息污染聊天历史与摘要边界。
+     *
+     * @param sessionId 所属会话 ID
+     * @param content 消息正文，可为空
+     * @param images 已处理完成、等待提交的图片凭据
+     * @return 含附件快照的消息
+     */
+    suspend fun createCharacterMessageWithImages(
+        sessionId: Long,
+        content: String,
+        images: List<MessageImageInput.Prepared>
+    ): MessageWithImages {
+        require(images.isNotEmpty()) { "A character image message requires at least one image" }
+        require(images.size <= MessageImagePolicy.MAX_IMAGES_PER_MESSAGE) {
+            "A message can contain at most four images"
+        }
+        return mImages.mutate(images.map { it.value }) {
+            val now = System.currentTimeMillis()
+            val id = mChatMessageDao.insertOrReplace(
+                ChatMessage(
+                    sessionId = sessionId,
+                    createTime = now,
+                    source = ChatMessage.Source.Char,
+                    content = content
+                )
+            )
+            mChatSessionDao.updateSessionLatestTime(sessionId, now)
+            val key = MessageKey(MessageType.Single, id)
+            mImages.replaceInTransaction(this, key, sessionId, images)
+            mImages.getMessages(listOf(key)).single()
+        }
+    }
+
     /** 原子编辑普通消息的图文；附件移除和顺序变化与正文使用同一摘要失效边界。 */
     suspend fun editMessageWithImages(
         sessionId: Long,

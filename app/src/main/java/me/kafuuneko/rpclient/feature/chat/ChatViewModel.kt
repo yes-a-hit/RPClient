@@ -23,6 +23,7 @@ import me.kafuuneko.rpclient.feature.characteredit.CharacterEditActivity
 import me.kafuuneko.rpclient.feature.chat.model.ChatGenerationState
 import me.kafuuneko.rpclient.feature.chat.model.ChatLorebookGroupItem
 import me.kafuuneko.rpclient.feature.chat.model.ChatMessageUiModel
+import me.kafuuneko.rpclient.feature.chat.model.MessageRole
 import me.kafuuneko.rpclient.feature.chat.presentation.ChatConversationState
 import me.kafuuneko.rpclient.feature.chat.presentation.ChatDialogState
 import me.kafuuneko.rpclient.feature.chat.presentation.ChatLoadState
@@ -45,6 +46,8 @@ import me.kafuuneko.rpclient.feature.noProviderModelSettingsGuide
 import me.kafuuneko.rpclient.feature.toGenerationFailurePresentation
 import me.kafuuneko.rpclient.feature.worldbooklist.WorldBookListActivity
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
+import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
 import me.kafuuneko.rpclient.libs.core.AppViewEvent
 import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
@@ -81,6 +84,7 @@ import me.kafuuneko.rpclient.libs.room.entity.ChatSession
 import me.kafuuneko.rpclient.libs.room.entity.LLMProvider
 import me.kafuuneko.rpclient.libs.room.entity.toConfig
 import me.kafuuneko.rpclient.libs.room.model.MessageImageInput
+import me.kafuuneko.rpclient.libs.skill.SkillRepository
 import me.kafuuneko.rpclient.libs.room.model.MessageWithImages
 import me.kafuuneko.rpclient.libs.room.model.SummaryInputSnapshot
 import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
@@ -89,6 +93,7 @@ import me.kafuuneko.rpclient.libs.room.repository.ChatSummaryGenerationContext
 import me.kafuuneko.rpclient.libs.room.repository.FileRepository
 import me.kafuuneko.rpclient.libs.room.repository.LLMRepository
 import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
+import me.kafuuneko.rpclient.ui.widgets.ChatBackgroundUiState
 import me.kafuuneko.rpclient.utils.filterLorebookGroups
 import me.kafuuneko.rpclient.utils.formatTimestamp
 import me.kafuuneko.rpclient.utils.toDefaultChatTitle
@@ -206,11 +211,20 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
     private val mLLMRepository by inject<LLMRepository>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mFileRepository by inject<FileRepository>()
+    /**
+     * 聊天背景解码缓存，保存上次解析的图片 UUID 与位图。
+     *
+     * 背景图只有一张且尺寸较大，每次状态刷新都重新解码会明显拖慢页面响应；
+     * 缓存键为文件 UUID，用户在设置页更换背景后 UUID 变化即自动失效。
+     */
+    private var mBackgroundImageCache: Pair<String, ImageBitmap?>? = null
     private val mChatPromptBuilder by inject<ChatPromptBuilder>()
     private val mSummaryPromptBuilder by inject<SummaryPromptBuilder>()
     private val mRegexRepository by inject<RegexScriptRepository>()
     private val mRegexProcessor by inject<RegexMessageProcessor>()
     private val mChatArchiveRepository by inject<ChatArchiveRepository>()
+    private val mImageGenRepository by inject<ImageGenRepository>()
+    private val mSkillRepository by inject<SkillRepository>()
     private val mContext by inject<Context>()
 
     /** 当前页面绑定的会话 ID，初始化成功后在页面生命周期内保持不变。 */
@@ -1050,6 +1064,99 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
     /**
      * 关闭当前显示的任何弹窗/对话框。
      */
+    /**
+     * 打开生图对话框。
+     *
+     * 提示词优先取最近一条角色消息，让用户在此基础上微调画面描述；
+     * 没有角色消息时留空，由用户自行填写。未配置生图服务时仍允许打开，
+     * 由对话框内的提示引导前往设置，避免静默无响应。
+     */
+    @UiIntentObserver(ChatUiIntent.OpenImageGen::class)
+    private fun onOpenImageGen() {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val settings = ImageGenSettings.decode(AppModel.imageGenSettings)
+        val seedPrompt = uiState.conversationState.messages
+            .lastOrNull { it.role == MessageRole.Assistant && it.content.isNotBlank() }
+            ?.content
+            ?.take(IMAGE_GEN_PROMPT_SEED_LENGTH)
+            .orEmpty()
+        uiState.copy(
+            dialogState = ChatDialogState.ImageGen(
+                prompt = seedPrompt,
+                aspect = settings.aspect
+            )
+        ).setup()
+    }
+
+    /** 修改生图提示词草稿。 */
+    @UiIntentObserver(ChatUiIntent.ChangeImageGenPrompt::class)
+    private fun onChangeImageGenPrompt(intent: ChatUiIntent.ChangeImageGenPrompt) {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? ChatDialogState.ImageGen ?: return
+        uiState.copy(dialogState = dialog.copy(prompt = intent.value, errorMessage = null)).setup()
+    }
+
+    /** 切换生图画幅。 */
+    @UiIntentObserver(ChatUiIntent.ChangeImageGenAspect::class)
+    private fun onChangeImageGenAspect(intent: ChatUiIntent.ChangeImageGenAspect) {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? ChatDialogState.ImageGen ?: return
+        uiState.copy(dialogState = dialog.copy(aspect = intent.aspect)).setup()
+    }
+
+    /**
+     * 请求外接生图服务并把结果作为角色图片消息插入会话。
+     *
+     * - 生成成功后才写入数据库，失败时不留下半成品消息。
+     * - 图片走与用户上传完全相同的暂存与去重路径，因此归档、分支、导出均无需特殊处理。
+     * - 对话框保持打开，方便用户微调提示词后继续生成。
+     */
+    @UiIntentObserver(ChatUiIntent.GenerateImage::class)
+    private suspend fun onGenerateImage() {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val sessionId = mSessionId ?: return
+        val dialog = uiState.dialogState as? ChatDialogState.ImageGen ?: return
+        if (!dialog.canGenerate) return
+        val settings = ImageGenSettings.decode(AppModel.imageGenSettings)
+        if (!settings.isConfigured) {
+            uiState.copy(
+                dialogState = dialog.copy(
+                    errorMessage = mContext.getString(R.string.image_gen_not_configured)
+                )
+            ).setup()
+            return
+        }
+        uiState.copy(dialogState = dialog.copy(generating = true, errorMessage = null)).setup()
+        try {
+            val prepared = mImageGenRepository.generate(
+                ownerId = "imagegen-$sessionId",
+                settings = settings,
+                prompt = dialog.prompt,
+                aspect = dialog.aspect
+            )
+            mChatRepository.createCharacterMessageWithImages(
+                sessionId = sessionId,
+                content = "",
+                images = prepared.map { MessageImageInput.Prepared(it) }
+            )
+            // 重新加载会话，让新插入的图片消息立即出现在列表中
+            refreshUiState(
+                sessionId = sessionId,
+                dialogState = dialog.copy(generating = false, errorMessage = null)
+            )
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            // 失败无需回读数据库，直接把原因留在对话框内供用户调整
+            val message = error.message?.takeIf { it.isNotBlank() }
+                ?: mContext.getString(R.string.image_gen_failed)
+            val latest = getOrNull<ChatUiState.Normal>() ?: return
+            latest.copy(
+                dialogState = dialog.copy(generating = false, errorMessage = message)
+            ).setup()
+        }
+    }
+
     @UiIntentObserver(ChatUiIntent.DismissDialog::class)
     private fun onDismissDialog() {
         val uiState = getOrNull<ChatUiState.Normal>() ?: return
@@ -2113,6 +2220,12 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
         val creatorNotes = mChatRepository.getSessionCreatorNotes(session)
         val regexScripts = mRegexRepository.activeScripts(listOf(character))
         val imageReferences = mImageRuntime.prepareCandidates(generationHistory.messages)
+        // 按最近消息扫描 Skill 触发词；扫描在构建器之外完成，保持构建过程无 IO
+        val activeSkills = mSkillRepository.resolveActive(
+            recentText = generationHistory.messages
+                .takeLast(SKILL_SCAN_MESSAGE_COUNT)
+                .joinToString("\n") { it.content }
+        )
         val buildResult = withContext(Dispatchers.Default) {
             mChatPromptBuilder.buildWithMetadata(
                 PromptBuildContext(
@@ -2143,7 +2256,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                     maxContextTokens = provider.contextTokens,
                     maxResponseTokens = provider.maxTokens,
                     generationMode = generationMode,
-                    regexScripts = regexScripts
+                    regexScripts = regexScripts,
+                    activeSkills = activeSkills
                 )
             )
         }
@@ -2205,6 +2319,37 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
      * @param messageLimit 从会话末尾保留的消息窗口大小
      * @return 组装完成的 [ChatUiState.Normal]，若会话或角色不存在返回 null
      */
+    /**
+     * 解析聊天页背景配置，返回可直接渲染的背景状态。
+     *
+     * - 未配置背景图时返回仅含遮罩强度的空状态，页面继续使用主题纯色背景。
+     * - 图片 UUID 与缓存一致时直接复用已解码位图，避免每次刷新重复解码大图。
+     * - 解码失败时同样缓存空位图结果，防止对损坏文件反复读取。
+     *
+     * @return 单聊页面背景展示状态
+     */
+    private suspend fun resolveBackgroundState(): ChatBackgroundUiState {
+        val avatarUuid = AppModel.chatBackgroundImage
+        val dimPercent = AppModel.chatBackgroundDim
+        if (avatarUuid.isBlank()) return ChatBackgroundUiState(dimPercent = dimPercent)
+        // 命中缓存时直接复用位图，仅刷新遮罩强度
+        mBackgroundImageCache?.let { (cachedUuid, cachedImage) ->
+            if (cachedUuid == avatarUuid) {
+                return ChatBackgroundUiState(image = cachedImage, dimPercent = dimPercent)
+            }
+        }
+        // 未命中缓存时按屏幕量级采样解码，避免原图占满内存
+        val image = withContext(Dispatchers.IO) {
+            mFileRepository.loadSampledBitmap(
+                uuid = avatarUuid,
+                requestedWidthPx = BACKGROUND_SAMPLE_WIDTH,
+                requestedHeightPx = BACKGROUND_SAMPLE_HEIGHT
+            )?.asImageBitmap()
+        }
+        mBackgroundImageCache = avatarUuid to image
+        return ChatBackgroundUiState(image = image, dimPercent = dimPercent)
+    }
+
     private suspend fun loadNormalState(
         sessionId: Long,
         inputDraft: String = "",
@@ -2278,7 +2423,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             streamEnabled = AppModel.streamEnabled,
             hasPromptInspection = mLastPromptInspection != null,
             hasAvailableProvider = hasAvailableProvider,
-            dialogState = dialogState
+            dialogState = dialogState,
+            backgroundState = resolveBackgroundState()
         )
     }
 
@@ -2425,6 +2571,18 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
     private companion object {
         /** 聊天页面首次和后续向前加载的单页消息数量。 */
         const val MESSAGE_PAGE_SIZE = 50
+
+        /** 背景图解码目标宽度，与主流手机竖屏逻辑宽度相当。 */
+        const val BACKGROUND_SAMPLE_WIDTH = 1080
+
+        /** 背景图解码目标高度，按长屏比例预留以保证铺满时不模糊。 */
+        const val BACKGROUND_SAMPLE_HEIGHT = 2400
+
+        /** 生图提示词预填时最多截取的字符数，避免把整段剧情直接塞进提示词。 */
+        const val IMAGE_GEN_PROMPT_SEED_LENGTH = 400
+
+        /** Skill 触发词扫描覆盖的最近消息条数。 */
+        const val SKILL_SCAN_MESSAGE_COUNT = 6
     }
 
     /** 单聊分页消息执行 Display Regex 所需的持久化上下文。 */

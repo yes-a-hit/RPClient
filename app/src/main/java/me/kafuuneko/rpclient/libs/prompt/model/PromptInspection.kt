@@ -11,6 +11,10 @@ enum class PromptSourceKind {
     WorldInfo,
     UserPersona,
     CharacterDescription,
+    /** 角色卡扩展档案：感情经历、关系边界等补充设定。 */
+    CharacterProfile,
+    /** 按触发词激活的助手 Skill 能力包。 */
+    Skill,
     CharacterPersonality,
     Scenario,
     Summary,
