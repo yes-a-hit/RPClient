@@ -3,7 +3,7 @@
 
   # RPClient
 
-  [简体中文](README_ZH.md) | English
+  [简体中文](README_ZH.md) | English | [定制版说明 (UV)](README_UV.md)
 
   A local-first AI role-playing chat client for Android.
 
