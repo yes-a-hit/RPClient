@@ -27,7 +27,7 @@ object AppModel : KotprefModel(), PromptPreferences {
     const val UV_AUTHOR = "yes a hit"
 
     /** 定制分支自身的版本标识，与上游 versionName 分开演进。 */
-    const val UV_VERSION = "0.61"
+    const val UV_VERSION = "0.63"
 
     /** 定制说明文档在 assets 中的文件名。 */
     const val UV_README_ASSET = "README_UV.md"

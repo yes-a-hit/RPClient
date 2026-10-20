@@ -69,7 +69,16 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     /** 打开指定已保存剧本。 */
     @UiIntentObserver(ScriptEditorUiIntent.OpenPack::class)
     private suspend fun onOpenPack(intent: ScriptEditorUiIntent.OpenPack) {
-        mPack = mStore.load(intent.packId) ?: mPack
+        val loaded = mStore.load(intent.packId)
+        if (loaded != null) {
+            mPack = loaded
+            // 换剧本要重新读候选，否则角色与图库列表还是上一份的
+            loadCandidates()
+        } else if (mPack == null) {
+            // 加载失败就退回第一个剧本或示例，别让界面直接关掉
+            mPack = mStore.loadFirst() ?: SAMPLE_PACK
+            loadCandidates()
+        }
         publish(null, null)
     }
 
@@ -240,17 +249,22 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     @UiIntentObserver(ScriptEditorUiIntent.ApplyBackground::class)
     private suspend fun onApplyBackground(intent: ScriptEditorUiIntent.ApplyBackground) {
         val uri = runCatching { android.net.Uri.parse(intent.uri) }.getOrNull() ?: return
+        // 章节层上传的图最终是「进图库 + 打标签」，剧本里只留一个引用，
+        // 图片本体永远不进 JSON
+        val sceneName = intent.sceneId?.let { id ->
+            mPack.scenes.firstOrNull { it.id == id }?.name
+        }
         val image = runCatching {
             mGalleryStore.importFromUri(
                 uri = uri,
                 saveFile = { source ->
                     runCatching { mFileRepository.saveFile(source) }.getOrNull()
                 },
-                name = intent.sceneId?.let { id ->
-                    mPack.scenes.firstOrNull { it.id == id }?.name
-                } ?: mPack.name,
-                labels = listOf("背景"),
-                isPublic = true
+                name = sceneName?.let { name -> name + " 背景" } ?: (mPack.name + " 背景"),
+                // 打上场景名标签：多个章节各自换图时不会混成一张
+                labels = listOf("背景") + listOfNotNull(sceneName),
+                isPublic = true,
+                description = "剧本《" + mPack.name + "》的背景图"
             )
         }.getOrNull() ?: return
         val key = image.name.ifBlank { image.labels.firstOrNull().orEmpty() }
@@ -608,6 +622,12 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             castInUse = mPack.scenes
                 .flatMap { scene -> scene.cast.map { it.name } }
                 .distinct(),
+            missingBackgrounds = buildList {
+                if (mPack.backgroundKey.isNotBlank()) add(mPack.backgroundKey)
+                addAll(mPack.scenes.map { it.backgroundKey })
+            }.filter { it.isNotBlank() }
+                .distinct()
+                .filterNot { it in mGalleryKeys },
             lorebookNames = mLorebookNames,
             galleryKeys = mGalleryKeys
         ).setup()

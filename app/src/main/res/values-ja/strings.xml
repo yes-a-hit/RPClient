@@ -1433,4 +1433,9 @@
     <string name="script_pack_background">脚本の既定背景</string>
     <string name="script_scene_inherit_bg">脚本の背景を継承</string>
     <string name="script_bg_import">画像を読み込む</string>
+    <string name="script_bg_missing">参照画像が端末にありません</string>
+    <string name="script_bg_none">この場面は背景なし</string>
+    <string name="script_selector_manual">手動追加</string>
+    <string name="script_selector_manual_hint">名前を入力</string>
+    <string name="script_selector_add">追加</string>
 </resources>

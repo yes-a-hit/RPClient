@@ -1437,4 +1437,9 @@
     <string name="script_pack_background">Skript-Hintergrund</string>
     <string name="script_scene_inherit_bg">Skripthintergrund erben</string>
     <string name="script_bg_import">Bild importieren</string>
+    <string name="script_bg_missing">Bild lokal nicht vorhanden</string>
+    <string name="script_bg_none">Kein Hintergrund</string>
+    <string name="script_selector_manual">Manuell</string>
+    <string name="script_selector_manual_hint">Name</string>
+    <string name="script_selector_add">Hinzufügen</string>
 </resources>

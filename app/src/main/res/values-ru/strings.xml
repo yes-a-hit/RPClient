@@ -1442,4 +1442,9 @@
     <string name="script_pack_background">Фон сценария</string>
     <string name="script_scene_inherit_bg">Наследовать фон</string>
     <string name="script_bg_import">Импорт изображения</string>
+    <string name="script_bg_missing">Изображение отсутствует</string>
+    <string name="script_bg_none">Без фона</string>
+    <string name="script_selector_manual">Вручную</string>
+    <string name="script_selector_manual_hint">Имя</string>
+    <string name="script_selector_add">Добавить</string>
 </resources>

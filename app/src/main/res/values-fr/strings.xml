@@ -1438,4 +1438,9 @@
     <string name="script_pack_background">Fond du script</string>
     <string name="script_scene_inherit_bg">Hériter du fond du script</string>
     <string name="script_bg_import">Importer une image</string>
+    <string name="script_bg_missing">Image absente en local</string>
+    <string name="script_bg_none">Aucun fond ici</string>
+    <string name="script_selector_manual">Ajouter</string>
+    <string name="script_selector_manual_hint">Nom</string>
+    <string name="script_selector_add">Inclure</string>
 </resources>

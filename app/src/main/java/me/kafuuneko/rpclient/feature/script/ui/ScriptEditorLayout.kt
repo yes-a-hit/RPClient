@@ -152,13 +152,13 @@ private fun ChapterCard(
     var failKeyword by remember(row.id) { mutableStateOf(row.failKeyword) }
     var failRounds by remember(row.id) { mutableStateOf(row.failRounds.toString()) }
     var rounds by remember(row.id) { mutableStateOf(row.maxRounds.toString()) }
-    var background by remember(row.id) { mutableStateOf(row.backgroundKey) }
+    var background by remember(row.id, row.backgroundKey) { mutableStateOf(row.backgroundKey) }
     var castNames by remember(row.id) { mutableStateOf(row.castNames) }
     var bannedNames by remember(row.id) { mutableStateOf(row.bannedNames) }
     var lorebookName by remember(row.id) { mutableStateOf(row.lorebookName) }
     var nextScenes by remember(row.id) { mutableStateOf(row.nextSceneIds) }
-    var actions by remember(row.id) { mutableStateOf(row.suggestedActions) }
-    var inheritBg by remember(row.id) { mutableStateOf(row.inheritBackground) }
+    var actions by remember(row.id, row.suggestedActions) { mutableStateOf(row.suggestedActions) }
+    var inheritBg by remember(row.id, row.inheritBackground) { mutableStateOf(row.inheritBackground) }
     var checkpoint by remember(row.id) { mutableStateOf(row.checkpoint) }
     var loop by remember(row.id) { mutableStateOf(row.loopEnabled) }
 
@@ -233,6 +233,53 @@ private fun ChapterCard(
                     .padding(top = 2.dp),
                 singleLine = true
             )
+            // 背景常显：编辑章节时一眼能看到图，不用先展开
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(R.string.script_scene_background),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Box(modifier = Modifier.weight(1f))
+                        TextButton(
+                            onClick = { ScriptEditorUiIntent.PickBackground(row.id).emit() }
+                        ) {
+                            Text(stringResource(R.string.script_bg_import))
+                        }
+                    }
+                    Text(
+                        text = background.ifBlank {
+                            if (inheritBg) {
+                                stringResource(R.string.script_scene_inherit_bg)
+                            } else {
+                                stringResource(R.string.script_bg_none)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (background.isNotBlank() && background !in galleryKeys) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                    // JSON 只存引用，图不在本机时明说，别让背景悄悄变空
+                    if (background.isNotBlank() && background !in galleryKeys) {
+                        Text(
+                            text = stringResource(R.string.script_bg_missing),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
             if (expanded) {
                 Column(
                     modifier = Modifier
@@ -258,12 +305,6 @@ private fun ChapterCard(
                         selected = background.toNameSet(),
                         onToggle = { key -> background = if (background == key) "" else key }
                     )
-                    OutlinedButton(
-                        onClick = { ScriptEditorUiIntent.PickBackground(row.id).emit() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.script_bg_import))
-                    }
                     SelectorSection(
                         title = stringResource(R.string.script_scene_cast),
                         options = characterNames,
@@ -375,7 +416,13 @@ private fun ChapterCard(
     }
 }
 
-/** 一组可勾选的候选，勾选态用主色底标出。 */
+/**
+ * 一组可勾选的候选。
+ *
+ * 除了勾选现有项，还能手打名字加进去：
+ * 本地没有对应角色卡或世界书时，候选是空的，
+ * 只给勾选的话就彻底没法编辑了。
+ */
 @Composable
 private fun SelectorSection(
     title: String,
@@ -383,13 +430,27 @@ private fun SelectorSection(
     selected: Set<String>,
     onToggle: (String) -> Unit
 ) {
+    var manualOpen by remember { mutableStateOf(false) }
+    var manualText by remember { mutableStateOf("") }
+    // 已选中但不在候选里的项也要显示，否则手打进去的东西看不见
+    val visible = (options + selected.toList()).distinct()
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (options.isEmpty()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Box(modifier = Modifier.weight(1f))
+            TextButton(onClick = { manualOpen = !manualOpen }) {
+                Text(
+                    text = stringResource(R.string.script_selector_manual),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+        if (visible.isEmpty()) {
             Text(
                 text = stringResource(R.string.script_scene_no_options),
                 style = MaterialTheme.typography.bodySmall,
@@ -400,7 +461,7 @@ private fun SelectorSection(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                options.forEach { option ->
+                visible.forEach { option ->
                     val picked = option in selected
                     Text(
                         text = option,
@@ -417,6 +478,26 @@ private fun SelectorSection(
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         style = MaterialTheme.typography.labelSmall
                     )
+                }
+            }
+        }
+        if (manualOpen) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = manualText,
+                    onValueChange = { manualText = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text(stringResource(R.string.script_selector_manual_hint)) }
+                )
+                TextButton(
+                    onClick = {
+                        val name = manualText.trim()
+                        if (name.isNotBlank() && name !in selected) onToggle(name)
+                        manualText = ""
+                    }
+                ) {
+                    Text(stringResource(R.string.script_selector_add))
                 }
             }
         }
@@ -620,6 +701,15 @@ private fun PackInfoCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.script_bg_import))
+                }
+                if (state.packBackground.isNotBlank() &&
+                    state.packBackground !in state.galleryKeys
+                ) {
+                    Text(
+                        text = stringResource(R.string.script_bg_missing),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
                 SwitchRow(
                     stringResource(R.string.script_pack_show_completion),

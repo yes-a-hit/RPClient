@@ -81,6 +81,9 @@ sealed class ScriptEditorUiState {
         /** 剧本里实际用到的角色名，供超管面板管理。 */
         val castInUse: List<String> = emptyList(),
 
+        /** 剧本引用了但图库里没有的背景，需要作者或玩家补图。 */
+        val missingBackgrounds: List<String> = emptyList(),
+
         /** 可选角色卡名称，供勾选出场与禁止名单。 */
         val characterNames: List<String> = emptyList(),
         /** 可选世界书名称。 */

@@ -1438,4 +1438,9 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_pack_background">Nền kịch bản</string>
     <string name="script_scene_inherit_bg">Kế thừa nền kịch bản</string>
     <string name="script_bg_import">Nhập ảnh</string>
+    <string name="script_bg_missing">Thiếu ảnh trên máy</string>
+    <string name="script_bg_none">Không nền</string>
+    <string name="script_selector_manual">Thêm tay</string>
+    <string name="script_selector_manual_hint">Nhập tên</string>
+    <string name="script_selector_add">Thêm</string>
 </resources>

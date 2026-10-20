@@ -1468,4 +1468,9 @@
     <string name="script_pack_background">剧本默认背景</string>
     <string name="script_scene_inherit_bg">本章背景继承剧本默认</string>
     <string name="script_bg_import">从本地导入图片</string>
+    <string name="script_bg_missing">引用的图本地没有，需要重新导入</string>
+    <string name="script_bg_none">本场不设背景</string>
+    <string name="script_selector_manual">手动添加</string>
+    <string name="script_selector_manual_hint">输入名称</string>
+    <string name="script_selector_add">加入</string>
 </resources>

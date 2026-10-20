@@ -1439,4 +1439,9 @@
     <string name="script_pack_background">Fondo del guion</string>
     <string name="script_scene_inherit_bg">Heredar fondo del guion</string>
     <string name="script_bg_import">Importar imagen</string>
+    <string name="script_bg_missing">Imagen no disponible localmente</string>
+    <string name="script_bg_none">Sin fondo en esta escena</string>
+    <string name="script_selector_manual">Añadir</string>
+    <string name="script_selector_manual_hint">Nombre</string>
+    <string name="script_selector_add">Incluir</string>
 </resources>

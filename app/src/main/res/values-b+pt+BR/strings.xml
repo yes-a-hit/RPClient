@@ -1441,4 +1441,9 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_pack_background">Fundo do roteiro</string>
     <string name="script_scene_inherit_bg">Herdar fundo do roteiro</string>
     <string name="script_bg_import">Importar imagem</string>
+    <string name="script_bg_missing">Imagem ausente no dispositivo</string>
+    <string name="script_bg_none">Sem fundo nesta cena</string>
+    <string name="script_selector_manual">Adicionar</string>
+    <string name="script_selector_manual_hint">Nome</string>
+    <string name="script_selector_add">Incluir</string>
 </resources>
