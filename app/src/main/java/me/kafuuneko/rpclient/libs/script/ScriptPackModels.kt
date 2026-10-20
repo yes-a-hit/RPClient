@@ -98,6 +98,13 @@ data class ScriptScene(
     /** 图形化编辑器的节点坐标；手写剧本时可以省略。 */
     val layout: SceneLayout? = null,
     /**
+     * 作者预设的候选行动。
+     *
+     * 有预设时直接展示这些，不等模型输出选项块——
+     * 模型演到兴头上常常忘掉格式，靠它自己写命中率不稳。
+     */
+    val suggestedActions: List<String> = emptyList(),
+    /**
      * 场景背景图的检索词，对应图库里的标签或名称。
      *
      * 只做本地匹配、不触发生成：同一场景反复进入都取同一张图，

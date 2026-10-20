@@ -69,12 +69,25 @@ class ScriptStore(private val mContext: Context) {
 
     /** 按 ID 读取剧本；文件缺失或损坏时返回 null。 */
     suspend fun load(packId: String): ScriptPack? = withContext(Dispatchers.IO) {
-        val file = File(mRoot, fileNameOf(packId))
-        if (!file.isFile) return@withContext null
-        when (val parsed = mCodec.decode(file.readText())) {
-            is ScriptPackParseResult.Success -> parsed.pack
-            is ScriptPackParseResult.Failure -> null
+        if (packId.isBlank()) return@withContext null
+        // 先按 id 拼文件名找，这是自己保存时的命名规则
+        val direct = File(mRoot, fileNameOf(packId))
+        if (direct.isFile) {
+            return@withContext when (val parsed = mCodec.decode(direct.readText())) {
+                is ScriptPackParseResult.Success -> parsed.pack
+                is ScriptPackParseResult.Failure -> null
+            }
         }
+        // 找不到再扫一遍：外部导入的剧本文件名未必等于 id，
+        // 只按文件名找会让这类剧本「点进去毫无反应」
+        mRoot.listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .firstNotNullOfOrNull { file ->
+                val parsed = mCodec.decode(file.readText())
+                (parsed as? ScriptPackParseResult.Success)
+                    ?.pack
+                    ?.takeIf { it.id == packId }
+            }
     }
 
     /** 读取任务队列中的第一个剧本，供编辑页默认打开。 */

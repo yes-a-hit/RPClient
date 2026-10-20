@@ -79,7 +79,8 @@ internal object ScriptPackJson {
                     y = layout.floatOr("y", 0f)
                 )
             },
-            backgroundKey = item.stringOr("backgroundKey")
+            backgroundKey = item.stringOr("backgroundKey"),
+            suggestedActions = item.stringListOr("suggestedActions")
         )
     }
 

@@ -221,7 +221,8 @@ class ScriptPlayViewModel(
 
             ScriptPlayOutcome.Continue -> Unit
         }
-        mOptions = parsedReply.options
+        // 预设优先：作者写好的候选比模型自由发挥更靠谱
+        mOptions = scene.suggestedActions.ifEmpty { parsedReply.options }
         // 指定发言是一次性的，用过就清，避免一直压着同一个角色
         mCurrentForcedSpeaker = null
         mPlayStore.save(mPlay)
@@ -443,7 +444,11 @@ class ScriptPlayViewModel(
             ),
             messages = mPlay.messages,
             finishedReason = mPlay.endReason,
-            options = mOptions,
+            // 没有新候选时回落到场景预设：进场景立刻就能点，
+            // 不至于等模型输出格式块才出现选项
+            options = mOptions.ifEmpty {
+                currentSceneOrNull()?.suggestedActions.orEmpty()
+            },
             backgroundUuid = mSceneBackground,
             castNames = (currentSceneOrNull()?.cast?.map { it.name }.orEmpty() +
                 mActiveCharacters).distinct(),

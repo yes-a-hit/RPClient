@@ -32,7 +32,12 @@
         "description": "你让 Amaya 进了门"
       },
       "failConditions": [],
-      "backgroundKey": "apartment"
+      "backgroundKey": "apartment",
+      "suggestedActions": [
+        "侧身让她进来",
+        "靠在门框上先问她想干什么",
+        "假装没注意她的视线，随口敷衍"
+      ]
     },
     {
       "id": "s2",
@@ -69,7 +74,12 @@
           "description": "你听了太久被发现，他们决定提前动手"
         }
       ],
-      "backgroundKey": "corridor"
+      "backgroundKey": "corridor",
+      "suggestedActions": [
+        "贴着墙继续听",
+        "直接走出去打断他们",
+        "回房间装作什么都没听见"
+      ]
     },
     {
       "id": "s3",
@@ -119,7 +129,12 @@
           "description": "你答应搬走，故事到此为止"
         }
       ],
-      "backgroundKey": "rooftop"
+      "backgroundKey": "rooftop",
+      "suggestedActions": [
+        "答应加入他们",
+        "明确拒绝但不搬走",
+        "反问这栋楼以前出过什么事"
+      ]
     },
     {
       "id": "s4",
@@ -161,7 +176,12 @@
         "description": "你接过了徽章"
       },
       "failConditions": [],
-      "backgroundKey": "dawn"
+      "backgroundKey": "dawn",
+      "suggestedActions": [
+        "接过徽章",
+        "婉拒，但留下来当普通房东",
+        "提出第三条路"
+      ]
     }
   ],
   "startSceneId": "s1",
