@@ -25,6 +25,12 @@ class SkillPromptBuilder {
                     appendLine(skill.description.trim())
                 }
                 appendLine(skill.instructions.trim())
+                // 模板单独成段，模型才知道该按什么形态交付
+                if (skill.template.isNotBlank()) {
+                    appendLine()
+                    appendLine("Output template:")
+                    appendLine(skill.template.trim())
+                }
             }
             append(FOOTER)
         }.trim()

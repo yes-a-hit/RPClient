@@ -31,7 +31,15 @@ data class SkillManifest(
     /** 是否启用；关闭后不参与激活判定。 */
     val enabled: Boolean = true,
     /** 能力正文，直接注入 Prompt。 */
-    val instructions: String = ""
+    val instructions: String = "",
+    /**
+     * 输出模板。
+     *
+     * 与 [instructions] 的分工：instructions 说「做什么」，
+     * template 说「按什么样子交出来」——表格、JSON、分点清单都行。
+     * 留空表示不限制输出形态。
+     */
+    val template: String = ""
 ) {
     /** 是否具备参与激活判定的最低内容。 */
     val isUsable: Boolean
@@ -107,7 +115,8 @@ object SkillCodec {
             triggers = json.stringList("triggers"),
             alwaysOn = json.booleanOrFalse("alwaysOn"),
             enabled = json.booleanOrDefault("enabled", true),
-            instructions = json.stringOrEmpty("instructions")
+            instructions = json.stringOrEmpty("instructions"),
+                template = json.stringOrEmpty("template")
         )
     }
 

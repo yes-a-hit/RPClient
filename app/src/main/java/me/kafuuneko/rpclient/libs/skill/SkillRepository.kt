@@ -246,6 +246,11 @@ When the scene needs an uncertain outcome, resolve it with a single d20 check.
 - Roll one d20, add the most fitting modifier from the character sheet, and compare.
 - Narrate the result through the character's senses instead of printing raw numbers only.
 - Keep the roll inside the story: no tables, no meta commentary, no asking the user to roll.
+""".trimIndent(),
+            template = """
+难度：<easy 10 / normal 15 / hard 20>
+掷骰：d20 = <结果>，调整值 <+N>，合计 <总值>
+判定：<成功 / 失败>，以角色视角写一两句后果。
 """.trimIndent()
         )
     }
