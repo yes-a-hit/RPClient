@@ -1399,4 +1399,5 @@
     <string name="group_chat_impersonate">Selbst spielen</string>
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox ist leer</string>
+    <string name="gallery_title">Galerie</string>
 </resources>

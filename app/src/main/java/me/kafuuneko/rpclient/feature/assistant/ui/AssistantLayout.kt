@@ -278,19 +278,30 @@ private fun AssistantMessageBubble(item: AssistantMessageItem) {
                         )
                     }
                 }
-                Text(
-                    text = item.content,
-                    style = if (isTool) {
-                        MaterialTheme.typography.bodySmall
-                    } else {
-                        MaterialTheme.typography.bodyMedium
-                    },
-                    color = if (isTool) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
-                )
+                // 模型发图时留的是 <image uuid="..." /> 标记，剥掉标记后单独渲染
+                val imageUuids = IMAGE_MARKER.findAll(item.content)
+                    .map { match -> match.groupValues[1] }
+                    .toList()
+                val visibleText = item.content.replace(IMAGE_MARKER, "").trim()
+                if (visibleText.isNotEmpty()) {
+                    Text(
+                        text = visibleText,
+                        style = if (isTool) {
+                            MaterialTheme.typography.bodySmall
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
+                        color = if (isTool) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+                imageUuids.forEach { uuid ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    MessageImage(uuid = uuid)
+                }
                 // 附件在气泡下方留痕，发过什么一眼能看到
                 if (!item.attachments.orEmpty().isEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -793,5 +804,40 @@ private fun SandboxBrowserDialog(
             }
         }
     )
+}
+
+/** 模型发图时写在正文里的标记。 */
+private val IMAGE_MARKER = Regex("<image\\s+uuid=\"([^\"]+)\"[^>]*/?>")
+
+/** 消息里的图片：按 UUID 从文件库取样加载。 */
+@Composable
+private fun MessageImage(uuid: String) {
+    val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, uuid) {
+        val loaded: androidx.compose.ui.graphics.ImageBitmap? = withContext(Dispatchers.IO) {
+            runCatching {
+                val repository = org.koin.core.context.GlobalContext.get()
+                    .get<me.kafuuneko.rpclient.libs.room.repository.FileRepository>()
+                repository.loadSampledBitmap(uuid, 720, 720)?.asImageBitmap()
+            }.getOrNull()
+        }
+        value = loaded
+    }
+    val image = bitmap
+    if (image != null) {
+        Image(
+            bitmap = image,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp)),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Text(
+            text = "（图片加载失败）",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 

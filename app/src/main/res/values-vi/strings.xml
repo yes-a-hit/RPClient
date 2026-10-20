@@ -1400,4 +1400,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="group_chat_impersonate">Nhập vai bạn</string>
     <string name="assistant_sandbox">Hộp cát</string>
     <string name="assistant_sandbox_empty">Hộp cát trống</string>
+    <string name="gallery_title">Thư viện ảnh</string>
 </resources>

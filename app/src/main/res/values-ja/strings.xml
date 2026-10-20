@@ -1395,4 +1395,5 @@
     <string name="group_chat_impersonate">自分を演じる</string>
     <string name="assistant_sandbox">サンドボックス</string>
     <string name="assistant_sandbox_empty">サンドボックスは空です</string>
+    <string name="gallery_title">ギャラリー</string>
 </resources>

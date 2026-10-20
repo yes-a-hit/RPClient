@@ -47,6 +47,7 @@ import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
@@ -674,6 +675,13 @@ private fun HomeAssetDock(
             title = stringResource(R.string.regex_script_title),
             count = null,
             onClick = { MainUiIntent.OpenRegexScripts.emit() }
+        )
+        HomeAssetCapsule(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.PhotoLibrary,
+            title = stringResource(R.string.gallery_title),
+            count = null,
+            onClick = { MainUiIntent.OpenGallery.emit() }
         )
     }
 }

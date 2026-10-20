@@ -1396,4 +1396,5 @@
     <string name="group_chat_impersonate">扮演自己</string>
     <string name="assistant_sandbox">沙箱</string>
     <string name="assistant_sandbox_empty">沙箱是空的</string>
+    <string name="gallery_title">图库</string>
 </resources>

@@ -1400,4 +1400,5 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="group_chat_impersonate">Perankan diri</string>
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox kosong</string>
+    <string name="gallery_title">Galeri</string>
 </resources>

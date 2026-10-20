@@ -1401,4 +1401,5 @@
     <string name="group_chat_impersonate">Interpretarte</string>
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox vacío</string>
+    <string name="gallery_title">Galería</string>
 </resources>

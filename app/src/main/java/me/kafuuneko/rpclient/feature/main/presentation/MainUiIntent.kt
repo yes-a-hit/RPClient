@@ -33,6 +33,9 @@ sealed class MainUiIntent {
     /** 打开剧本库。 */
     data object OpenScriptLibrary : MainUiIntent()
 
+    /** 打开图库。 */
+    data object OpenGallery : MainUiIntent()
+
     /** 打开场景总览。 */
     data object OpenScriptScene : MainUiIntent()
 

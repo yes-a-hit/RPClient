@@ -752,6 +752,16 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
         ).tryEmit()
     }
 
+
+    /** 打开图库页。 */
+    @UiIntentObserver(MainUiIntent.OpenGallery::class)
+    private fun onOpenGallery() {
+        if (!isStateOf<MainUiState.Normal>()) return
+        AppViewEvent.StartActivity(
+            me.kafuuneko.rpclient.feature.gallery.GalleryActivity::class.java
+        ).tryEmit()
+    }
+
     /** 打开剧情冒险页。 */
     @UiIntentObserver(MainUiIntent.OpenAdventure::class)
     private fun onOpenAdventure() {
