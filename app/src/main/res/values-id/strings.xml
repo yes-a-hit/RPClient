@@ -1444,4 +1444,10 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_selector_manual_hint">Nama</string>
     <string name="script_selector_add">Masukkan</string>
     <string name="adventure_edit_pack">Edit skrip</string>
+    <string name="script_coming_soon">Direncanakan</string>
+    <string name="script_soon_event">Peristiwa adegan: tambah/hapus karakter</string>
+    <string name="script_soon_free">Mode bebas: kunjungi adegan terbuka</string>
+    <string name="script_soon_fnaf">Skrip demo FNAF: lima hari</string>
+    <string name="script_soon_daily">Mode harian: kalender dan linimasa</string>
+    <string name="script_soon_group">Grup NPC: wujud berbeda</string>
 </resources>

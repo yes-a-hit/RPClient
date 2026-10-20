@@ -1445,4 +1445,10 @@
     <string name="script_selector_manual_hint">Nombre</string>
     <string name="script_selector_add">Incluir</string>
     <string name="adventure_edit_pack">Editar guion</string>
+    <string name="script_coming_soon">Planeado</string>
+    <string name="script_soon_event">Eventos en escena: añadir/quitar personajes</string>
+    <string name="script_soon_free">Modo libre: visitar escenas abiertas</string>
+    <string name="script_soon_fnaf">Guion demo FNAF: cinco días</string>
+    <string name="script_soon_daily">Modo diario: calendario y línea temporal</string>
+    <string name="script_soon_group">Grupos de NPC: formas propias</string>
 </resources>

@@ -1444,4 +1444,10 @@
     <string name="script_selector_manual_hint">Nom</string>
     <string name="script_selector_add">Inclure</string>
     <string name="adventure_edit_pack">Modifier le script</string>
+    <string name="script_coming_soon">Prévu</string>
+    <string name="script_soon_event">Événements de scène : ajouter/retirer des personnages</string>
+    <string name="script_soon_free">Mode libre : visiter les scènes ouvertes</string>
+    <string name="script_soon_fnaf">Script démo FNAF : cinq jours</string>
+    <string name="script_soon_daily">Mode quotidien : calendrier et chronologie</string>
+    <string name="script_soon_group">Groupes de PNJ : formes distinctes</string>
 </resources>

@@ -1438,4 +1438,10 @@
     <string name="script_selector_manual_hint">이름 입력</string>
     <string name="script_selector_add">추가</string>
     <string name="adventure_edit_pack">스크립트 편집</string>
+    <string name="script_coming_soon">예정 (탭하여 펼치기)</string>
+    <string name="script_soon_event">장면 이벤트: 등장 인물 추가/제거</string>
+    <string name="script_soon_free">자유 모드: 개방 장면 자유 이동</string>
+    <string name="script_soon_fnaf">FNAF 데모 스크립트: 5일</string>
+    <string name="script_soon_daily">일상 모드: 달력과 시간축</string>
+    <string name="script_soon_group">NPC 그룹: 변신 전후 별도 모습</string>
 </resources>

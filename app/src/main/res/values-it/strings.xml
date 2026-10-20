@@ -1422,4 +1422,10 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_selector_manual_hint">Nome</string>
     <string name="script_selector_add">Includi</string>
     <string name="adventure_edit_pack">Modifica script</string>
+    <string name="script_coming_soon">In programma</string>
+    <string name="script_soon_event">Eventi di scena: aggiungere/rimuovere personaggi</string>
+    <string name="script_soon_free">Modalità libera: visitare scene aperte</string>
+    <string name="script_soon_fnaf">Script demo FNAF: cinque giorni</string>
+    <string name="script_soon_daily">Modalità quotidiana: calendario e cronologia</string>
+    <string name="script_soon_group">Gruppi NPC: forme distinte</string>
 </resources>

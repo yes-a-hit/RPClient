@@ -1439,4 +1439,10 @@
     <string name="script_selector_manual_hint">名前を入力</string>
     <string name="script_selector_add">追加</string>
     <string name="adventure_edit_pack">脚本を編集</string>
+    <string name="script_coming_soon">予定（タップで展開）</string>
+    <string name="script_soon_event">場面イベント：登場人物の増減、零人も可</string>
+    <string name="script_soon_free">フリーモード：開放場面を自由に移動</string>
+    <string name="script_soon_fnaf">FNAF 風スクリプト：五日五場面</string>
+    <string name="script_soon_daily">日常モード：カレンダーと時間軸</string>
+    <string name="script_soon_group">NPC グループ：変身前後の別姿</string>
 </resources>

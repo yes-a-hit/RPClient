@@ -1474,4 +1474,10 @@
     <string name="script_selector_manual_hint">输入名称</string>
     <string name="script_selector_add">加入</string>
     <string name="adventure_edit_pack">编辑剧本</string>
+    <string name="script_coming_soon">规划中（点击展开）</string>
+    <string name="script_soon_event">局内事件判定：增删在场角色，允许零角色只与旁白互动</string>
+    <string name="script_soon_free">自由模式漫游：自由访问开放场景，角色不固定</string>
+    <string name="script_soon_fnaf">文字版 FNAF 示范剧本：五天五景，失败改为战败演出</string>
+    <string name="script_soon_daily">日常模式：日历与时间轴，角色按作息活动</string>
+    <string name="script_soon_group">NPC 组切换：人间体与变身各自独立头像与人设</string>
 </resources>

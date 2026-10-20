@@ -1447,4 +1447,10 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_selector_manual_hint">Nome</string>
     <string name="script_selector_add">Incluir</string>
     <string name="adventure_edit_pack">Editar roteiro</string>
+    <string name="script_coming_soon">Planejado</string>
+    <string name="script_soon_event">Eventos na cena: adicionar/remover personagens</string>
+    <string name="script_soon_free">Modo livre: visitar cenas abertas</string>
+    <string name="script_soon_fnaf">Roteiro demo FNAF: cinco dias</string>
+    <string name="script_soon_daily">Modo diário: calendário e linha do tempo</string>
+    <string name="script_soon_group">Grupos de NPC: formas com visual próprio</string>
 </resources>

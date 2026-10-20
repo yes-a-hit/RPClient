@@ -87,6 +87,9 @@ fun ScriptEditorLayout(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
+                ComingSoonCard()
+            }
+            item {
                 PackInfoCard(state = state, emit = emit)
             }
             item {
@@ -825,6 +828,58 @@ private fun CastAdminCard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 规划中提示。
+ *
+ * 这几项已经设计但引擎还没实现，明确列出来，
+ * 免得玩家把「没这个功能」当成 bug 反复试。
+ */
+@Composable
+private fun ComingSoonCard() {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { expanded = !expanded }
+            ) {
+                Text(
+                    text = stringResource(R.string.script_coming_soon),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Box(modifier = Modifier.weight(1f))
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            if (expanded) {
+                Column(modifier = Modifier.padding(top = 6.dp)) {
+                    listOf(
+                        R.string.script_soon_event,
+                        R.string.script_soon_free,
+                        R.string.script_soon_fnaf,
+                        R.string.script_soon_daily,
+                        R.string.script_soon_group
+                    ).forEach { res ->
+                        Text(
+                            text = "· " + stringResource(res),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
                     }
                 }
             }

@@ -1448,4 +1448,10 @@
     <string name="script_selector_manual_hint">Имя</string>
     <string name="script_selector_add">Добавить</string>
     <string name="adventure_edit_pack">Изменить сценарий</string>
+    <string name="script_coming_soon">В планах</string>
+    <string name="script_soon_event">События сцены: добавить/убрать персонажей</string>
+    <string name="script_soon_free">Свободный режим: открытые сцены</string>
+    <string name="script_soon_fnaf">Демо-сценарий FNAF: пять дней</string>
+    <string name="script_soon_daily">Бытовой режим: календарь и время</string>
+    <string name="script_soon_group">Группы NPC: отдельные облики</string>
 </resources>
