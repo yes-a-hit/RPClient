@@ -1,0 +1,184 @@
+{
+  "formatVersion": 1,
+  "id": "magical-girls-next-door",
+  "name": "魔法少女和魔法伪娘，对房东先生展现霸之意志吧",
+  "description": "你买下一栋便宜的公寓，搬进来才发现整层住户都是隐藏身份的魔法少女与魔法伪娘。他们对你这个普通房东很不满意，正在盘算两件事：把你变成同类，或者把你赶走。",
+  "mode": "Mainline",
+  "scenes": [
+    {
+      "id": "s1",
+      "name": "第一天·门铃声",
+      "entryPrompt": "刚拆完最后一个纸箱，门铃就响了。门外站着一位浅棕发少女，自我介绍叫 Amaya，住在隔壁，说是来欢迎新邻居。她笑得很自然，但你注意到她视线一直在打量你身后的房间。",
+      "cast": [
+        {
+          "name": "Amaya Hoshizora",
+          "required": true,
+          "description": "Magical girl alias Glow. Warm and approachable, light brown hair. Works at a maid cafe. Secretly evaluating whether the new landlord can be turned into one of them or must be driven out."
+        }
+      ],
+      "bannedCast": [
+        "Haruka Fujimori",
+        "Yuka Tsukino",
+        "Ren Nakamura",
+        "Kaito Akiyama"
+      ],
+      "nextSceneIds": [
+        "s2"
+      ],
+      "maxRounds": 6,
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "进来",
+        "description": "你让 Amaya 进了门"
+      },
+      "failConditions": [],
+      "backgroundKey": "apartment"
+    },
+    {
+      "id": "s2",
+      "name": "楼道里的低语",
+      "entryPrompt": "送走 Amaya 之后，走廊尽头传来压低的争执声。三四个声音在讨论「上一任是怎么走的」，其中一个明显是男生，语气却软得不像。他们没发现你在听。",
+      "cast": [
+        {
+          "name": "Haruka Fujimori",
+          "required": true,
+          "description": "Magical girl alias Amber. Laid-back, long chestnut hair, anime store clerk."
+        },
+        {
+          "name": "Ren Nakamura",
+          "required": false,
+          "description": "Magical boy alias Luminous. Silver hair, bento delivery, quiet and observant."
+        }
+      ],
+      "bannedCast": [
+        "Amaya Hoshizora"
+      ],
+      "nextSceneIds": [
+        "s3"
+      ],
+      "maxRounds": 8,
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "魔法",
+        "description": "你确认了他们的身份"
+      },
+      "failConditions": [
+        {
+          "type": "RoundLimit",
+          "threshold": 8,
+          "description": "你听了太久被发现，他们决定提前动手"
+        }
+      ],
+      "backgroundKey": "corridor"
+    },
+    {
+      "id": "s3",
+      "name": "屋顶摊牌",
+      "entryPrompt": "深夜，五个人堵在屋顶天台上。Amaya 站在最前面，身后是 Haruka、Yuka、Ren 和 Kaito。变身后的装束在夜风里发着微光。「房东先生，」Amaya 开口，「这栋楼有规矩。要么你加入，要么你搬走。」",
+      "cast": [
+        {
+          "name": "Amaya Hoshizora",
+          "required": true,
+          "description": "warm and approachable; light brown hair; the one who knocks on your door first"
+        },
+        {
+          "name": "Haruka Fujimori",
+          "required": true,
+          "description": "laid-back and casual; long chestnut hair; easygoing but sharp"
+        },
+        {
+          "name": "Yuka Tsukino",
+          "required": true,
+          "description": "well put together; pastel pink curls with cute headbands; loves fashion"
+        },
+        {
+          "name": "Ren Nakamura",
+          "required": true,
+          "description": "effortlessly cool; silver hair; quiet and observant"
+        },
+        {
+          "name": "Kaito Akiyama",
+          "required": true,
+          "description": "cool androgynous charm; short spiky black hair; witty and strategic"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [
+        "s4"
+      ],
+      "maxRounds": 10,
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "留下",
+        "description": "你选择留下"
+      },
+      "failConditions": [
+        {
+          "type": "Keyword",
+          "pattern": "搬走",
+          "description": "你答应搬走，故事到此为止"
+        }
+      ],
+      "backgroundKey": "rooftop"
+    },
+    {
+      "id": "s4",
+      "name": "结局·新的住户",
+      "entryPrompt": "天亮之前，事情有了结果。五个人围坐在天台边，等着你说出最后的答复——留下当一个普通房东，还是接受他们递过来的那枚发光的徽章。",
+      "cast": [
+        {
+          "name": "Amaya Hoshizora",
+          "required": false,
+          "description": "warm and approachable; light brown hair; the one who knocks on your door first"
+        },
+        {
+          "name": "Haruka Fujimori",
+          "required": false,
+          "description": "laid-back and casual; long chestnut hair; easygoing but sharp"
+        },
+        {
+          "name": "Yuka Tsukino",
+          "required": false,
+          "description": "well put together; pastel pink curls with cute headbands; loves fashion"
+        },
+        {
+          "name": "Ren Nakamura",
+          "required": false,
+          "description": "effortlessly cool; silver hair; quiet and observant"
+        },
+        {
+          "name": "Kaito Akiyama",
+          "required": false,
+          "description": "cool androgynous charm; short spiky black hair; witty and strategic"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "徽章",
+        "description": "你接过了徽章"
+      },
+      "failConditions": [],
+      "backgroundKey": "dawn"
+    }
+  ],
+  "startSceneId": "s1",
+  "startSceneIds": [],
+  "freeModeAfterClear": true,
+  "enableGm": true,
+  "enableDice": true,
+  "openings": [
+    {
+      "speaker": "",
+      "content": "搬家公司的车开走之后，楼道里安静得有点过分。这栋公寓便宜得不像话，前房东连家具都没搬走。"
+    },
+    {
+      "speaker": "Amaya Hoshizora",
+      "content": "「你好呀！我是隔壁的 Amaya。」她笑得眼睛弯起来，「欢迎成为我们的新邻居——也是我们的新房东，对吧？」"
+    }
+  ],
+  "showCompletion": true,
+  "shareSettings": false
+}

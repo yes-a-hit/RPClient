@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.scriptadventure.ui
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -93,7 +94,13 @@ fun ScriptAdventureLayout(
                     SectionTitle(stringResource(R.string.adventure_new))
                 }
                 items(state.packs, key = { it.packId }) { pack ->
-                    PackCard(pack) { ScriptAdventureUiIntent.OpenCharacterPicker(pack.packId).emit() }
+                    PackCard(
+                    pack = pack,
+                    onStart = { ScriptAdventureUiIntent.StartNew(pack.packId).emit() },
+                    onPickCast = {
+                        ScriptAdventureUiIntent.OpenCharacterPicker(pack.packId).emit()
+                    }
+                )
                 }
             }
             if (state.isEmpty) {
@@ -179,9 +186,16 @@ private fun SaveCard(
 
 /** 剧本卡片：点一下开新局。 */
 @Composable
-private fun PackCard(pack: AdventurePackItem, onStart: () -> Unit) {
+private fun PackCard(
+    pack: AdventurePackItem,
+    onStart: () -> Unit,
+    onPickCast: () -> Unit
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onStart),
+        modifier = Modifier
+            .fillMaxWidth()
+            // 点一下直接开局；想指定在场角色时长按，别把选择器做成必经步骤
+            .combinedClickable(onClick = onStart, onLongClick = onPickCast),
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 1.dp
     ) {
@@ -220,6 +234,8 @@ private fun CharacterPickerDialog(
     AlertDialog(
         onDismissRequest = { ScriptAdventureUiIntent.DismissCharacterPicker.emit() },
         title = { Text(stringResource(R.string.adventure_pick_cast)) },
+        // 明确说明可以不选：剧本自带的名单已经够用
+
         text = {
             if (state.characters.isEmpty()) {
                 Text(stringResource(R.string.adventure_no_characters))

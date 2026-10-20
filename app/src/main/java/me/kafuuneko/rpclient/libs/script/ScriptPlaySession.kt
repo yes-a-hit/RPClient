@@ -126,7 +126,14 @@ object ScriptPlayPromptBuilder {
         remainingRounds: Int,
         activeCharacters: List<String> = emptyList(),
         mutedCharacters: Set<String> = emptySet(),
-        forcedSpeaker: String? = null
+        forcedSpeaker: String? = null,
+        /**
+         * 自动挑出的本轮发言人。
+         *
+         * 与 [forcedSpeaker] 的区别：这个是系统按轮转规则算出来的，
+         * 玩家没指定时用它，保证多角色场景不会一直是同一个人在说。
+         */
+        autoSpeaker: String? = null
     ): String {
         val builder = StringBuilder()
         builder.append("你正在主持一场角色扮演剧本《").append(pack.name).append("》。\n")
@@ -148,6 +155,14 @@ object ScriptPlayPromptBuilder {
             builder.append("\\n【本轮禁言】")
             builder.append(mutedCharacters.joinToString("、"))
             builder.append("，本轮不得让他们说话。\\n")
+        }
+        // 自动安排的发言人；玩家手动指定时以手动为准
+        if (autoSpeaker != null && forcedSpeaker.isNullOrBlank() &&
+            autoSpeaker !in mutedCharacters
+        ) {
+            builder.append("\n【本轮建议由】")
+            builder.append(autoSpeaker)
+            builder.append(" 发言，其他人简短回应即可。\n")
         }
         if (!forcedSpeaker.isNullOrBlank()) {
             builder.append("\\n【本轮必须发言】")

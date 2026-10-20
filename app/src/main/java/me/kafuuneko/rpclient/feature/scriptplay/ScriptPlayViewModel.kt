@@ -79,6 +79,9 @@ class ScriptPlayViewModel(
 
     /** 本轮指定发言角色，取自界面状态。 */
     private var mCurrentForcedSpeaker: String? = null
+
+    /** 本轮自动挑出的发言人。 */
+    private var mAutoSpeaker: String? = null
     private var mPlay: ScriptPlaythrough = ScriptPlaythrough(
         id = mPlayId,
         packId = mPackId,
@@ -161,6 +164,12 @@ class ScriptPlayViewModel(
         // GM 干预只作用于本轮，发送时取当前界面状态
         mCurrentMuted = state.mutedCharacters
         mCurrentForcedSpeaker = state.forcedSpeaker
+        // 没人手动指定时自动安排一个，多角色场景才不会一直同一个人说
+        mAutoSpeaker = if (state.forcedSpeaker.isNullOrBlank()) {
+            nextAutoSpeaker(scene, state.mutedCharacters)
+        } else {
+            null
+        }
         mPlay = mPlay.copy(messages = mPlay.messages + ScriptPlayMessage(PLAYER, text))
         state.copy(input = "", generating = true, messages = mPlay.messages).setup()
 
@@ -457,6 +466,27 @@ class ScriptPlayViewModel(
 
     /** 当前场景，取不到时返回 null。 */
     private fun currentSceneOrNull(): ScriptScene? = mPack?.let { currentScene(it) }
+
+    /**
+     * 按轮转池挑本轮发言人。
+     *
+     * 从场景名单里优先选「用户上一句之后还没说过话」的角色，
+     * 都说过一轮了再从头开始，避免整场只有一个人在讲话。
+     * 禁言中的角色直接排除。
+     */
+    private fun nextAutoSpeaker(scene: ScriptScene, muted: Set<String>): String? {
+        val cast = scene.cast.map { it.name }.filterNot { it in muted }
+        if (cast.isEmpty()) return null
+        if (cast.size == 1) return cast.first()
+        // 最近一段连续的角色发言即为本轮已说过的
+        val spoken = mPlay.messages
+            .takeLastWhile { it.speaker != PLAYER }
+            .map { it.speaker }
+            .toSet()
+        val pending = cast.filterNot { it in spoken }
+        val pool = pending.ifEmpty { cast }
+        return pool.randomOrNull()
+    }
 
     /** Open the GM panel. */
     @UiIntentObserver(ScriptPlayUiIntent.OpenGmPanel::class)

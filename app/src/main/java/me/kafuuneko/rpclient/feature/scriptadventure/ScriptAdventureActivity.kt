@@ -45,9 +45,19 @@ class ScriptAdventureActivity : CoreActivityWithEvent() {
     override suspend fun onReceivedViewEvent(viewEvent: IViewEvent) {
         when (viewEvent) {
             is ScriptAdventureViewEvent.LaunchPlay -> {
-                startActivity(
-                    ScriptPlayActivity.intentOf(this, viewEvent.packId, viewEvent.playId, viewEvent.characters)
-                )
+                android.util.Log.d("Adventure", "LaunchPlay pack=" + viewEvent.packId + " play=" + viewEvent.playId)
+                runCatching {
+                    startActivity(
+                        ScriptPlayActivity.intentOf(
+                            this,
+                            viewEvent.packId,
+                            viewEvent.playId,
+                            viewEvent.characters
+                        )
+                    )
+                }.onFailure { error ->
+                    android.util.Log.e("Adventure", "launch failed", error)
+                }
                 return
             }
 

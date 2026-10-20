@@ -64,7 +64,8 @@ class ScriptAdventureViewModel :
     @UiIntentObserver(ScriptAdventureUiIntent.StartNew::class)
     private fun onStartNew(intent: ScriptAdventureUiIntent.StartNew) {
         // 存档 ID 留空，由剧本模式页按时间戳生成，避免覆盖旧局
-        ScriptAdventureViewEvent.LaunchPlay(intent.packId, "", intent.characters).tryEmit()
+        val sent = ScriptAdventureViewEvent.LaunchPlay(intent.packId, "", intent.characters).tryEmit()
+        android.util.Log.d("Adventure", "onStartNew pack=" + intent.packId + " sent=" + sent)
     }
 
     /** 继续已有存档。 */

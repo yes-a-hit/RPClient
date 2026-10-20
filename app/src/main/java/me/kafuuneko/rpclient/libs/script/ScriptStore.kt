@@ -35,7 +35,14 @@ class ScriptStore(private val mContext: Context) {
 
     /** 列出全部已保存剧本，按名称排序。 */
     suspend fun list(): List<ScriptPackSummary> = withContext(Dispatchers.IO) {
-        mRoot.listFiles { file -> file.isFile && file.extension == "json" }
+        // 目录与文件数打到日志，路径对不上时一眼能看出来
+        val candidates = mRoot.listFiles { file -> file.isFile && file.extension == "json" }
+        android.util.Log.d(
+            "ScriptStore",
+            "dir=" + mRoot.absolutePath + " files=" + (candidates?.size ?: -1) +
+                " names=" + candidates?.joinToString(",") { it.name }
+        )
+        candidates
             ?.mapNotNull { file ->
                 // 单个文件损坏不影响其余剧本的展示
                 when (val parsed = mCodec.decode(file.readText())) {
@@ -46,7 +53,14 @@ class ScriptStore(private val mContext: Context) {
                         mode = parsed.pack.mode
                     )
 
-                    is ScriptPackParseResult.Failure -> null
+                    is ScriptPackParseResult.Failure -> {
+                        // 解析失败不再静默丢弃：记下文件名与原因，方便排查
+                        android.util.Log.w(
+                            "ScriptStore",
+                            "skip " + file.name + ": " + parsed.error + " " + parsed.detail
+                        )
+                        null
+                    }
                 }
             }
             ?.sortedBy { it.name }

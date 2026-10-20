@@ -415,4 +415,19 @@ class ScriptPackCodecTest {
 
         assertTrue(codec.decode(json) is ScriptPackParseResult.Success)
     }
+
+    @Test
+    fun `magical girls sample pack validates`() {
+        // 用真实产出验证：四章、五角色、条件与开场白都要能通过校验
+        val json = javaClass.classLoader!!.getResourceAsStream("script-magical-girls.json")!!.bufferedReader().readText()
+
+        val result = codec.decode(json)
+
+        assertTrue(result is ScriptPackParseResult.Success)
+        val pack = (result as ScriptPackParseResult.Success).pack
+        assertEquals(4, pack.scenes.size)
+        assertTrue(pack.openings.isNotEmpty())
+        // 每章都必须接得上，不能有孤岛
+        assertTrue(pack.scenes.all { it.nextSceneIds.isNotEmpty() || it.id == "s4" })
+    }
 }
