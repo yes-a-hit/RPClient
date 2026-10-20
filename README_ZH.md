@@ -1,9 +1,11 @@
 <div align="center">
   <img src="app/src/main/res/drawable/app_logo.png" alt="RPClient Logo" width="112" />
 
-  # RPClient
+  # RPClient Unoffical Version(RPClient UV)
 
   简体中文 | [English](README.md)
+
+ KafuuNeko/RPClient 的非官方定制分支
 
   一个面向 Android 的本地优先 AI 角色扮演聊天客户端。
 
