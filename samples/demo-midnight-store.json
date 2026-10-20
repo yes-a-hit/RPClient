@@ -1,0 +1,159 @@
+{
+  "formatVersion": 1,
+  "id": "demo-midnight-store",
+  "name": "末班便利店",
+  "description": "凌晨三点，你第七次走进同一家便利店。店员抬头看你，说的第一句话是：你又来了。这个故事只有四章，关于一个不肯承认自己在等人的人。",
+  "mode": "Mainline",
+  "scenes": [
+    {
+      "id": "s1",
+      "name": "雨夜进门",
+      "entryPrompt": "自动门滑开的瞬间，潮湿的风裹着雨味扑进来。店里只有收银台一盏灯亮着，货架间的通道黑得像洞。店员趴在柜台上打盹，听到门铃才抬起头。她看见你，没有说欢迎光临，而是愣了一下，然后轻声说：你又来了。",
+      "cast": [
+        {
+          "name": "林小满",
+          "required": true,
+          "description": "二十四岁，便利店夜班店员。短发，眼下有淡淡的青色，说话很轻，习惯在紧张时擦柜台。她记得每一个凌晨三点来的客人，也记得哪些人后来再没出现过。她对你有一件没说完的事。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": ["s2"],
+      "loopEnabled": false,
+      "checkpoint": false,
+      "failConditions": [],
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "记得",
+        "description": "你确认了她确实记得你"
+      },
+      "maxRounds": 8,
+      "backgroundKey": "",
+      "inheritBackground": true,
+      "suggestedActions": [
+        "问她为什么说「又」",
+        "假装没听懂，先买瓶水",
+        "直接问她是不是记得你"
+      ]
+    },
+    {
+      "id": "s2",
+      "name": "货架之间",
+      "entryPrompt": "她说了句「你自己看吧」，转身去整理后面的货架。你跟过去的时候，发现最里面那排货架后面有一道不该存在的门——店面明明只有一层。门缝底下透着光，还有极轻的呼吸声。",
+      "cast": [
+        {
+          "name": "林小满",
+          "required": true,
+          "description": "二十四岁便利店夜班店员。短发，眼下青色，说话轻。她一直在回避那扇门，被你问起时会下意识挡在门前。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": ["s3"],
+      "loopEnabled": false,
+      "checkpoint": false,
+      "failConditions": [
+        {
+          "type": "RoundLimit",
+          "threshold": 6,
+          "description": "你在货架间耗了太久，天亮了，她换班离开"
+        }
+      ],
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "门",
+        "description": "你逼近了那扇门"
+      },
+      "maxRounds": 6,
+      "backgroundKey": "",
+      "inheritBackground": true,
+      "suggestedActions": [
+        "问她门后面是什么",
+        "直接去推那扇门",
+        "先退回收银台，假装什么都没看见"
+      ]
+    },
+    {
+      "id": "s3",
+      "name": "收银台前",
+      "entryPrompt": "她拦住你，声音第一次带了力度：别开。然后她沉默了几秒，把一直藏在柜台下的东西推到你面前——是本店的交接班记录本，翻开的那页写着七个日期，同一个时间，同一个人的签名，是你的名字。",
+      "cast": [
+        {
+          "name": "林小满",
+          "required": true,
+          "description": "二十四岁便利店夜班店员。她终于决定说出来，语气比之前坚定，但手指一直在抖。她怕你听完就走。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": ["s4"],
+      "loopEnabled": false,
+      "checkpoint": true,
+      "failConditions": [
+        {
+          "type": "Keyword",
+          "pattern": "转身就走",
+          "description": "你什么都没问就离开了，记录本上多了第八个签名"
+        }
+      ],
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "留下",
+        "description": "你决定听她说完"
+      },
+      "maxRounds": 10,
+      "backgroundKey": "",
+      "inheritBackground": true,
+      "suggestedActions": [
+        "告诉她你愿意听",
+        "问她这七天到底发生了什么",
+        "质问她为什么一直没说"
+      ]
+    },
+    {
+      "id": "s4",
+      "name": "天亮之前",
+      "entryPrompt": "她说完了。雨停了，玻璃门外天色发灰。那扇门已经不见了，货架间只剩一面普通的白墙。她把记录本合上，看着你，等你决定这一夜之后还要不要再来。",
+      "cast": [
+        {
+          "name": "林小满",
+          "required": true,
+          "description": "二十四岁便利店夜班店员。事情说完之后她放松了很多，但仍在等你的答复，不敢催。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "loopEnabled": false,
+      "checkpoint": false,
+      "failConditions": [],
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "下次",
+        "description": "你答应了下次还来"
+      },
+      "maxRounds": 0,
+      "backgroundKey": "",
+      "inheritBackground": true,
+      "suggestedActions": [
+        "答应她明晚还来",
+        "说这大概就是最后一晚",
+        "什么都不说，只是把水钱放在柜台上"
+      ]
+    }
+  ],
+  "startSceneId": "s1",
+  "startSceneIds": [],
+  "freeModeAfterClear": true,
+  "enableGm": true,
+  "enableDice": true,
+  "openings": [
+    {
+      "speaker": "",
+      "content": "雨下了整夜。你撑着一把伞站在便利店门口，玻璃上倒映出你自己的脸，看不太清楚。"
+    },
+    {
+      "speaker": "林小满",
+      "content": "「……你又来了。」她的声音很轻，像怕吵醒什么。"
+    }
+  ],
+  "showCompletion": true,
+  "shareSettings": false,
+  "backgroundKey": ""
+}

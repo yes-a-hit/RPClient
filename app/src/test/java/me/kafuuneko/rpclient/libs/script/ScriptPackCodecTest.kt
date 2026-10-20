@@ -430,4 +430,27 @@ class ScriptPackCodecTest {
         // 每章都必须接得上，不能有孤岛
         assertTrue(pack.scenes.all { it.nextSceneIds.isNotEmpty() || it.id == "s4" })
     }
+
+    @Test
+    fun `demo midnight store is playable`() {
+        // 示例剧本要保证四章串得起来，条件与候选都填了
+        val json = javaClass.classLoader!!.getResourceAsStream("demo-midnight-store.json")!!
+            .bufferedReader()
+            .readText()
+
+        val result = codec.decode(json)
+
+        assertTrue(result is ScriptPackParseResult.Success)
+        val pack = (result as ScriptPackParseResult.Success).pack
+        assertEquals(4, pack.scenes.size)
+        assertEquals("s1", pack.startSceneId)
+        assertTrue(pack.openings.isNotEmpty())
+        // 每章都要有可选行动，否则玩家只能盲打
+        assertTrue(pack.scenes.all { it.suggestedActions.isNotEmpty() })
+        // 中间章必须接得上下一章
+        pack.scenes.filter { it.id != "s4" }.forEach { scene ->
+            assertTrue(scene.nextSceneIds.isNotEmpty())
+        }
+    }
+
 }
