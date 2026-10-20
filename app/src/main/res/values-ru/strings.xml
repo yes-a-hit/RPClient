@@ -1424,4 +1424,7 @@
     <string name="script_pack_art_style">Стиль</string>
     <string name="script_pack_show_completion">Показывать финал</string>
     <string name="script_pack_share">Поделиться</string>
+    <string name="script_auto_fill_pack">Создать описание</string>
+    <string name="script_auto_fill_scene">Создать главу</string>
+    <string name="script_auto_filling">Создание…</string>
 </resources>

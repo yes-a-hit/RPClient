@@ -1419,4 +1419,7 @@
     <string name="script_pack_art_style">Stil</string>
     <string name="script_pack_show_completion">Abschluss zeigen</string>
     <string name="script_pack_share">Teilen</string>
+    <string name="script_auto_fill_pack">Zusammenfassung erzeugen</string>
+    <string name="script_auto_fill_scene">Kapitel erzeugen</string>
+    <string name="script_auto_filling">Wird erzeugt…</string>
 </resources>

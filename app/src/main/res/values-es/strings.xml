@@ -1421,4 +1421,7 @@
     <string name="script_pack_art_style">Estilo</string>
     <string name="script_pack_show_completion">Mostrar final</string>
     <string name="script_pack_share">Compartir</string>
+    <string name="script_auto_fill_pack">Generar sinopsis</string>
+    <string name="script_auto_fill_scene">Generar capítulo</string>
+    <string name="script_auto_filling">Generando…</string>
 </resources>

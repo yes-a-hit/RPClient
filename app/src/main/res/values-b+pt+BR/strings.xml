@@ -1423,4 +1423,7 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_pack_art_style">Estilo</string>
     <string name="script_pack_show_completion">Mostrar conclusão</string>
     <string name="script_pack_share">Compartilhar</string>
+    <string name="script_auto_fill_pack">Gerar sinopse</string>
+    <string name="script_auto_fill_scene">Gerar capítulo</string>
+    <string name="script_auto_filling">Gerando…</string>
 </resources>

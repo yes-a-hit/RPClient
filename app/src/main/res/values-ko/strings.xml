@@ -1414,4 +1414,7 @@
     <string name="script_pack_art_style">화풍</string>
     <string name="script_pack_show_completion">완료 조건 표시</string>
     <string name="script_pack_share">설정 공유</string>
+    <string name="script_auto_fill_pack">줄거리 자동 생성</string>
+    <string name="script_auto_fill_scene">챕터 자동 생성</string>
+    <string name="script_auto_filling">생성 중…</string>
 </resources>

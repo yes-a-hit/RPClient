@@ -1450,4 +1450,7 @@
     <string name="script_pack_art_style">绘图风格</string>
     <string name="script_pack_show_completion">成功条件对玩家可见</string>
     <string name="script_pack_share">允许他人查看设定</string>
+    <string name="script_auto_fill_pack">自动填梗概与开场白</string>
+    <string name="script_auto_fill_scene">自动填本章</string>
+    <string name="script_auto_filling">正在生成…</string>
 </resources>

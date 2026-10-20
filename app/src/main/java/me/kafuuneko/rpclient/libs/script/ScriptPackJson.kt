@@ -26,7 +26,6 @@ internal object ScriptPackJson {
         enableGm = root.boolOr("enableGm", true),
         enableDice = root.boolOr("enableDice", true),
         openings = root.arrayOr("openings").mapNotNull { toOpening(it) },
-        artStyle = root.stringOr("artStyle"),
         showCompletion = root.boolOr("showCompletion", true),
         shareSettings = root.boolOr("shareSettings", false)
     )

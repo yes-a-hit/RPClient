@@ -26,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -92,6 +93,7 @@ fun ScriptEditorLayout(
                 ChapterCard(
                     index = index,
                     row = row,
+                    generating = state.generating,
                     characterNames = state.characterNames,
                     lorebookNames = state.lorebookNames,
                     galleryKeys = state.galleryKeys,
@@ -132,6 +134,7 @@ fun ScriptEditorLayout(
 private fun ChapterCard(
     index: Int,
     row: ScriptSceneRow,
+    generating: String,
     characterNames: List<String>,
     lorebookNames: List<String>,
     galleryKeys: List<String>,
@@ -287,6 +290,21 @@ private fun ChapterCard(
                     }
                     SwitchRow(stringResource(R.string.script_scene_loop), loop) { loop = it }
                 }
+            }
+            OutlinedButton(
+                onClick = {
+                    ScriptEditorUiIntent.GenerateSceneContent(row.id).emit()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = generating.isBlank()
+            ) {
+                Text(
+                    if (generating == row.id) {
+                        stringResource(R.string.script_auto_filling)
+                    } else {
+                        stringResource(R.string.script_auto_fill_scene)
+                    }
+                )
             }
             TextButton(
                 onClick = {
@@ -456,7 +474,6 @@ private fun PackInfoCard(
     var name by remember(state.packName) { mutableStateOf(state.packName) }
     var description by remember(state.description) { mutableStateOf(state.description) }
     var openings by remember(state.openingsText) { mutableStateOf(state.openingsText) }
-    var artStyle by remember(state.artStyle) { mutableStateOf(state.artStyle) }
     var showCompletion by remember(state.showCompletion) { mutableStateOf(state.showCompletion) }
     var shareSettings by remember(state.shareSettings) { mutableStateOf(state.shareSettings) }
     var expanded by remember { mutableStateOf(true) }
@@ -518,15 +535,19 @@ private fun PackInfoCard(
                         .padding(top = 2.dp),
                     maxLines = 5
                 )
-                OutlinedTextField(
-                    value = artStyle,
-                    onValueChange = { artStyle = it },
-                    label = { Text(stringResource(R.string.script_pack_art_style)) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
-                )
+                OutlinedButton(
+                    onClick = { ScriptEditorUiIntent.GeneratePackInfo.emit() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = state.generating.isBlank()
+                ) {
+                    Text(
+                        if (state.generating == "pack") {
+                            stringResource(R.string.script_auto_filling)
+                        } else {
+                            stringResource(R.string.script_auto_fill_pack)
+                        }
+                    )
+                }
                 SwitchRow(
                     stringResource(R.string.script_pack_show_completion),
                     showCompletion
@@ -541,7 +562,6 @@ private fun PackInfoCard(
                             name = name,
                             description = description,
                             openingsText = openings,
-                            artStyle = artStyle,
                             showCompletion = showCompletion,
                             shareSettings = shareSettings
                         ).emit()

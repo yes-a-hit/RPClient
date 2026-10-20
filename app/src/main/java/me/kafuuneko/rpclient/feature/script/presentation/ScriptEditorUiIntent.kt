@@ -70,6 +70,12 @@ sealed class ScriptEditorUiIntent {
     ) : ScriptEditorUiIntent()
 
     /** 删除场景。 */
+    /** 让模型根据剧本名与章节标题，写出梗概与开场白草稿。 */
+    data object GeneratePackInfo : ScriptEditorUiIntent()
+
+    /** 让模型为某一章写内容草稿。 */
+    data class GenerateSceneContent(val sceneId: String) : ScriptEditorUiIntent()
+
     /**
      * 更新剧本级信息。
      *
@@ -80,10 +86,10 @@ sealed class ScriptEditorUiIntent {
         val name: String,
         val description: String,
         val openingsText: String,
-        val artStyle: String,
         val showCompletion: Boolean,
         val shareSettings: Boolean
     ) : ScriptEditorUiIntent()
+
 
     data class DeleteScene(val sceneId: String) : ScriptEditorUiIntent()
 

@@ -12,6 +12,7 @@ import me.kafuuneko.rpclient.libs.script.ScriptConditionType
 import me.kafuuneko.rpclient.libs.script.ScriptCastMember
 import me.kafuuneko.rpclient.libs.script.ScriptLorebook
 import me.kafuuneko.rpclient.libs.script.ScriptOpening
+import me.kafuuneko.rpclient.libs.room.entity.toConfig
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
 import me.kafuuneko.rpclient.libs.script.ScriptScene
@@ -34,6 +35,9 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     private val mCodec = ScriptPackCodec()
 
     private val mStore by inject<ScriptStore>()
+    private val mClientFactory by inject<me.kafuuneko.rpclient.libs.llm.LLMClientFactory>()
+    private val mProviderSelectionResolver by
+        inject<me.kafuuneko.rpclient.libs.llm.LLMProviderSelectionResolver>()
 
     /** 角色卡名称缓存，供设置面板勾选。 */
     private var mCharacterNames: List<String> = emptyList()
@@ -215,6 +219,119 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
 
 
     /** 更新剧本级信息；开场白从多行文本拆回列表。 */
+
+    /** 让模型写梗概与开场白草稿，结果直接落库并刷新界面。 */
+    @UiIntentObserver(ScriptEditorUiIntent.GeneratePackInfo::class)
+    private suspend fun onGeneratePackInfo() {
+        if (isStateOf<ScriptEditorUiState.Loading>()) return
+        setGenerating("pack")
+        val draft = runCatching {
+            requestText(
+                system = "你是剧本策划。根据下面这些信息写两份内容，用 === 分隔：\n" +
+                    "第一部分是剧本梗概，150 字以内，说明世界观与玩家处境；\n" +
+                    "第二部分是开场白，2 到 3 行，每行格式为「发言者|内容」，" +
+                    "发言者留空表示旁白。\n只输出这两部分，不要额外解释。",
+                user = "剧本名：${mPack.name}\n章节：${
+                    mPack.scenes.joinToString("、") { it.name }
+                }"
+            )
+        }.getOrNull()
+        if (draft.isNullOrBlank()) {
+            setGenerating("")
+            return
+        }
+        val parts = draft.split("===", limit = 2)
+        val description = parts.firstOrNull().orEmpty().trim()
+        val openings = parts.getOrNull(1).orEmpty().trim()
+        mPack = mPack.copy(
+            description = description.ifBlank { mPack.description },
+            openings = openings
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .map { line ->
+                    val separator = line.indexOf('|')
+                    if (separator < 0) {
+                        ScriptOpening(speaker = "", content = line)
+                    } else {
+                        ScriptOpening(
+                            speaker = line.substring(0, separator).trim(),
+                            content = line.substring(separator + 1).trim()
+                        )
+                    }
+                }
+        )
+        mStore.save(mPack)
+        setGenerating("")
+        publish(null, null)
+    }
+
+    /** 让模型为某一章写内容草稿，追加到该章的进入提示里。 */
+    @UiIntentObserver(ScriptEditorUiIntent.GenerateSceneContent::class)
+    private suspend fun onGenerateSceneContent(intent: ScriptEditorUiIntent.GenerateSceneContent) {
+        if (isStateOf<ScriptEditorUiState.Loading>()) return
+        val scene = mPack.scenes.firstOrNull { it.id == intent.sceneId } ?: return
+        setGenerating(intent.sceneId)
+        val draft = runCatching {
+            requestText(
+                system = "你是剧本作者。根据剧本设定与本场景标题，写一段 200 字以内的场景描写，" +
+                    "交代环境、在场角色的动作与开场对白。只输出正文，不要标题与解释。",
+                user = "剧本：${mPack.name}\n梗概：${mPack.description}\n" +
+                    "场景：${scene.name}\n在场角色：${
+                        scene.cast.joinToString("、") { it.name }.ifBlank { "未指定" }
+                    }"
+            )
+        }.getOrNull()
+        if (!draft.isNullOrBlank()) {
+            mPack = mPack.copy(
+                scenes = mPack.scenes.map { item ->
+                    if (item.id == scene.id) {
+                        item.copy(entryPrompt = draft.trim())
+                    } else {
+                        item
+                    }
+                }
+            )
+            mStore.save(mPack)
+        }
+        setGenerating("")
+        publish(null, null)
+    }
+
+    /** 发一次不流式的文本请求，返回模型原始输出。 */
+    private suspend fun requestText(system: String, user: String): String {
+        val provider = mProviderSelectionResolver.requireDefaultProvider()
+        val client = mClientFactory.create(provider.toConfig())
+        val messages = listOf(
+            me.kafuuneko.rpclient.libs.llm.model.LLMMessage(
+                me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole.System,
+                system
+            ),
+            me.kafuuneko.rpclient.libs.llm.model.LLMMessage(
+                me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole.User,
+                user
+            )
+        )
+        val builder = StringBuilder()
+        client.streamGenerate(
+            me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest(
+                messages = messages,
+                model = provider.model
+            )
+        ).collect { event ->
+            if (event is me.kafuuneko.rpclient.libs.llm.model.LLMStreamEvent.Delta) {
+                builder.append(event.content)
+            }
+        }
+        return builder.toString()
+    }
+
+    /** 标记哪一块正在生成，界面据此显示进度。 */
+    private fun setGenerating(key: String) {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        state.copy(generating = key).setup()
+    }
+
     @UiIntentObserver(ScriptEditorUiIntent.UpdatePackInfo::class)
     private suspend fun onUpdatePackInfo(intent: ScriptEditorUiIntent.UpdatePackInfo) {
         val openings = intent.openingsText
@@ -237,7 +354,6 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             name = intent.name.ifBlank { mPack.name },
             description = intent.description.trim(),
             openings = openings,
-            artStyle = intent.artStyle.trim(),
             showCompletion = intent.showCompletion,
             shareSettings = intent.shareSettings
         )
@@ -332,7 +448,6 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                 if (opening.speaker.isBlank()) opening.content
                 else opening.speaker + "|" + opening.content
             },
-            artStyle = mPack.artStyle,
             showCompletion = mPack.showCompletion,
             shareSettings = mPack.shareSettings,
             rows = mPack.scenes.map { scene ->

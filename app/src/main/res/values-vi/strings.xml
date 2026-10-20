@@ -1420,4 +1420,7 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_pack_art_style">Phong cách</string>
     <string name="script_pack_show_completion">Hiện điều kiện</string>
     <string name="script_pack_share">Chia sẻ</string>
+    <string name="script_auto_fill_pack">Tạo tóm tắt</string>
+    <string name="script_auto_fill_scene">Tạo chương</string>
+    <string name="script_auto_filling">Đang tạo…</string>
 </resources>

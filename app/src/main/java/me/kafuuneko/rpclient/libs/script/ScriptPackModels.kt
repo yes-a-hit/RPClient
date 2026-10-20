@@ -40,8 +40,6 @@ data class ScriptPack(
      * 空发言者表示旁白。可以没有，也可以有多条。
      */
     val openings: List<ScriptOpening> = emptyList(),
-    /** 绘图风格描述，供出图时参考。 */
-    val artStyle: String = "",
     /** 成功条件是否对玩家可见。 */
     val showCompletion: Boolean = true,
     /** 设定是否允许其他玩家查看。 */

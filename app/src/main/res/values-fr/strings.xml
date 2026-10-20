@@ -1420,4 +1420,7 @@
     <string name="script_pack_art_style">Style</string>
     <string name="script_pack_show_completion">Afficher la fin</string>
     <string name="script_pack_share">Partager</string>
+    <string name="script_auto_fill_pack">Générer le synopsis</string>
+    <string name="script_auto_fill_scene">Générer le chapitre</string>
+    <string name="script_auto_filling">Génération…</string>
 </resources>

@@ -60,12 +60,13 @@ sealed class ScriptEditorUiState {
         val editingField: ScriptLinkField? = null,
         /** 正在编辑设置的场景 ID。 */
         val settingsSceneId: String? = null,
+        /** 正在生成哪一块内容；空表示空闲。 */
+        val generating: String = "",
+
         /** 剧本梗概，同时充当全局背景设定。 */
         val description: String = "",
         /** 开场白，已按「发言者|内容」拼成多行文本。 */
         val openingsText: String = "",
-        /** 绘图风格描述。 */
-        val artStyle: String = "",
         /** 成功条件是否对玩家可见。 */
         val showCompletion: Boolean = true,
         /** 设定是否允许其他玩家查看。 */

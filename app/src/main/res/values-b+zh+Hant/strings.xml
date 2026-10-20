@@ -1414,4 +1414,7 @@
     <string name="script_pack_art_style">繪圖風格</string>
     <string name="script_pack_show_completion">成功條件對玩家可見</string>
     <string name="script_pack_share">允許他人檢視設定</string>
+    <string name="script_auto_fill_pack">自動填梗概與開場白</string>
+    <string name="script_auto_fill_scene">自動填本章</string>
+    <string name="script_auto_filling">正在生成…</string>
 </resources>
