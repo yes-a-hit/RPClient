@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantAttachment
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantMessageItem
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantRole
@@ -60,6 +61,12 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     /** 本轮待附加的图片引用，只随下一次请求发送。 */
     private var mPendingImages: List<LLMImageReference> = emptyList()
 
+    /** 本轮已收到的部分回复；断流时用它保住已生成的内容。 */
+    /** 本轮断流后的自动重试次数。 */
+    private var mRetryCount = 0
+
+    private val mPartialReply = StringBuilder()
+
     /** 本轮导入沙箱的文本文件名，用于在消息里补一句提示。 */
     private var mImportedFileNames: List<String> = emptyList()
 
@@ -99,11 +106,18 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     /** 提交输入并启动生成。 */
     @UiIntentObserver(AssistantUiIntent.Send::class)
     private suspend fun onSend() {
-        val state = getOrNull<AssistantUiState.Ready>() ?: return
-        if (state.isGenerating) return
+        var state = getOrNull<AssistantUiState.Ready>() ?: return
+        if (state.isGenerating) {
+            // 生成任务已经不在了但界面还停在「生成中」，属于断流后的残留状态。
+            // 这时如果直接 return，玩家的输入会被静默吞掉，必须先把状态拉回来。
+            if (mGenerationJob?.isActive == true) return
+            finishGeneration()
+            state = getOrNull<AssistantUiState.Ready>() ?: return
+        }
         val rawText = state.input.trim()
         // 纯附件也可以发送，因此只在没有文字也没有附件时才拦下
         if (rawText.isEmpty() && state.attachments.isEmpty()) return
+        mRetryCount = 0
         if (mMessages.isEmpty()) {
             AssistantViewEvent.Toast("助手已就绪").tryEmit()
         }
@@ -482,6 +496,7 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
      * 轮数上限由 [AssistantToolCatalog.MAX_TOOL_ROUNDS] 控制，避免模型反复调用同一工具。
      */
     private suspend fun runGeneration() {
+        mPartialReply.clear()
         var rounds = 0
         try {
             while (true) {
@@ -512,11 +527,25 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
             finishGeneration()
             throw cancellation
         } catch (error: Exception) {
+            // 一个字都没收到就断了，多半是网络抖动，自动重试一次
+            // 这样玩家不必自己再发一句来「重新启动」对话
+            if (mPartialReply.isEmpty() && mRetryCount < MAX_STREAM_RETRY) {
+                mRetryCount++
+                mPartialReply.clear()
+                runGeneration()
+                return
+            }
             val message = error.message ?: error::class.simpleName ?: "未知错误"
+            // 已经生成的部分先落库，避免断流把整段回复一起吞掉
+            val partial = mPartialReply.toString().trim()
+            if (partial.isNotEmpty()) {
+                mMessages += AssistantMessage(role = ROLE_ASSISTANT, content = partial)
+                mPartialReply.clear()
+            }
             // 失败也写进对话，避免只闪一下 Toast 就查不到原因
             mMessages += AssistantMessage(
                 role = ROLE_ASSISTANT,
-                content = "生成失败：$message"
+                content = "生成中断：$message（可直接再发一条继续，或点右上角重新生成）"
             )
             persistAndPublish()
             AssistantViewEvent.Toast("生成失败：$message").tryEmit()
@@ -532,20 +561,23 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
             messages = buildRequestMessages(),
             model = provider.model
         )
-        val builder = StringBuilder()
-        client.streamGenerate(request).collect { event ->
-            when (event) {
-                is LLMStreamEvent.Delta -> {
-                    builder.append(event.content)
-                    publishStreaming(builder.toString())
-                }
+        // 断流兜底：流不会自己报告「已经断了」，只能靠超时判定。
+        // 超时后把已收到的内容原样返回，宁可少一段也不要整轮丢失。
+        withTimeoutOrNull(STREAM_TIMEOUT_MS) {
+            client.streamGenerate(request).collect { event ->
+                when (event) {
+                    is LLMStreamEvent.Delta -> {
+                        mPartialReply.append(event.content)
+                        publishStreaming(mPartialReply.toString())
+                    }
 
-                is LLMStreamEvent.ReasoningDelta -> Unit
-                is LLMStreamEvent.Finished -> Unit
-                else -> Unit
+                    is LLMStreamEvent.ReasoningDelta -> Unit
+                    is LLMStreamEvent.Finished -> Unit
+                    else -> Unit
+                }
             }
         }
-        return builder.toString()
+        return mPartialReply.toString()
     }
 
     /** 构建请求消息：系统提示词 + 最近若干轮上下文，工具结果按文本回填。 */
@@ -632,6 +664,12 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     private companion object {
+        /** 断流后最多自动重试几次，避免网络一直不通时反复消耗额度。 */
+        const val MAX_STREAM_RETRY = 1
+
+        /** 流式空闲超时：超过这个时间没有新内容就当作断流。 */
+        const val STREAM_TIMEOUT_MS = 90_000L
+
         /** 单个文本附件读入正文的上限字符数。 */
         const val MAX_ATTACHMENT_CHARS = 20000
 
