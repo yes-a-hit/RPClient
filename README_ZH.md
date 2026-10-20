@@ -11,15 +11,6 @@
 
   支持角色卡、世界书、单人对话、群聊、长期摘要记忆、Prompt 检查与多种 LLM 接口，并新增**剧本冒险、沙箱助手、整本小说导入与消耗计费**。
 
-  <p>
-    <a href="https://play.google.com/store/apps/details?id=me.kafuuneko.rpclient">
-      <img src="https://play.google.com/intl/en_us/badges/images/generic/zh-cn_badge_web_generic.png" alt="上游版本 Google Play" height="70" />
-    </a>
-    <a href="https://f-droid.org/packages/me.kafuuneko.rpclient/">
-      <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-zh-cn.png" alt="上游版本 F-Droid" height="80" />
-    </a>
-  </p>
-
   [项目简介](#项目简介) · [定制版改动](#定制版改动) · [界面展示](#界面展示) · [功能特性](#功能特性) · [开发进度](#开发进度) · [已知问题](#已知问题) · [快速开始](#快速开始) · [构建](#构建) · [参与贡献](#参与贡献)
 </div>
 
