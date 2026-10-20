@@ -64,7 +64,8 @@ internal object ScriptPackJson {
                     x = layout.floatOr("x", 0f),
                     y = layout.floatOr("y", 0f)
                 )
-            }
+            },
+            backgroundKey = item.stringOr("backgroundKey")
         )
     }
 

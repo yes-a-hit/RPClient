@@ -85,7 +85,14 @@ data class ScriptScene(
     /** 前置场景：这些场景都经历过才解锁；为空表示一开始就可达。 */
     val unlockedBy: List<String> = emptyList(),
     /** 图形化编辑器的节点坐标；手写剧本时可以省略。 */
-    val layout: SceneLayout? = null
+    val layout: SceneLayout? = null,
+    /**
+     * 场景背景图的检索词，对应图库里的标签或名称。
+     *
+     * 只做本地匹配、不触发生成：同一场景反复进入都取同一张图，
+     * 既不额外花钱，也不会每次换一张让人出戏。
+     */
+    val backgroundKey: String = ""
 )
 
 /**

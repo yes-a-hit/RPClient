@@ -50,6 +50,7 @@ class ScriptPlayViewModel(
     private val mPlayStore by inject<ScriptPlayStore>()
     private val mCharacterRepository by inject<CharacterRepository>()
     private val mFileRepository by inject<me.kafuuneko.rpclient.libs.room.repository.FileRepository>()
+    private val mGalleryStore by inject<me.kafuuneko.rpclient.libs.gallery.GalleryStore>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mClientFactory by inject<LLMClientFactory>()
 
@@ -71,6 +72,9 @@ class ScriptPlayViewModel(
     private var mAutoRounds = 0
 
     /** 本轮禁言名单，取自界面状态。 */
+    /** 当前场景的背景图 UUID，切场时预先解析好。 */
+    private var mSceneBackground = ""
+
     private var mCurrentMuted: Set<String> = emptySet()
 
     /** 本轮指定发言角色，取自界面状态。 */
@@ -100,6 +104,10 @@ class ScriptPlayViewModel(
             packName = pack.name,
             sceneId = resolveStartScene(pack).id
         )
+        // 进场先把当前场景的背景图解析好，publish 里直接读缓存
+        mSceneBackground = runCatching {
+            resolveSceneBackground(currentScene(pack) ?: return)
+        }.getOrDefault("")
         publish()
     }
 
@@ -231,6 +239,9 @@ class ScriptPlayViewModel(
             endReason = "",
             messages = mPlay.messages + ScriptPlayMessage(SYSTEM, "进入「${target.name}」")
         )
+        mSceneBackground = runCatching {
+            resolveSceneBackground(currentScene(mPack ?: return) ?: return)
+        }.getOrDefault("")
         mPlayStore.save(mPlay)
         publish()
     }
@@ -417,6 +428,7 @@ class ScriptPlayViewModel(
             messages = mPlay.messages,
             finishedReason = mPlay.endReason,
             options = mOptions,
+            backgroundUuid = mSceneBackground,
             castNames = (currentSceneOrNull()?.cast?.map { it.name }.orEmpty() +
                 mActiveCharacters).distinct(),
             autoPlay = mAutoPlay
@@ -480,4 +492,16 @@ class ScriptPlayViewModel(
         state.copy(forcedSpeaker = next).setup()
     }
 
+
+    /**
+     * 按当前场景的检索词从图库找背景图。
+     *
+     * 纯本地匹配，不调用模型也不生成图片：
+     * 同一场景每次进来都拿同一张，玩家不会看到背景乱跳。
+     */
+    private suspend fun resolveSceneBackground(scene: ScriptScene): String {
+        val keyword = scene.backgroundKey.ifBlank { scene.name }
+        val hits = runCatching { mGalleryStore.search(keyword) }.getOrDefault(emptyList())
+        return hits.firstOrNull()?.fileUuid.orEmpty()
+    }
 }

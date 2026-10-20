@@ -32,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -125,6 +126,17 @@ fun ScriptPlayLayout(
                 .imePadding()
         ) {
             SceneBar(state, sceneNames, emit)
+            // 场景背景图：图库本地匹配，不生成不扣费，同一场景始终同一张
+            if (state.backgroundUuid.isNotBlank()) {
+                SceneBackground(
+                    uuid = state.backgroundUuid,
+                    loadAvatar = loadAvatar,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .padding(horizontal = 12.dp)
+                )
+            }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 state = listState,
@@ -346,6 +358,32 @@ private fun InputBar(
 
 /** 玩家发言者在存档中的标识。 */
 private const val PLACEHOLDER_PLAYER = "玩家"
+
+/**
+ * 场景背景图。
+ *
+ * 图片来自图库的本地匹配，不触发生成，所以切场来回走也不会换图、不会花钱。
+ * 加载失败时整块不占位，避免留一块空白。
+ */
+@Composable
+private fun SceneBackground(
+    uuid: String,
+    loadAvatar: suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?,
+    modifier: Modifier = Modifier
+) {
+    val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, uuid) {
+        value = withContext(Dispatchers.IO) {
+            runCatching { loadAvatar(uuid) }.getOrNull()
+        }
+    }
+    val image = bitmap ?: return
+    Image(
+        bitmap = image,
+        contentDescription = null,
+        modifier = modifier.clip(RoundedCornerShape(12.dp)),
+        contentScale = ContentScale.Crop
+    )
+}
 
 /**
  * GM 面板：禁言某个角色，或指定下一轮必须发言的人。

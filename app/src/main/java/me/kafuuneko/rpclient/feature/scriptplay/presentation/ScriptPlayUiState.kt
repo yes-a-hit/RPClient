@@ -34,6 +34,9 @@ sealed class ScriptPlayUiState {
         /** 本轮指定发言的角色。 */
         val forcedSpeaker: String? = null,
 
+        /** 当前场景的背景图 UUID；空表示用默认底色。 */
+        val backgroundUuid: String = "",
+
         /** 本轮给出的推荐行动。 */
         val options: List<String> = emptyList(),
 
