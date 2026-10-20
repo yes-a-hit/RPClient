@@ -1433,4 +1433,12 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_cast_no_card">Sem cartão local</string>
     <string name="script_cast_create">Criar do script</string>
     <string name="script_cast_remove">Remover</string>
+    <string name="script_paste_import_action">Colar importar</string>
+    <string name="script_paste_import_hint">Cole o JSON do roteiro</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="script_pack_export">Exportar modelo</string>
+    <string name="script_scene_actions">Ações sugeridas</string>
+    <string name="script_pack_background">Fundo do roteiro</string>
+    <string name="script_scene_inherit_bg">Herdar fundo do roteiro</string>
+    <string name="script_bg_import">Importar imagem</string>
 </resources>

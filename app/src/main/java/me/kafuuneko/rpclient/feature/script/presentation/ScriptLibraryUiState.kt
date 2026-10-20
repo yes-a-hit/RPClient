@@ -34,6 +34,10 @@ sealed class ScriptLibraryUiState {
     data object Loading : ScriptLibraryUiState()
 
     data class Ready(
+        /** 粘贴导入对话框是否展开。 */
+        val pasteDialogVisible: Boolean = false,
+        /** 粘贴内容草稿。 */
+        val pasteDraft: String = "",
         val tab: ScriptLibraryTab = ScriptLibraryTab.Pack,
         val packs: List<ScriptLibraryItem> = emptyList(),
         val scenes: List<ScriptSceneItem> = emptyList()
@@ -58,6 +62,21 @@ sealed class ScriptLibraryUiIntent {
     data class PlayPack(val packId: String) : ScriptLibraryUiIntent()
 
     /** 重命名剧本。 */
+    /** 打开粘贴导入对话框：不依赖文件选择器。 */
+    data object ShowPasteImport : ScriptLibraryUiIntent()
+
+    /** 关闭粘贴导入对话框。 */
+    data object HidePasteImport : ScriptLibraryUiIntent()
+
+    /** 粘贴的文本变化。 */
+    data class PasteChanged(val text: String) : ScriptLibraryUiIntent()
+
+    /** 确认导入粘贴内容。 */
+    data object ConfirmPasteImport : ScriptLibraryUiIntent()
+
+    /** 把当前选中的剧本导出成可分享的文本。 */
+    data class ExportPack(val packId: String) : ScriptLibraryUiIntent()
+
     data class RenamePack(val packId: String, val newName: String) : ScriptLibraryUiIntent()
 
     /** 删除剧本。 */
@@ -81,6 +100,12 @@ sealed class ScriptLibraryUiIntent {
 
 /** 剧本库事件。 */
 sealed class ScriptLibraryViewEvent : me.kafuuneko.rpclient.libs.core.IViewEvent {
+    /** 轻提示。 */
+    data class ShowToast(val message: String) : ScriptLibraryViewEvent()
+
+    /** 交给系统分享面板导出模板包。 */
+    data class ShareText(val name: String, val text: String) : ScriptLibraryViewEvent()
+
     /** 打开系统文件选择器。 */
     data object OpenFilePicker : ScriptLibraryViewEvent()
 

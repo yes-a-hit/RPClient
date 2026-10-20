@@ -42,7 +42,11 @@ data class ScriptSceneRow(
     /** 通关关键词。 */
     val completionKeyword: String = "",
     /** 后继场景 ID，逗号分隔的展示串。 */
-    val nextSceneIds: String = ""
+    val nextSceneIds: String = "",
+    /** 是否继承剧本级背景。 */
+    val inheritBackground: Boolean = true,
+    /** 建议行动，每行一条；留空表示交给 AI 临场决定。 */
+    val suggestedActions: String = ""
 )
 
 /** 剧本编辑页状态。 */
@@ -62,6 +66,9 @@ sealed class ScriptEditorUiState {
         val settingsSceneId: String? = null,
         /** 正在生成哪一块内容；空表示空闲。 */
         val generating: String = "",
+
+        /** 剧本级背景图关键词或名称。 */
+        val packBackground: String = "",
 
         /** 剧本梗概，同时充当全局背景设定。 */
         val description: String = "",

@@ -26,6 +26,7 @@ internal object ScriptPackJson {
         enableGm = root.boolOr("enableGm", true),
         enableDice = root.boolOr("enableDice", true),
         openings = root.arrayOr("openings").mapNotNull { toOpening(it) },
+        backgroundKey = root.stringOr("backgroundKey"),
         showCompletion = root.boolOr("showCompletion", true),
         shareSettings = root.boolOr("shareSettings", false)
     )
@@ -80,6 +81,7 @@ internal object ScriptPackJson {
                 )
             },
             backgroundKey = item.stringOr("backgroundKey"),
+            inheritBackground = item.boolOr("inheritBackground", true),
             suggestedActions = item.stringListOr("suggestedActions")
         )
     }

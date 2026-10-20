@@ -1408,4 +1408,12 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_cast_no_card">Nessuna scheda</string>
     <string name="script_cast_create">Crea dallo script</string>
     <string name="script_cast_remove">Rimuovi</string>
+    <string name="script_paste_import_action">Incolla importa</string>
+    <string name="script_paste_import_hint">Incolla il JSON dello script</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="script_pack_export">Esporta modello</string>
+    <string name="script_scene_actions">Azioni suggerite</string>
+    <string name="script_pack_background">Sfondo script</string>
+    <string name="script_scene_inherit_bg">Eredita sfondo script</string>
+    <string name="script_bg_import">Importa immagine</string>
 </resources>

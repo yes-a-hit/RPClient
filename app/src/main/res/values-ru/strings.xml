@@ -1434,4 +1434,12 @@
     <string name="script_cast_no_card">Карточки нет</string>
     <string name="script_cast_create">Создать из сценария</string>
     <string name="script_cast_remove">Убрать</string>
+    <string name="script_paste_import_action">Вставить импорт</string>
+    <string name="script_paste_import_hint">Вставьте JSON сценария</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="script_pack_export">Экспорт шаблона</string>
+    <string name="script_scene_actions">Предлагаемые действия</string>
+    <string name="script_pack_background">Фон сценария</string>
+    <string name="script_scene_inherit_bg">Наследовать фон</string>
+    <string name="script_bg_import">Импорт изображения</string>
 </resources>

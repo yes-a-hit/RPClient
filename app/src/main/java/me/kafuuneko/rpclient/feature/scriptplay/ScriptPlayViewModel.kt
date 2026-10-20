@@ -221,8 +221,9 @@ class ScriptPlayViewModel(
 
             ScriptPlayOutcome.Continue -> Unit
         }
-        // 预设优先：作者写好的候选比模型自由发挥更靠谱
-        mOptions = scene.suggestedActions.ifEmpty { parsedReply.options }
+        // 模型给的候选优先，它没写才用作者预设兜底：
+        // 预设是保险，不该压住模型随机应变的空间
+        mOptions = parsedReply.options.ifEmpty { scene.suggestedActions }
         // 指定发言是一次性的，用过就清，避免一直压着同一个角色
         mCurrentForcedSpeaker = null
         mPlayStore.save(mPlay)
@@ -254,7 +255,18 @@ class ScriptPlayViewModel(
             roundCount = 0,
             finished = false,
             endReason = "",
-            messages = mPlay.messages + ScriptPlayMessage(SYSTEM, "进入「${target.name}」")
+            // 章与章之间是天然分段点：旧场景的对白逐字带过去没有意义，
+            // 只留走过的场景轨迹和上一场最后一句话，上下文就压得很小
+            messages = buildList {
+                val trail = mPlay.messages
+                    .filter { it.speaker == SYSTEM && it.content.startsWith("进入「") }
+                    .takeLast(MAX_SCENE_TRAIL)
+                addAll(trail)
+                mPlay.messages
+                    .lastOrNull { it.speaker != PLAYER && it.speaker != SYSTEM }
+                    ?.let { add(it) }
+                add(ScriptPlayMessage(SYSTEM, "进入「${target.name}」"))
+            }
         )
         mSceneBackground = runCatching {
             resolveSceneBackground(currentScene(mPack ?: return) ?: return)
@@ -474,6 +486,8 @@ class ScriptPlayViewModel(
 
         /** 送给模型的历史条数上限。 */
         const val MAX_HISTORY_MESSAGES = 20
+        /** 切场时保留的场景轨迹条数，够交代走过哪几张图就行。 */
+        const val MAX_SCENE_TRAIL = 4
     }
 
     /** 当前场景，取不到时返回 null。 */
@@ -542,7 +556,21 @@ class ScriptPlayViewModel(
      * 同一场景每次进来都拿同一张，玩家不会看到背景乱跳。
      */
     private suspend fun resolveSceneBackground(scene: ScriptScene): String {
-        val keyword = scene.backgroundKey.ifBlank { scene.name }
+        // 场景自己指定了就用它，优先于一切
+        scene.backgroundKey.takeIf { it.isNotBlank() }?.let { return searchBackground(it) }
+        if (scene.inheritBackground) {
+            // 没指定且允许继承：用剧本级那张
+            mPack?.backgroundKey?.takeIf { it.isNotBlank() }?.let { return searchBackground(it) }
+            // 剧本级也没写，按场景名自动找一张，保持旧行为
+            return searchBackground(scene.name)
+        }
+        // 关闭继承又没有自己的图：这一场明确不要背景
+        return ""
+    }
+
+    /** 按关键词在图库里找一张背景，返回文件 UUID。 */
+    private suspend fun searchBackground(keyword: String): String {
+        if (keyword.isBlank()) return ""
         val hits = runCatching { mGalleryStore.search(keyword) }.getOrDefault(emptyList())
         return hits.firstOrNull()?.fileUuid.orEmpty()
     }

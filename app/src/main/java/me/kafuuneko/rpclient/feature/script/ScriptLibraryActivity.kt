@@ -66,6 +66,22 @@ class ScriptLibraryActivity : CoreActivityWithEvent() {
                 return
             }
 
+            is ScriptLibraryViewEvent.ShowToast -> {
+                Toast.makeText(this, viewEvent.message, Toast.LENGTH_LONG).show()
+                return
+            }
+
+            is ScriptLibraryViewEvent.ShareText -> {
+                // 以文本形式分享：JSON 本体就是模板，对方存成 .json 即可直接用
+                val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_SUBJECT, viewEvent.name)
+                    putExtra(android.content.Intent.EXTRA_TEXT, viewEvent.text)
+                }
+                startActivity(android.content.Intent.createChooser(share, viewEvent.name))
+                return
+            }
+
             is ScriptLibraryViewEvent.StartPlay -> {
                 startActivity(ScriptPlayActivity.intentOf(this, viewEvent.packId))
                 return

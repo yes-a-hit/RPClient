@@ -1430,4 +1430,12 @@
     <string name="script_cast_no_card">Aucune carte</string>
     <string name="script_cast_create">Créer du script</string>
     <string name="script_cast_remove">Retirer</string>
+    <string name="script_paste_import_action">Coller importer</string>
+    <string name="script_paste_import_hint">Collez le JSON du script</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="script_pack_export">Exporter le modèle</string>
+    <string name="script_scene_actions">Actions suggérées</string>
+    <string name="script_pack_background">Fond du script</string>
+    <string name="script_scene_inherit_bg">Hériter du fond du script</string>
+    <string name="script_bg_import">Importer une image</string>
 </resources>

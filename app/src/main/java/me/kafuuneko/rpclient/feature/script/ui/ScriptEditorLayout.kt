@@ -157,6 +157,8 @@ private fun ChapterCard(
     var bannedNames by remember(row.id) { mutableStateOf(row.bannedNames) }
     var lorebookName by remember(row.id) { mutableStateOf(row.lorebookName) }
     var nextScenes by remember(row.id) { mutableStateOf(row.nextSceneIds) }
+    var actions by remember(row.id) { mutableStateOf(row.suggestedActions) }
+    var inheritBg by remember(row.id) { mutableStateOf(row.inheritBackground) }
     var checkpoint by remember(row.id) { mutableStateOf(row.checkpoint) }
     var loop by remember(row.id) { mutableStateOf(row.loopEnabled) }
 
@@ -245,12 +247,23 @@ private fun ChapterCard(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    // 继承打开时用剧本级那张；关掉且不选图就是不要背景
+                    SwitchRow(
+                        stringResource(R.string.script_scene_inherit_bg),
+                        inheritBg
+                    ) { inheritBg = it }
                     SelectorSection(
                         title = stringResource(R.string.script_scene_background),
                         options = galleryKeys,
                         selected = background.toNameSet(),
                         onToggle = { key -> background = if (background == key) "" else key }
                     )
+                    OutlinedButton(
+                        onClick = { ScriptEditorUiIntent.PickBackground(row.id).emit() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.script_bg_import))
+                    }
                     SelectorSection(
                         title = stringResource(R.string.script_scene_cast),
                         options = characterNames,
@@ -293,6 +306,18 @@ private fun ChapterCard(
                         checkpoint = it
                     }
                     SwitchRow(stringResource(R.string.script_scene_loop), loop) { loop = it }
+                    // 留空就让 AI 临场决定，写满则固定这三条
+                    Text(
+                        text = stringResource(R.string.script_scene_actions),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = actions,
+                        onValueChange = { actions = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 5
+                    )
                 }
             }
             OutlinedTextField(
@@ -337,7 +362,9 @@ private fun ChapterCard(
                         failKeyword = failKeyword,
                         failRounds = failRounds.toIntOrNull() ?: 0,
                         completionKeyword = completion,
-                        nextSceneIds = nextScenes
+                        nextSceneIds = nextScenes,
+                        suggestedActions = actions,
+                        inheritBackground = inheritBg
                     ).emit()
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -572,6 +599,27 @@ private fun PackInfoCard(
                             stringResource(R.string.script_auto_fill_pack)
                         }
                     )
+                }
+                SelectorSection(
+                    title = stringResource(R.string.script_pack_background),
+                    options = state.galleryKeys,
+                    selected = state.packBackground.toNameSet(),
+                    onToggle = { key ->
+                        ScriptEditorUiIntent.UpdatePackInfo(
+                            name = name,
+                            description = description,
+                            openingsText = openings,
+                            showCompletion = showCompletion,
+                            shareSettings = shareSettings,
+                            backgroundKey = if (state.packBackground == key) "" else key
+                        ).emit()
+                    }
+                )
+                OutlinedButton(
+                    onClick = { ScriptEditorUiIntent.PickBackground(null).emit() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.script_bg_import))
                 }
                 SwitchRow(
                     stringResource(R.string.script_pack_show_completion),

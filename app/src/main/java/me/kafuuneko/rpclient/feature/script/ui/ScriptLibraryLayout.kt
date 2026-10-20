@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.ContentPaste
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryItem
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryTab
@@ -78,6 +79,12 @@ fun ScriptLibraryLayout(
                         Icon(
                             Icons.Rounded.Add,
                             contentDescription = stringResource(R.string.script_create_action)
+                        )
+                    }
+                    IconButton(onClick = { ScriptLibraryUiIntent.ShowPasteImport.emit() }) {
+                        Icon(
+                            Icons.Rounded.ContentPaste,
+                            contentDescription = stringResource(R.string.script_paste_import_action)
                         )
                     }
                     IconButton(onClick = { ScriptLibraryUiIntent.ImportClick.emit() }) {
@@ -155,6 +162,9 @@ fun ScriptLibraryLayout(
                                 onOpen = { ScriptLibraryUiIntent.OpenPack(pack.packId).emit() },
                                 onPlay = { ScriptLibraryUiIntent.PlayPack(pack.packId).emit() },
                                 onRename = { renameTarget = pack },
+                                onExport = {
+                                    ScriptLibraryUiIntent.ExportPack(pack.packId).emit()
+                                },
                                 onDelete = { deleteTarget = pack }
                             )
                         }
@@ -189,6 +199,61 @@ fun ScriptLibraryLayout(
             }
         )
     }
+    if (state.pasteDialogVisible) {
+        PasteImportDialog(
+            draft = state.pasteDraft,
+            onDraftChange = { ScriptLibraryUiIntent.PasteChanged(it).emit() },
+            onDismiss = { ScriptLibraryUiIntent.HidePasteImport.emit() },
+            onConfirm = { ScriptLibraryUiIntent.ConfirmPasteImport.emit() }
+        )
+    }
+}
+
+/**
+ * 粘贴导入对话框。
+ *
+ * 文件选择器在部分设备上不灵，这里是可靠通道：
+ * 直接把剧本 JSON 贴进来，校验流程与导入文件完全一致。
+ */
+@Composable
+private fun PasteImportDialog(
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.script_paste_import_action)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.script_paste_import_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = onDraftChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    minLines = 5,
+                    maxLines = 10
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = draft.isNotBlank()) {
+                Text(stringResource(R.string.script_scene_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 
 /** 重命名对话框：本地输入，确认后提交。 */
@@ -253,6 +318,7 @@ private fun PackCard(
     onOpen: () -> Unit,
     onPlay: () -> Unit,
     onRename: () -> Unit,
+    onExport: () -> Unit,
     onDelete: () -> Unit
 ) {
     // 长按弹出重命名与删除，避免在卡片上塞满图标
@@ -302,6 +368,13 @@ private fun PackCard(
                 onClick = {
                     menuOpen = false
                     onRename()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.script_pack_export)) },
+                onClick = {
+                    menuOpen = false
+                    onExport()
                 }
             )
             DropdownMenuItem(

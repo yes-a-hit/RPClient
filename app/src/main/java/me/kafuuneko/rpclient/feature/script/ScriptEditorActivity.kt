@@ -30,6 +30,21 @@ class ScriptEditorActivity : CoreActivityWithEvent() {
         if (uri != null) mViewModel.emit(ScriptEditorUiIntent.ImportFromUri(uri))
     }
 
+    /** 待选背景的场景 ID；null 表示剧本级背景。 */
+    private var mPendingBackgroundScene: String? = null
+
+    /** 背景图选择：选完直接导入图库并设为本场背景。 */
+    private val mImagePicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            mViewModel.emit(
+                ScriptEditorUiIntent.ApplyBackground(mPendingBackgroundScene, uri.toString())
+            )
+        }
+        mPendingBackgroundScene = null
+    }
+
     /** 从剧本库进入时携带的剧本 ID。 */
     private val mPackId: String by lazy { intent.getStringExtra(EXTRA_PACK_ID).orEmpty() }
 
@@ -62,6 +77,12 @@ class ScriptEditorActivity : CoreActivityWithEvent() {
         when (viewEvent) {
             ScriptEditorViewEvent.OpenFilePicker -> {
                 mFilePicker.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                return
+            }
+
+            is ScriptEditorViewEvent.PickBackgroundImage -> {
+                mPendingBackgroundScene = viewEvent.sceneId
+                mImagePicker.launch(arrayOf("image/*"))
                 return
             }
 

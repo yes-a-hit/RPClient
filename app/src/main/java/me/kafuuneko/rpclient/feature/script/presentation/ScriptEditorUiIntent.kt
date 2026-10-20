@@ -66,7 +66,10 @@ sealed class ScriptEditorUiIntent {
         /** 通关关键词，命中即通关。 */
         val completionKeyword: String = "",
         /** 后继场景 ID，逗号分隔。 */
-        val nextSceneIds: String = ""
+        val nextSceneIds: String = "",
+        val suggestedActions: String = "",
+        /** 是否继承剧本级背景。 */
+        val inheritBackground: Boolean = true
     ) : ScriptEditorUiIntent()
 
     /** 删除场景。 */
@@ -94,7 +97,9 @@ sealed class ScriptEditorUiIntent {
         val description: String,
         val openingsText: String,
         val showCompletion: Boolean,
-        val shareSettings: Boolean
+        val shareSettings: Boolean,
+        /** 剧本级背景，留空表示不设置。 */
+        val backgroundKey: String = ""
     ) : ScriptEditorUiIntent()
 
 
@@ -104,6 +109,16 @@ sealed class ScriptEditorUiIntent {
      * 剧本声明的 cast 若在本地找不到同名角色卡，就用描述建一张，
      * 省得玩家自己开着编辑器一个个补。
      */
+    /**
+     * 请求为某处挑一张背景图。
+     *
+     * [sceneId] 为空表示剧本级全局背景，否则是那一章。
+     */
+    data class PickBackground(val sceneId: String?) : ScriptEditorUiIntent()
+
+    /** 选好图之后回来的 URI。 */
+    data class ApplyBackground(val sceneId: String?, val uri: String) : ScriptEditorUiIntent()
+
     data class CreateCastCharacter(val name: String) : ScriptEditorUiIntent()
 
     /** 把某个角色从剧本的所有名单里移除。 */
@@ -117,6 +132,9 @@ sealed class ScriptEditorUiIntent {
 sealed class ScriptEditorViewEvent : me.kafuuneko.rpclient.libs.core.IViewEvent {
     /** 打开系统文件选择器。 */
     data object OpenFilePicker : ScriptEditorViewEvent()
+
+    /** 打开图片选择器；[sceneId] 为空表示剧本级背景。 */
+    data class PickBackgroundImage(val sceneId: String?) : ScriptEditorViewEvent()
 
     /** 导入结果提示。 */
     data class ImportResult(val success: Boolean, val detail: String, val savedPackCount: Int) : ScriptEditorViewEvent()

@@ -1430,4 +1430,12 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_cast_no_card">Kartu tidak ada</string>
     <string name="script_cast_create">Buat dari skrip</string>
     <string name="script_cast_remove">Hapus</string>
+    <string name="script_paste_import_action">Tempel impor</string>
+    <string name="script_paste_import_hint">Tempel JSON skrip</string>
+    <string name="action_cancel">Batal</string>
+    <string name="script_pack_export">Ekspor templat</string>
+    <string name="script_scene_actions">Tindakan saran</string>
+    <string name="script_pack_background">Latar skrip</string>
+    <string name="script_scene_inherit_bg">Warisi latar skrip</string>
+    <string name="script_bg_import">Impor gambar</string>
 </resources>

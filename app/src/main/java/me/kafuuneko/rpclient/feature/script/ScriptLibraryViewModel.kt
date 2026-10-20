@@ -47,6 +47,65 @@ class ScriptLibraryViewModel(
     }
 
     /** 重命名剧本：读出来改名再写回，剧本 ID 不变。 */
+
+    /** 打开粘贴导入。 */
+    @UiIntentObserver(ScriptLibraryUiIntent.ShowPasteImport::class)
+    private fun onShowPasteImport() {
+        val state = getOrNull<ScriptLibraryUiState.Ready>() ?: return
+        state.copy(pasteDialogVisible = true, pasteDraft = "").setup()
+    }
+
+    /** 关闭粘贴导入。 */
+    @UiIntentObserver(ScriptLibraryUiIntent.HidePasteImport::class)
+    private fun onHidePasteImport() {
+        val state = getOrNull<ScriptLibraryUiState.Ready>() ?: return
+        state.copy(pasteDialogVisible = false).setup()
+    }
+
+    @UiIntentObserver(ScriptLibraryUiIntent.PasteChanged::class)
+    private fun onPasteChanged(intent: ScriptLibraryUiIntent.PasteChanged) {
+        val state = getOrNull<ScriptLibraryUiState.Ready>() ?: return
+        state.copy(pasteDraft = intent.text).setup()
+    }
+
+    /**
+     * 导入粘贴的文本。
+     *
+     * 文件选择器在部分设备上不可靠，粘贴导入是兜底通道：
+     * 内容与导入文件走同一套校验，不会绕过错误检查。
+     */
+    @UiIntentObserver(ScriptLibraryUiIntent.ConfirmPasteImport::class)
+    private suspend fun onConfirmPasteImport() {
+        val state = getOrNull<ScriptLibraryUiState.Ready>() ?: return
+        val raw = state.pasteDraft.trim()
+        if (raw.isBlank()) return
+        when (val outcome = mStore.importFromText(raw)) {
+            is ScriptImportOutcome.Success -> {
+                ScriptLibraryViewEvent.ShowToast(
+                    "已导入 ${outcome.packName}（${outcome.sceneCount} 个场景）"
+                ).tryEmit()
+                val current = getOrNull<ScriptLibraryUiState.Ready>() ?: return
+                current.copy(pasteDialogVisible = false, pasteDraft = "").setup()
+                publish(current.tab)
+            }
+
+            is ScriptImportOutcome.Failure -> {
+                ScriptLibraryViewEvent.ShowToast("导入失败：${outcome.detail}").tryEmit()
+            }
+        }
+    }
+
+    /** 导出剧本为可分享文本，用于制作模板包。 */
+    @UiIntentObserver(ScriptLibraryUiIntent.ExportPack::class)
+    private suspend fun onExportPack(intent: ScriptLibraryUiIntent.ExportPack) {
+        val pack = mStore.load(intent.packId) ?: return
+        val json = mCodec.encode(pack)
+        ScriptLibraryViewEvent.ShareText(
+            name = "${pack.name}.json",
+            text = json
+        ).tryEmit()
+    }
+
     @UiIntentObserver(ScriptLibraryUiIntent.RenamePack::class)
     private suspend fun onRenamePack(intent: ScriptLibraryUiIntent.RenamePack) {
         val state = getOrNull<ScriptLibraryUiState.Ready>() ?: return

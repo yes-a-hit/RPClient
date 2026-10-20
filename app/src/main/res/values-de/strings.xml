@@ -1429,4 +1429,12 @@
     <string name="script_cast_no_card">Keine Karte</string>
     <string name="script_cast_create">Aus Skript erstellen</string>
     <string name="script_cast_remove">Entfernen</string>
+    <string name="script_paste_import_action">Einfügen</string>
+    <string name="script_paste_import_hint">Skript-JSON einfügen</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="script_pack_export">Vorlage exportieren</string>
+    <string name="script_scene_actions">Vorgeschlagene Aktionen</string>
+    <string name="script_pack_background">Skript-Hintergrund</string>
+    <string name="script_scene_inherit_bg">Skripthintergrund erben</string>
+    <string name="script_bg_import">Bild importieren</string>
 </resources>

@@ -1460,4 +1460,12 @@
     <string name="script_cast_no_card">本地没有这张卡</string>
     <string name="script_cast_create">按剧本设定创建</string>
     <string name="script_cast_remove">移出名单</string>
+    <string name="script_paste_import_action">粘贴导入</string>
+    <string name="script_paste_import_hint">把剧本 JSON 贴进来，与文件导入走同一套校验</string>
+    <string name="action_cancel">取消</string>
+    <string name="script_pack_export">导出模板包</string>
+    <string name="script_scene_actions">建议行动（每行一条，留空由 AI 临场决定）</string>
+    <string name="script_pack_background">剧本默认背景</string>
+    <string name="script_scene_inherit_bg">本章背景继承剧本默认</string>
+    <string name="script_bg_import">从本地导入图片</string>
 </resources>

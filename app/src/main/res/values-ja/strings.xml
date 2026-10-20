@@ -1425,4 +1425,12 @@
     <string name="script_cast_no_card">ローカルに無し</string>
     <string name="script_cast_create">脚本から作成</string>
     <string name="script_cast_remove">リストから削除</string>
+    <string name="script_paste_import_action">貼り付けてインポート</string>
+    <string name="script_paste_import_hint">脚本 JSON を貼り付け</string>
+    <string name="action_cancel">キャンセル</string>
+    <string name="script_pack_export">テンプレート書き出し</string>
+    <string name="script_scene_actions">候補行動（1行1件、空なら AI が判断）</string>
+    <string name="script_pack_background">脚本の既定背景</string>
+    <string name="script_scene_inherit_bg">脚本の背景を継承</string>
+    <string name="script_bg_import">画像を読み込む</string>
 </resources>

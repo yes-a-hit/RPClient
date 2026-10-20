@@ -1431,4 +1431,12 @@
     <string name="script_cast_no_card">Sin tarjeta local</string>
     <string name="script_cast_create">Crear del guion</string>
     <string name="script_cast_remove">Quitar</string>
+    <string name="script_paste_import_action">Pegar importar</string>
+    <string name="script_paste_import_hint">Pega el JSON del guion</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="script_pack_export">Exportar plantilla</string>
+    <string name="script_scene_actions">Acciones sugeridas</string>
+    <string name="script_pack_background">Fondo del guion</string>
+    <string name="script_scene_inherit_bg">Heredar fondo del guion</string>
+    <string name="script_bg_import">Importar imagen</string>
 </resources>

@@ -40,6 +40,13 @@ data class ScriptPack(
      * 空发言者表示旁白。可以没有，也可以有多条。
      */
     val openings: List<ScriptOpening> = emptyList(),
+    /**
+     * 剧本级背景。
+     *
+     * 所有没单独指定背景的场景共用这一张；
+     * 留空则各场景自己按名字找。
+     */
+    val backgroundKey: String = "",
     /** 成功条件是否对玩家可见。 */
     val showCompletion: Boolean = true,
     /** 设定是否允许其他玩家查看。 */
@@ -104,6 +111,13 @@ data class ScriptScene(
      * 模型演到兴头上常常忘掉格式，靠它自己写命中率不稳。
      */
     val suggestedActions: List<String> = emptyList(),
+    /**
+     * 是否继承剧本级背景。
+     *
+     * 开启且本场景没指定背景时用剧本级那张；
+     * 关闭且本场景没指定，表示这一场就是不要背景。
+     */
+    val inheritBackground: Boolean = true,
     /**
      * 场景背景图的检索词，对应图库里的标签或名称。
      *

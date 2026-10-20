@@ -52,6 +52,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     private val mLorebookRepository by
         inject<me.kafuuneko.rpclient.libs.room.repository.LorebookRepository>()
     private val mGalleryStore by inject<me.kafuuneko.rpclient.libs.gallery.GalleryStore>()
+    private val mFileRepository by inject<me.kafuuneko.rpclient.libs.room.repository.FileRepository>()
 
     /** 当前编辑的剧本包。 */
     private var mPack: ScriptPack = SAMPLE_PACK
@@ -223,6 +224,55 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     /** 让模型写梗概与开场白草稿，结果直接落库并刷新界面。 */
 
     /** 用剧本里的角色设定建一张本地角色卡。 */
+
+    /** 请求挑背景图；真正选图交给 Activity。 */
+    @UiIntentObserver(ScriptEditorUiIntent.PickBackground::class)
+    private fun onPickBackground(intent: ScriptEditorUiIntent.PickBackground) {
+        ScriptEditorViewEvent.PickBackgroundImage(intent.sceneId).tryEmit()
+    }
+
+    /**
+     * 把选中的图片导入图库并设为背景。
+     *
+     * 走图库而不是单独存盘：导入之后这张图在别的场景、
+     * 甚至助手发图时也能复用，不用重复导入。
+     */
+    @UiIntentObserver(ScriptEditorUiIntent.ApplyBackground::class)
+    private suspend fun onApplyBackground(intent: ScriptEditorUiIntent.ApplyBackground) {
+        val uri = runCatching { android.net.Uri.parse(intent.uri) }.getOrNull() ?: return
+        val image = runCatching {
+            mGalleryStore.importFromUri(
+                uri = uri,
+                saveFile = { source ->
+                    runCatching { mFileRepository.saveFile(source) }.getOrNull()
+                },
+                name = intent.sceneId?.let { id ->
+                    mPack.scenes.firstOrNull { it.id == id }?.name
+                } ?: mPack.name,
+                labels = listOf("背景"),
+                isPublic = true
+            )
+        }.getOrNull() ?: return
+        val key = image.name.ifBlank { image.labels.firstOrNull().orEmpty() }
+        if (intent.sceneId == null) {
+            mPack = mPack.copy(backgroundKey = key)
+        } else {
+            mPack = mPack.copy(
+                scenes = mPack.scenes.map { scene ->
+                    if (scene.id == intent.sceneId) {
+                        // 选了图就必然不继承，否则会被剧本级覆盖
+                        scene.copy(backgroundKey = key, inheritBackground = false)
+                    } else {
+                        scene
+                    }
+                }
+            )
+        }
+        mStore.save(mPack)
+        loadCandidates()
+        publish(null, null)
+    }
+
     @UiIntentObserver(ScriptEditorUiIntent.CreateCastCharacter::class)
     private suspend fun onCreateCastCharacter(intent: ScriptEditorUiIntent.CreateCastCharacter) {
         val name = intent.name.trim()
@@ -456,7 +506,12 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                                     pattern = keyword
                                 )
                             },
-                        nextSceneIds = splitNames(intent.nextSceneIds)
+                        nextSceneIds = splitNames(intent.nextSceneIds),
+                        suggestedActions = intent.suggestedActions
+                            .lines()
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() },
+                        inheritBackground = intent.inheritBackground
                     )
                 }
             }
@@ -507,6 +562,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         ScriptEditorUiState.Ready(
             packName = mPack.name,
             description = mPack.description,
+            packBackground = mPack.backgroundKey,
             openingsText = mPack.openings.joinToString("\n") { opening ->
                 if (opening.speaker.isBlank()) opening.content
                 else opening.speaker + "|" + opening.content
@@ -540,7 +596,9 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                         ?.takeIf { it.type == ScriptConditionType.Keyword }
                         ?.pattern
                         .orEmpty(),
-                    nextSceneIds = scene.nextSceneIds.joinToString("、")
+                    nextSceneIds = scene.nextSceneIds.joinToString("、"),
+                    suggestedActions = scene.suggestedActions.joinToString("\n"),
+                    inheritBackground = scene.inheritBackground
                 )
             },
             editingSceneId = editingSceneId,
