@@ -32,7 +32,20 @@ data class ScriptPack(
     /** 是否启用 GM（游戏主持人）叙述层。 */
     val enableGm: Boolean = true,
     /** 是否启用骰子判定。 */
-    val enableDice: Boolean = true
+    val enableDice: Boolean = true,
+    /**
+     * 开场白。
+     *
+     * 每条由发言者与内容组成，按顺序作为开局消息播种，
+     * 空发言者表示旁白。可以没有，也可以有多条。
+     */
+    val openings: List<ScriptOpening> = emptyList(),
+    /** 绘图风格描述，供出图时参考。 */
+    val artStyle: String = "",
+    /** 成功条件是否对玩家可见。 */
+    val showCompletion: Boolean = true,
+    /** 设定是否允许其他玩家查看。 */
+    val shareSettings: Boolean = false
 ) {
     companion object {
         /** 当前支持的剧本结构版本。 */
@@ -194,3 +207,11 @@ data class ScriptCollection(
     /** 按 ID 查找剧本包。 */
     fun packById(packId: String): ScriptPack? = packs.firstOrNull { it.id == packId }
 }
+
+/** 一条开场白：谁说的、说了什么。 */
+data class ScriptOpening(
+    /** 发言者名称；为空表示旁白。 */
+    val speaker: String = "",
+    /** 开场内容。 */
+    val content: String = ""
+)

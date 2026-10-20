@@ -1416,4 +1416,11 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_add_scene">Adicionar capítulo</string>
     <string name="script_scene_end_condition">Condição de fim</string>
     <string name="script_scene_unlock">Desbloquear</string>
+    <string name="script_pack_info">Informações</string>
+    <string name="script_pack_name">Nome</string>
+    <string name="script_pack_description">Sinopse</string>
+    <string name="script_pack_openings">Aberturas (uma por linha)</string>
+    <string name="script_pack_art_style">Estilo</string>
+    <string name="script_pack_show_completion">Mostrar conclusão</string>
+    <string name="script_pack_share">Compartilhar</string>
 </resources>

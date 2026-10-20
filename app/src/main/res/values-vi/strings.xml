@@ -1413,4 +1413,11 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_add_scene">Thêm chương</string>
     <string name="script_scene_end_condition">Điều kiện kết thúc</string>
     <string name="script_scene_unlock">Mở khoá</string>
+    <string name="script_pack_info">Thông tin</string>
+    <string name="script_pack_name">Tên</string>
+    <string name="script_pack_description">Tóm tắt</string>
+    <string name="script_pack_openings">Mở đầu (mỗi dòng một)</string>
+    <string name="script_pack_art_style">Phong cách</string>
+    <string name="script_pack_show_completion">Hiện điều kiện</string>
+    <string name="script_pack_share">Chia sẻ</string>
 </resources>

@@ -11,6 +11,7 @@ import me.kafuuneko.rpclient.libs.script.ScriptCondition
 import me.kafuuneko.rpclient.libs.script.ScriptConditionType
 import me.kafuuneko.rpclient.libs.script.ScriptCastMember
 import me.kafuuneko.rpclient.libs.script.ScriptLorebook
+import me.kafuuneko.rpclient.libs.script.ScriptOpening
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
 import me.kafuuneko.rpclient.libs.script.ScriptScene
@@ -212,6 +213,38 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         return conditions
     }
 
+
+    /** 更新剧本级信息；开场白从多行文本拆回列表。 */
+    @UiIntentObserver(ScriptEditorUiIntent.UpdatePackInfo::class)
+    private suspend fun onUpdatePackInfo(intent: ScriptEditorUiIntent.UpdatePackInfo) {
+        val openings = intent.openingsText
+            .lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { line ->
+                val separator = line.indexOf('|')
+                if (separator < 0) {
+                    ScriptOpening(speaker = "", content = line)
+                } else {
+                    ScriptOpening(
+                        speaker = line.substring(0, separator).trim(),
+                        content = line.substring(separator + 1).trim()
+                    )
+                }
+            }
+            .filter { it.content.isNotBlank() }
+        mPack = mPack.copy(
+            name = intent.name.ifBlank { mPack.name },
+            description = intent.description.trim(),
+            openings = openings,
+            artStyle = intent.artStyle.trim(),
+            showCompletion = intent.showCompletion,
+            shareSettings = intent.shareSettings
+        )
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
     @UiIntentObserver(ScriptEditorUiIntent.UpdateScene::class)
     private suspend fun onUpdateScene(intent: ScriptEditorUiIntent.UpdateScene) {
         mPack = mPack.copy(
@@ -294,6 +327,14 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         }
         ScriptEditorUiState.Ready(
             packName = mPack.name,
+            description = mPack.description,
+            openingsText = mPack.openings.joinToString("\n") { opening ->
+                if (opening.speaker.isBlank()) opening.content
+                else opening.speaker + "|" + opening.content
+            },
+            artStyle = mPack.artStyle,
+            showCompletion = mPack.showCompletion,
+            shareSettings = mPack.shareSettings,
             rows = mPack.scenes.map { scene ->
                 ScriptSceneRow(
                     id = scene.id,

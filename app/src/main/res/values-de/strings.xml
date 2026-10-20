@@ -1412,4 +1412,11 @@
     <string name="script_add_scene">Kapitel hinzufügen</string>
     <string name="script_scene_end_condition">Endbedingung</string>
     <string name="script_scene_unlock">Freischalten</string>
+    <string name="script_pack_info">Informationen</string>
+    <string name="script_pack_name">Name</string>
+    <string name="script_pack_description">Zusammenfassung</string>
+    <string name="script_pack_openings">Eröffnungen (eine pro Zeile)</string>
+    <string name="script_pack_art_style">Stil</string>
+    <string name="script_pack_show_completion">Abschluss zeigen</string>
+    <string name="script_pack_share">Teilen</string>
 </resources>

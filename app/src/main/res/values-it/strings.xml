@@ -1391,4 +1391,11 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_add_scene">Aggiungi capitolo</string>
     <string name="script_scene_end_condition">Condizione finale</string>
     <string name="script_scene_unlock">Sblocca</string>
+    <string name="script_pack_info">Informazioni</string>
+    <string name="script_pack_name">Nome</string>
+    <string name="script_pack_description">Sinossi</string>
+    <string name="script_pack_openings">Aperture (una per riga)</string>
+    <string name="script_pack_art_style">Stile</string>
+    <string name="script_pack_show_completion">Mostra finale</string>
+    <string name="script_pack_share">Condividi</string>
 </resources>

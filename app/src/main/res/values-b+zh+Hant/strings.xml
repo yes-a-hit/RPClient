@@ -1407,4 +1407,11 @@
     <string name="script_add_scene">新增章節</string>
     <string name="script_scene_end_condition">章節結局條件</string>
     <string name="script_scene_unlock">解鎖前置</string>
+    <string name="script_pack_info">劇本資訊</string>
+    <string name="script_pack_name">劇本名稱</string>
+    <string name="script_pack_description">梗概與全域背景</string>
+    <string name="script_pack_openings">開場白（每行一條，發言者|內容）</string>
+    <string name="script_pack_art_style">繪圖風格</string>
+    <string name="script_pack_show_completion">成功條件對玩家可見</string>
+    <string name="script_pack_share">允許他人檢視設定</string>
 </resources>

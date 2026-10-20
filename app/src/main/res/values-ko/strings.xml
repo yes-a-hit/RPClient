@@ -1407,4 +1407,11 @@
     <string name="script_add_scene">챕터 추가</string>
     <string name="script_scene_end_condition">챕터 종료 조건</string>
     <string name="script_scene_unlock">해금</string>
+    <string name="script_pack_info">스크립트 정보</string>
+    <string name="script_pack_name">이름</string>
+    <string name="script_pack_description">줄거리</string>
+    <string name="script_pack_openings">오프닝 (줄당 하나)</string>
+    <string name="script_pack_art_style">화풍</string>
+    <string name="script_pack_show_completion">완료 조건 표시</string>
+    <string name="script_pack_share">설정 공유</string>
 </resources>

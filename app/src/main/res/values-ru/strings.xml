@@ -1417,4 +1417,11 @@
     <string name="script_add_scene">Добавить главу</string>
     <string name="script_scene_end_condition">Условие завершения</string>
     <string name="script_scene_unlock">Открыть</string>
+    <string name="script_pack_info">Информация</string>
+    <string name="script_pack_name">Название</string>
+    <string name="script_pack_description">Краткое содержание</string>
+    <string name="script_pack_openings">Вступления (по строке)</string>
+    <string name="script_pack_art_style">Стиль</string>
+    <string name="script_pack_show_completion">Показывать финал</string>
+    <string name="script_pack_share">Поделиться</string>
 </resources>

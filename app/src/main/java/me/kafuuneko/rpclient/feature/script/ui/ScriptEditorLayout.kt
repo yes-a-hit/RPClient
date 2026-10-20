@@ -85,6 +85,9 @@ fun ScriptEditorLayout(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            item {
+                PackInfoCard(state = state, emit = emit)
+            }
             itemsIndexed(state.rows) { index, row ->
                 ChapterCard(
                     index = index,
@@ -436,4 +439,118 @@ private fun String.toggleName(name: String): String {
     val current = toNameSet().toMutableSet()
     if (!current.add(name)) current.remove(name)
     return current.joinToString("、")
+}
+
+/**
+ * 剧本信息卡。
+ *
+ * 梗概同时充当全局背景：剧情里跨章节统一的设定写这里，
+ * 具体情节留给各章节。开场白按「发言者|内容」每行一条，
+ * 不留发言者即旁白。
+ */
+@Composable
+private fun PackInfoCard(
+    state: ScriptEditorUiState.Ready,
+    emit: ScriptEditorUiIntent.() -> Unit
+) {
+    var name by remember(state.packName) { mutableStateOf(state.packName) }
+    var description by remember(state.description) { mutableStateOf(state.description) }
+    var openings by remember(state.openingsText) { mutableStateOf(state.openingsText) }
+    var artStyle by remember(state.artStyle) { mutableStateOf(state.artStyle) }
+    var showCompletion by remember(state.showCompletion) { mutableStateOf(state.showCompletion) }
+    var shareSettings by remember(state.shareSettings) { mutableStateOf(state.shareSettings) }
+    var expanded by remember { mutableStateOf(true) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        tonalElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.script_pack_info),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Box(modifier = Modifier.weight(1f))
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            if (expanded) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.script_pack_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = stringResource(R.string.script_pack_description),
+                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    maxLines = 4
+                )
+                Text(
+                    text = stringResource(R.string.script_pack_openings),
+                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = openings,
+                    onValueChange = { openings = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    maxLines = 5
+                )
+                OutlinedTextField(
+                    value = artStyle,
+                    onValueChange = { artStyle = it },
+                    label = { Text(stringResource(R.string.script_pack_art_style)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                SwitchRow(
+                    stringResource(R.string.script_pack_show_completion),
+                    showCompletion
+                ) { showCompletion = it }
+                SwitchRow(
+                    stringResource(R.string.script_pack_share),
+                    shareSettings
+                ) { shareSettings = it }
+                TextButton(
+                    onClick = {
+                        ScriptEditorUiIntent.UpdatePackInfo(
+                            name = name,
+                            description = description,
+                            openingsText = openings,
+                            artStyle = artStyle,
+                            showCompletion = showCompletion,
+                            shareSettings = shareSettings
+                        ).emit()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.script_scene_save))
+                }
+            }
+        }
+    }
 }

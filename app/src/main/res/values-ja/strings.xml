@@ -1408,4 +1408,11 @@
     <string name="script_add_scene">章を追加</string>
     <string name="script_scene_end_condition">章の終了条件</string>
     <string name="script_scene_unlock">前提</string>
+    <string name="script_pack_info">脚本情報</string>
+    <string name="script_pack_name">脚本名</string>
+    <string name="script_pack_description">あらすじ</string>
+    <string name="script_pack_openings">開始文（1行1件）</string>
+    <string name="script_pack_art_style">画風</string>
+    <string name="script_pack_show_completion">達成条件を表示</string>
+    <string name="script_pack_share">設定を共有</string>
 </resources>

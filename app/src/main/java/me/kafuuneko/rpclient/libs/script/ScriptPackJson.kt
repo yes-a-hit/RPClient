@@ -24,8 +24,23 @@ internal object ScriptPackJson {
         startSceneIds = root.stringListOr("startSceneIds"),
         freeModeAfterClear = root.boolOr("freeModeAfterClear", true),
         enableGm = root.boolOr("enableGm", true),
-        enableDice = root.boolOr("enableDice", true)
+        enableDice = root.boolOr("enableDice", true),
+        openings = root.arrayOr("openings").mapNotNull { toOpening(it) },
+        artStyle = root.stringOr("artStyle"),
+        showCompletion = root.boolOr("showCompletion", true),
+        shareSettings = root.boolOr("shareSettings", false)
     )
+
+    /** 映射一条开场白；内容为空时丢弃。 */
+    private fun toOpening(element: com.google.gson.JsonElement): ScriptOpening? {
+        val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val content = item.stringOr("content")
+        if (content.isBlank()) return null
+        return ScriptOpening(
+            speaker = item.stringOr("speaker"),
+            content = content
+        )
+    }
 
     /** 把 JSON 对象映射成剧本集。 */
     fun toCollection(root: JsonObject): ScriptCollection = ScriptCollection(

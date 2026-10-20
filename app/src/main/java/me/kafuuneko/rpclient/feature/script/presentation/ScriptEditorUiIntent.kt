@@ -70,6 +70,21 @@ sealed class ScriptEditorUiIntent {
     ) : ScriptEditorUiIntent()
 
     /** 删除场景。 */
+    /**
+     * 更新剧本级信息。
+     *
+     * 开场白按「发言者|内容」每行一条的纯文本编辑，
+     * 保存时拆成结构化列表，JSON 里是 openings 数组。
+     */
+    data class UpdatePackInfo(
+        val name: String,
+        val description: String,
+        val openingsText: String,
+        val artStyle: String,
+        val showCompletion: Boolean,
+        val shareSettings: Boolean
+    ) : ScriptEditorUiIntent()
+
     data class DeleteScene(val sceneId: String) : ScriptEditorUiIntent()
 
 }

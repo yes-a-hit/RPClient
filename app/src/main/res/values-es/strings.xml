@@ -1414,4 +1414,11 @@
     <string name="script_add_scene">Añadir capítulo</string>
     <string name="script_scene_end_condition">Condición final</string>
     <string name="script_scene_unlock">Desbloquear</string>
+    <string name="script_pack_info">Información</string>
+    <string name="script_pack_name">Nombre</string>
+    <string name="script_pack_description">Sinopsis</string>
+    <string name="script_pack_openings">Aperturas (una por línea)</string>
+    <string name="script_pack_art_style">Estilo</string>
+    <string name="script_pack_show_completion">Mostrar final</string>
+    <string name="script_pack_share">Compartir</string>
 </resources>
