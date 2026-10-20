@@ -295,6 +295,17 @@ private fun InputBar(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            // 轮空：不发话，让局势自己往前走
+            IconButton(
+                onClick = { ScriptPlayUiIntent.ContinueWithoutInput.emit() },
+                enabled = !state.generating && state.finishedReason.isBlank()
+            ) {
+                Icon(
+                    Icons.Rounded.SkipNext,
+                    contentDescription = stringResource(R.string.script_play_skip),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             OutlinedTextField(
                 value = state.input,
                 onValueChange = { ScriptPlayUiIntent.InputChanged(it).emit() },
