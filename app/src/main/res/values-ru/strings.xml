@@ -1427,4 +1427,11 @@
     <string name="script_auto_fill_pack">Создать описание</string>
     <string name="script_auto_fill_scene">Создать главу</string>
     <string name="script_auto_filling">Создание…</string>
+    <string name="script_gen_hint">Пожелание (необязательно)</string>
+    <string name="script_gen_hint_hint">Пусто — свободно; заполнено — учтено</string>
+    <string name="script_cast_admin">Состав</string>
+    <string name="script_cast_has_card">Карточка есть</string>
+    <string name="script_cast_no_card">Карточки нет</string>
+    <string name="script_cast_create">Создать из сценария</string>
+    <string name="script_cast_remove">Убрать</string>
 </resources>

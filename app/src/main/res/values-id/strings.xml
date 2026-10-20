@@ -1423,4 +1423,11 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_auto_fill_pack">Buat sinopsis</string>
     <string name="script_auto_fill_scene">Buat bab</string>
     <string name="script_auto_filling">Membuat…</string>
+    <string name="script_gen_hint">Permintaan (opsional)</string>
+    <string name="script_gen_hint_hint">Kosong = bebas; diisi = diikuti</string>
+    <string name="script_cast_admin">Daftar peran</string>
+    <string name="script_cast_has_card">Kartu ada</string>
+    <string name="script_cast_no_card">Kartu tidak ada</string>
+    <string name="script_cast_create">Buat dari skrip</string>
+    <string name="script_cast_remove">Hapus</string>
 </resources>

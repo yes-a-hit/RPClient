@@ -1401,4 +1401,11 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_auto_fill_pack">Genera sinossi</string>
     <string name="script_auto_fill_scene">Genera capitolo</string>
     <string name="script_auto_filling">Generazione…</string>
+    <string name="script_gen_hint">Richiesta (opzionale)</string>
+    <string name="script_gen_hint_hint">Vuoto = libero; scritto = seguito</string>
+    <string name="script_cast_admin">Cast</string>
+    <string name="script_cast_has_card">Scheda presente</string>
+    <string name="script_cast_no_card">Nessuna scheda</string>
+    <string name="script_cast_create">Crea dallo script</string>
+    <string name="script_cast_remove">Rimuovi</string>
 </resources>

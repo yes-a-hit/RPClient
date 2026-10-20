@@ -221,8 +221,60 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     /** 更新剧本级信息；开场白从多行文本拆回列表。 */
 
     /** 让模型写梗概与开场白草稿，结果直接落库并刷新界面。 */
+
+    /** 用剧本里的角色设定建一张本地角色卡。 */
+    @UiIntentObserver(ScriptEditorUiIntent.CreateCastCharacter::class)
+    private suspend fun onCreateCastCharacter(intent: ScriptEditorUiIntent.CreateCastCharacter) {
+        val name = intent.name.trim()
+        if (name.isBlank()) return
+        val existing = runCatching {
+            mCharacterRepository.getAllCharacters().any { it.name == name }
+        }.getOrDefault(false)
+        if (existing) return
+        // 从剧本里所有出现该角色的场景里找一段描述来当人设
+        val description = mPack.scenes
+            .flatMap { it.cast }
+            .firstOrNull { it.name == name && it.description.isNotBlank() }
+            ?.description
+            .orEmpty()
+        runCatching {
+            mCharacterRepository.saveCharacter(
+                me.kafuuneko.rpclient.libs.room.entity.Character(
+                    name = name,
+                    avatar = "",
+                    characterTags = "[]",
+                    description = description,
+                    personality = "",
+                    scenario = "",
+                    firstMessages = "[]",
+                    examplesOfDialogue = "",
+                    postHistoryInstructions = ""
+                )
+            )
+        }
+        loadCandidates()
+        publish(null, null)
+    }
+
+    /** 把角色从所有场景的出场与禁止名单里移除。 */
+    @UiIntentObserver(ScriptEditorUiIntent.RemoveCastCharacter::class)
+    private suspend fun onRemoveCastCharacter(intent: ScriptEditorUiIntent.RemoveCastCharacter) {
+        val name = intent.name.trim()
+        if (name.isBlank()) return
+        mPack = mPack.copy(
+            scenes = mPack.scenes.map { scene ->
+                scene.copy(
+                    cast = scene.cast.filterNot { it.name == name },
+                    bannedCast = scene.bannedCast.filterNot { it == name }
+                )
+            }
+        )
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
     @UiIntentObserver(ScriptEditorUiIntent.GeneratePackInfo::class)
-    private suspend fun onGeneratePackInfo() {
+    private suspend fun onGeneratePackInfo(intent: ScriptEditorUiIntent.GeneratePackInfo) {
         if (isStateOf<ScriptEditorUiState.Loading>()) return
         setGenerating("pack")
         val draft = runCatching {
@@ -231,9 +283,14 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                     "第一部分是剧本梗概，150 字以内，说明世界观与玩家处境；\n" +
                     "第二部分是开场白，2 到 3 行，每行格式为「发言者|内容」，" +
                     "发言者留空表示旁白。\n只输出这两部分，不要额外解释。",
-                user = "剧本名：${mPack.name}\n章节：${
-                    mPack.scenes.joinToString("、") { it.name }
-                }"
+                user = buildString {
+                    append("剧本名：").append(mPack.name).append('\n')
+                    append("章节：").append(mPack.scenes.joinToString("、") { it.name })
+                    // 有具体要求就以要求为准，没有才自由发挥
+                    if (intent.hint.isNotBlank()) {
+                        append("\n玩家的额外要求（优先满足）：").append(intent.hint.trim())
+                    }
+                }
             )
         }.getOrNull()
         if (draft.isNullOrBlank()) {
@@ -276,10 +333,16 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             requestText(
                 system = "你是剧本作者。根据剧本设定与本场景标题，写一段 200 字以内的场景描写，" +
                     "交代环境、在场角色的动作与开场对白。只输出正文，不要标题与解释。",
-                user = "剧本：${mPack.name}\n梗概：${mPack.description}\n" +
-                    "场景：${scene.name}\n在场角色：${
-                        scene.cast.joinToString("、") { it.name }.ifBlank { "未指定" }
-                    }"
+                user = buildString {
+                    append("剧本：").append(mPack.name).append('\n')
+                    append("梗概：").append(mPack.description).append('\n')
+                    append("场景：").append(scene.name).append('\n')
+                    append("在场角色：")
+                        .append(scene.cast.joinToString("、") { it.name }.ifBlank { "未指定" })
+                    if (intent.hint.isNotBlank()) {
+                        append("\n玩家的额外要求（优先满足）：").append(intent.hint.trim())
+                    }
+                }
             )
         }.getOrNull()
         if (!draft.isNullOrBlank()) {
@@ -484,6 +547,9 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             editingField = editingField,
             settingsSceneId = settingsSceneId,
             characterNames = mCharacterNames,
+            castInUse = mPack.scenes
+                .flatMap { scene -> scene.cast.map { it.name } }
+                .distinct(),
             lorebookNames = mLorebookNames,
             galleryKeys = mGalleryKeys
         ).setup()

@@ -1426,4 +1426,11 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_auto_fill_pack">Gerar sinopse</string>
     <string name="script_auto_fill_scene">Gerar capítulo</string>
     <string name="script_auto_filling">Gerando…</string>
+    <string name="script_gen_hint">Requisito (opcional)</string>
+    <string name="script_gen_hint_hint">Vazio = livre; escrito = seguido</string>
+    <string name="script_cast_admin">Elenco</string>
+    <string name="script_cast_has_card">Já existe</string>
+    <string name="script_cast_no_card">Sem cartão local</string>
+    <string name="script_cast_create">Criar do script</string>
+    <string name="script_cast_remove">Remover</string>
 </resources>

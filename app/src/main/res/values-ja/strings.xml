@@ -1418,4 +1418,11 @@
     <string name="script_auto_fill_pack">あらすじを自動生成</string>
     <string name="script_auto_fill_scene">この章を自動生成</string>
     <string name="script_auto_filling">生成中…</string>
+    <string name="script_gen_hint">生成の要望（任意）</string>
+    <string name="script_gen_hint_hint">空欄なら自由に、書けば優先されます</string>
+    <string name="script_cast_admin">登場人物</string>
+    <string name="script_cast_has_card">カードあり</string>
+    <string name="script_cast_no_card">ローカルに無し</string>
+    <string name="script_cast_create">脚本から作成</string>
+    <string name="script_cast_remove">リストから削除</string>
 </resources>

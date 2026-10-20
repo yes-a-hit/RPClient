@@ -89,6 +89,9 @@ fun ScriptEditorLayout(
             item {
                 PackInfoCard(state = state, emit = emit)
             }
+            item {
+                CastAdminCard(state = state, emit = emit)
+            }
             itemsIndexed(state.rows) { index, row ->
                 ChapterCard(
                     index = index,
@@ -142,6 +145,7 @@ private fun ChapterCard(
     emit: ScriptEditorUiIntent.() -> Unit
 ) {
     var expanded by remember(row.id) { mutableStateOf(false) }
+    var sceneHint by remember(row.id) { mutableStateOf("") }
     var name by remember(row.id) { mutableStateOf(row.name) }
     var content by remember(row.id) { mutableStateOf(row.entryPrompt) }
     var completion by remember(row.id) { mutableStateOf(row.completionKeyword) }
@@ -291,9 +295,19 @@ private fun ChapterCard(
                     SwitchRow(stringResource(R.string.script_scene_loop), loop) { loop = it }
                 }
             }
+            OutlinedTextField(
+                value = sceneHint,
+                onValueChange = { sceneHint = it },
+                label = { Text(stringResource(R.string.script_gen_hint)) },
+                placeholder = { Text(stringResource(R.string.script_gen_hint_hint)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                maxLines = 2
+            )
             OutlinedButton(
                 onClick = {
-                    ScriptEditorUiIntent.GenerateSceneContent(row.id).emit()
+                    ScriptEditorUiIntent.GenerateSceneContent(row.id, sceneHint).emit()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = generating.isBlank()
@@ -477,6 +491,7 @@ private fun PackInfoCard(
     var showCompletion by remember(state.showCompletion) { mutableStateOf(state.showCompletion) }
     var shareSettings by remember(state.shareSettings) { mutableStateOf(state.shareSettings) }
     var expanded by remember { mutableStateOf(true) }
+    var packHint by remember { mutableStateOf("") }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -535,8 +550,18 @@ private fun PackInfoCard(
                         .padding(top = 2.dp),
                     maxLines = 5
                 )
+                OutlinedTextField(
+                    value = packHint,
+                    onValueChange = { packHint = it },
+                    label = { Text(stringResource(R.string.script_gen_hint)) },
+                    placeholder = { Text(stringResource(R.string.script_gen_hint_hint)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    maxLines = 2
+                )
                 OutlinedButton(
-                    onClick = { ScriptEditorUiIntent.GeneratePackInfo.emit() },
+                    onClick = { ScriptEditorUiIntent.GeneratePackInfo(packHint).emit() },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = state.generating.isBlank()
                 ) {
@@ -574,3 +599,98 @@ private fun PackInfoCard(
         }
     }
 }
+
+/**
+ * 角色名单超管。
+ *
+ * 剧本里用到的角色未必都在本地有卡：这里能一键按剧本设定补卡，
+ * 也能把不再需要的角色从所有场景名单里摘掉。
+ */
+@Composable
+private fun CastAdminCard(
+    state: ScriptEditorUiState.Ready,
+    emit: ScriptEditorUiIntent.() -> Unit
+) {
+    if (state.castInUse.isEmpty()) return
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        tonalElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.script_cast_admin),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = " · " + state.castInUse.size,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Box(modifier = Modifier.weight(1f))
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            if (expanded) {
+                state.castInUse.forEach { name ->
+                    val hasCard = name in state.characterNames
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = if (hasCard) {
+                                    stringResource(R.string.script_cast_has_card)
+                                } else {
+                                    stringResource(R.string.script_cast_no_card)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (hasCard) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                }
+                            )
+                        }
+                        if (!hasCard) {
+                            TextButton(
+                                onClick = {
+                                    ScriptEditorUiIntent.CreateCastCharacter(name).emit()
+                                }
+                            ) {
+                                Text(stringResource(R.string.script_cast_create))
+                            }
+                        }
+                        IconButton(
+                            onClick = {
+                                ScriptEditorUiIntent.RemoveCastCharacter(name).emit()
+                            }
+                        ) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

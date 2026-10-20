@@ -71,6 +71,9 @@ sealed class ScriptEditorUiState {
         val showCompletion: Boolean = true,
         /** 设定是否允许其他玩家查看。 */
         val shareSettings: Boolean = false,
+        /** 剧本里实际用到的角色名，供超管面板管理。 */
+        val castInUse: List<String> = emptyList(),
+
         /** 可选角色卡名称，供勾选出场与禁止名单。 */
         val characterNames: List<String> = emptyList(),
         /** 可选世界书名称。 */

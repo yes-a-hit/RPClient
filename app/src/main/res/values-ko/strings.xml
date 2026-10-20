@@ -1417,4 +1417,11 @@
     <string name="script_auto_fill_pack">줄거리 자동 생성</string>
     <string name="script_auto_fill_scene">챕터 자동 생성</string>
     <string name="script_auto_filling">생성 중…</string>
+    <string name="script_gen_hint">생성 요청 (선택)</string>
+    <string name="script_gen_hint_hint">비우면 자유, 쓰면 우선 반영</string>
+    <string name="script_cast_admin">등장 인물</string>
+    <string name="script_cast_has_card">카드 있음</string>
+    <string name="script_cast_no_card">로컬에 없음</string>
+    <string name="script_cast_create">스크립트로 생성</string>
+    <string name="script_cast_remove">목록에서 제거</string>
 </resources>

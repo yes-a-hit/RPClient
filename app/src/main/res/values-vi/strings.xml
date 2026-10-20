@@ -1423,4 +1423,11 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_auto_fill_pack">Tạo tóm tắt</string>
     <string name="script_auto_fill_scene">Tạo chương</string>
     <string name="script_auto_filling">Đang tạo…</string>
+    <string name="script_gen_hint">Yêu cầu (tuỳ chọn)</string>
+    <string name="script_gen_hint_hint">Trống = tự do; có = ưu tiên</string>
+    <string name="script_cast_admin">Danh sách vai</string>
+    <string name="script_cast_has_card">Đã có thẻ</string>
+    <string name="script_cast_no_card">Chưa có thẻ</string>
+    <string name="script_cast_create">Tạo từ kịch bản</string>
+    <string name="script_cast_remove">Bỏ khỏi danh sách</string>
 </resources>

@@ -1417,4 +1417,11 @@
     <string name="script_auto_fill_pack">自動填梗概與開場白</string>
     <string name="script_auto_fill_scene">自動填本章</string>
     <string name="script_auto_filling">正在生成…</string>
+    <string name="script_gen_hint">生成要求（可留空）</string>
+    <string name="script_gen_hint_hint">留空則自由發揮；寫清要求會優先照做</string>
+    <string name="script_cast_admin">角色名單</string>
+    <string name="script_cast_has_card">已有角色卡</string>
+    <string name="script_cast_no_card">本地沒有這張卡</string>
+    <string name="script_cast_create">依劇本設定建立</string>
+    <string name="script_cast_remove">移出名單</string>
 </resources>

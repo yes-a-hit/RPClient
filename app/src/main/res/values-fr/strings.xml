@@ -1423,4 +1423,11 @@
     <string name="script_auto_fill_pack">Générer le synopsis</string>
     <string name="script_auto_fill_scene">Générer le chapitre</string>
     <string name="script_auto_filling">Génération…</string>
+    <string name="script_gen_hint">Consigne (optionnel)</string>
+    <string name="script_gen_hint_hint">Vide = libre ; écrite = suivie</string>
+    <string name="script_cast_admin">Distribution</string>
+    <string name="script_cast_has_card">Carte existante</string>
+    <string name="script_cast_no_card">Aucune carte</string>
+    <string name="script_cast_create">Créer du script</string>
+    <string name="script_cast_remove">Retirer</string>
 </resources>

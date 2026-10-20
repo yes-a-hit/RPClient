@@ -1422,4 +1422,11 @@
     <string name="script_auto_fill_pack">Zusammenfassung erzeugen</string>
     <string name="script_auto_fill_scene">Kapitel erzeugen</string>
     <string name="script_auto_filling">Wird erzeugt…</string>
+    <string name="script_gen_hint">Vorgabe (optional)</string>
+    <string name="script_gen_hint_hint">Leer = frei; gesetzt = befolgt</string>
+    <string name="script_cast_admin">Besetzung</string>
+    <string name="script_cast_has_card">Karte vorhanden</string>
+    <string name="script_cast_no_card">Keine Karte</string>
+    <string name="script_cast_create">Aus Skript erstellen</string>
+    <string name="script_cast_remove">Entfernen</string>
 </resources>

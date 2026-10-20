@@ -70,11 +70,18 @@ sealed class ScriptEditorUiIntent {
     ) : ScriptEditorUiIntent()
 
     /** 删除场景。 */
-    /** 让模型根据剧本名与章节标题，写出梗概与开场白草稿。 */
-    data object GeneratePackInfo : ScriptEditorUiIntent()
+    /**
+     * 让模型写梗概与开场白。
+     *
+     * [hint] 是玩家的具体要求，写清了就照做，留空才由模型自由发挥。
+     */
+    data class GeneratePackInfo(val hint: String = "") : ScriptEditorUiIntent()
 
-    /** 让模型为某一章写内容草稿。 */
-    data class GenerateSceneContent(val sceneId: String) : ScriptEditorUiIntent()
+    /** 让模型为某一章写内容；[hint] 同样优先于自由发挥。 */
+    data class GenerateSceneContent(
+        val sceneId: String,
+        val hint: String = ""
+    ) : ScriptEditorUiIntent()
 
     /**
      * 更新剧本级信息。
@@ -90,6 +97,17 @@ sealed class ScriptEditorUiIntent {
         val shareSettings: Boolean
     ) : ScriptEditorUiIntent()
 
+
+    /**
+     * 按剧本里的角色设定创建本地角色卡。
+     *
+     * 剧本声明的 cast 若在本地找不到同名角色卡，就用描述建一张，
+     * 省得玩家自己开着编辑器一个个补。
+     */
+    data class CreateCastCharacter(val name: String) : ScriptEditorUiIntent()
+
+    /** 把某个角色从剧本的所有名单里移除。 */
+    data class RemoveCastCharacter(val name: String) : ScriptEditorUiIntent()
 
     data class DeleteScene(val sceneId: String) : ScriptEditorUiIntent()
 

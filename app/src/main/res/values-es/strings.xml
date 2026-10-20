@@ -1424,4 +1424,11 @@
     <string name="script_auto_fill_pack">Generar sinopsis</string>
     <string name="script_auto_fill_scene">Generar capítulo</string>
     <string name="script_auto_filling">Generando…</string>
+    <string name="script_gen_hint">Requisito (opcional)</string>
+    <string name="script_gen_hint_hint">Vacío = libre; escrito = seguido</string>
+    <string name="script_cast_admin">Reparto</string>
+    <string name="script_cast_has_card">Ya existe</string>
+    <string name="script_cast_no_card">Sin tarjeta local</string>
+    <string name="script_cast_create">Crear del guion</string>
+    <string name="script_cast_remove">Quitar</string>
 </resources>
