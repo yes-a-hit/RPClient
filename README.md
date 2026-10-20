@@ -11,15 +11,6 @@
 
   Supports character cards, lorebooks, one-on-one chats, group chats, long-term summary memory, prompt inspection, and multiple LLM APIs — plus **scenario-driven adventures, a sandboxed assistant, whole-novel import, and cost tracking**.
 
-  <p>
-    <a href="https://play.google.com/store/apps/details?id=me.kafuuneko.rpclient">
-      <img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" alt="Get the upstream app on Google Play" height="80" />
-    </a>
-    <a href="https://f-droid.org/packages/me.kafuuneko.rpclient/">
-      <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get the upstream app on F-Droid" height="80" />
-    </a>
-  </p>
-
   [Overview](#overview) · [Branding](#branding-and-packaging) · [New in This Fork](#new-in-this-fork) · [Screenshots](#screenshots) · [Features](#features) · [Development Status](#development-status) · [Known Issues](#known-issues) · [Quick Start](#quick-start) · [Build](#build)
 </div>
 
