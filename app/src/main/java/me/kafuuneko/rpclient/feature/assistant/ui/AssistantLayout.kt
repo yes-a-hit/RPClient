@@ -46,6 +46,8 @@ import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantAttachment
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -277,6 +279,31 @@ private fun AssistantMessageBubble(item: AssistantMessageItem) {
                         MaterialTheme.colorScheme.onSurface
                     }
                 )
+                // 附件在气泡下方留痕，发过什么一眼能看到
+                if (!item.attachments.orEmpty().isEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        item.attachments.orEmpty().forEach { attachment ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (attachment.isImage) {
+                                        Icons.Rounded.Image
+                                    } else {
+                                        Icons.Rounded.Description
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = " ${attachment.name}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
 import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
 import me.kafuuneko.rpclient.libs.script.ScriptImportOutcome
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
+import me.kafuuneko.rpclient.libs.gallery.GalleryStore
 import me.kafuuneko.rpclient.libs.script.ScriptStore
 
 /**
@@ -28,7 +29,8 @@ class AssistantToolExecutor(
     private val mSandboxRoot: File,
     private val mCharacterRepository: CharacterRepository,
     private val mLorebookRepository: LorebookRepository,
-    private val mScriptStore: ScriptStore
+    private val mScriptStore: ScriptStore,
+    private val mGalleryStore: GalleryStore
 ) {
 
     /** 剧本编解码器，仅用于把已有剧本回填给模型查看。 */
@@ -51,6 +53,9 @@ class AssistantToolExecutor(
                 "add_worldbook_entry" -> addWorldbookEntry(call.arguments)
                 "get_worldbook_entries" -> getWorldbookEntries(call.arguments)
                 "list_scripts" -> listScripts()
+            "list_gallery" -> listGallery()
+            "send_image" -> sendImage(call.arguments)
+            "add_image_label" -> addImageLabel(call.arguments)
                 "get_script" -> getScript(call.arguments)
                 "create_script" -> createScript(call.arguments)
                 else -> "未知工具：${call.name}"
@@ -342,5 +347,47 @@ class AssistantToolExecutor(
         /** 助手写入条目的默认插入深度。 */
         const val DEFAULT_ENTRY_DEPTH = 4
     }
+
+
+    /** 列出图库图片，供模型挑选。 */
+    private suspend fun listGallery(): String {
+        val images = mGalleryStore.list()
+        if (images.isEmpty()) return "图库是空的。"
+        return images.joinToString("\n") { "- ${it.id}｜${it.toBrief()}" }
+    }
+
+    /**
+     * 按标签或名称挑一张图发出去。
+     *
+     * 命中多张时取第一张（列表按加入时间倒序，新图优先），
+     * 并把图片标记写回结果，界面据此渲染。
+     */
+    private suspend fun sendImage(arguments: JsonObject): String {
+        val keyword = arguments.get("keyword")?.asString.orEmpty()
+        val characterName = arguments.get("character")?.asString.orEmpty()
+        val hits = mGalleryStore.search(keyword, characterName)
+        if (hits.isEmpty()) {
+            return "图库里没有匹配「${keyword.ifBlank { "任意" }}」的图片。"
+        }
+        val picked = hits.first()
+        return "已发送图片：${picked.name}" + nlLiteral() +
+            "<image uuid=\"${picked.fileUuid}\" name=\"${picked.name}\" />"
+    }
+
+    /** 给图片追加标签。 */
+    private suspend fun addImageLabel(arguments: JsonObject): String {
+        val id = arguments.get("id")?.asString.orEmpty()
+        val image = mGalleryStore.find(id) ?: return "找不到图片：$id"
+        val extra = arguments.getAsJsonArray("labels")
+            ?.mapNotNull { it.asString }
+            .orEmpty()
+        if (extra.isEmpty()) return "没有需要追加的标签。"
+        val merged = (image.labels + extra).distinct()
+        mGalleryStore.save(image.copy(labels = merged))
+        return "已更新标签：${merged.joinToString("、")}"
+    }
+
+    /** 换行符，避免在拼接里反复写转义。 */
+    private fun nlLiteral(): String = "\n"
 
 }

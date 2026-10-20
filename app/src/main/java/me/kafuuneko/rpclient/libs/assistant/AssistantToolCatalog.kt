@@ -89,6 +89,13 @@ object AssistantToolCatalog {
 - `list_scripts` `{}`：列出已保存的剧本（ID、名称、场景数）。
 - `get_script` `{"id":"script-1"}`：读取某个剧本的完整 JSON。
 - `create_script` `{"json":"{...}"}`：保存一份剧本 JSON，会做完整校验。
+- `list_gallery` `{}`：列出图库里的图片（名称、标签、绑定角色、是否公开）。
+- `send_image` `{"keyword":"开心"}`：按标签或名称从图库挑一张发给用户；命中多张时按最匹配的那张发。
+- `add_image_label` `{"id":"图片ID","labels":["meme","开心"]}`：给图库图片追加标签。
+
+**什么时候该发图**：当对话里出现明显的情绪转折、需要示意图、或者用户问到外观与设定时，
+用 `send_image` 挑一张合适的图比纯文字更直接。没有合适的图就不要硬发。
+发图前可先用 `list_gallery` 看有哪些可选，命中不了就别勉强。
 
 用 `create_script` 生成剧本时必须遵守这几条，否则会被校验直接拒绝：
 

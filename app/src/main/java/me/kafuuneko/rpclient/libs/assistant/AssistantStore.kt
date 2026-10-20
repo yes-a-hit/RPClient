@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.libs.assistant
 
+import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantAttachment
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -150,7 +151,14 @@ class AssistantStore(private val mContext: Context) {
 data class AssistantMessage(
     val role: String,
     val content: String,
-    val toolName: String? = null
+    val toolName: String? = null,
+    /**
+     * 随这条消息附上的文件。
+     *
+     * 文本会同步复制进沙箱供工具读写，但对话里仍留一份可见记录，
+     * 否则用户发完文件就再也看不见自己发过什么。
+     */
+    val attachments: List<AssistantAttachment>? = null
 )
 
 /** 一次沙箱导入的结果统计。 */

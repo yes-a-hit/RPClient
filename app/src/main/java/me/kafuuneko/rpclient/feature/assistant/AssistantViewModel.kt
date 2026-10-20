@@ -125,7 +125,14 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         // 先落用户消息，保证中断后历史仍然完整
         val prepared = buildAttachmentPayload(state.attachments, rawText, mImportedFileNames)
         mImportedFileNames = emptyList()
-        mMessages += AssistantMessage(role = ROLE_USER, content = prepared.text)
+        // 附件记进这条用户消息，对话里能看到发过什么；
+        // 文本同时也已复制进沙箱，工具照样能读
+        val sentAttachments = state.attachments
+        mMessages += AssistantMessage(
+            role = ROLE_USER,
+            content = prepared.text,
+            attachments = sentAttachments
+        )
         state.copy(
             items = mMessages.toItems(),
             input = "",
@@ -652,7 +659,11 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     /** 把存储消息映射成展示条目。 */
     private fun List<AssistantMessage>.toItems(): List<AssistantMessageItem> = map { message ->
         when (message.role) {
-            ROLE_USER -> AssistantMessageItem(AssistantRole.User, message.content)
+            ROLE_USER -> AssistantMessageItem(
+                    AssistantRole.User,
+                    message.content,
+                    attachments = message.attachments
+                )
             ROLE_TOOL -> AssistantMessageItem(
                 role = AssistantRole.Tool,
                 content = message.content,

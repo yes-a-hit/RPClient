@@ -39,7 +39,7 @@ sealed class AssistantUiState {
         /** 当前会话 ID。 */
         val currentSessionId: String = "",
         /** 待发送附件：选中后随下一条消息一起发出。 */
-        val attachments: List<AssistantAttachment> = emptyList()
+    val attachments: List<AssistantAttachment> = emptyList()
     ) : AssistantUiState()
 
     /** 页面结束。 */
@@ -61,7 +61,9 @@ enum class AssistantRole {
 data class AssistantMessageItem(
     val role: AssistantRole,
     val content: String,
-    val toolName: String? = null
+    val toolName: String? = null,
+    /** 这条消息附带的文件，界面在气泡下方展示。 */
+    val attachments: List<AssistantAttachment>? = null
 )
 
 /**

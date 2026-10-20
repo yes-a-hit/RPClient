@@ -15,6 +15,7 @@ import me.kafuuneko.rpclient.libs.assistant.AssistantToolExecutor
 import me.kafuuneko.rpclient.libs.billing.PricingRepository
 import me.kafuuneko.rpclient.libs.billing.ProviderBalanceClient
 import me.kafuuneko.rpclient.libs.billing.UsageCostCalculator
+import me.kafuuneko.rpclient.libs.gallery.GalleryStore
 import me.kafuuneko.rpclient.libs.script.ScriptStore
 import me.kafuuneko.rpclient.libs.script.ScriptPlayStore
 import me.kafuuneko.rpclient.libs.story.NovelImportRepository
@@ -219,7 +220,8 @@ internal val appModules = module {
     // 助手会话：沙箱内文件工具与角色卡编辑工具
     single { AssistantStore(androidContext()) }
     single { AssistantSessionStore(androidContext()) }
-    single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get(), get()) }
+    single { GalleryStore(androidContext(), get()) }
+    single { AssistantToolExecutor(get<AssistantStore>().sandboxRoot, get(), get(), get(), get()) }
 
     // 计费：模型报价快照与服务商余额查询
     single { PricingRepository(get(), get()) }
