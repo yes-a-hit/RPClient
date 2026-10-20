@@ -24,9 +24,25 @@ data class ScriptSceneRow(
     /** 是否允许循环。 */
     val loopEnabled: Boolean = false,
     /** 后继场景 ID。 */
-    val nextIds: List<String>,
+    val nextIds: List<String> = emptyList(),
     /** 解锁前置 ID。 */
-    val unlockIds: List<String>
+    val unlockIds: List<String> = emptyList(),
+    /** 背景图检索词。 */
+    val backgroundKey: String = "",
+    /** 可出场角色，顿号分隔的展示串。 */
+    val castNames: String = "",
+    /** 禁止出场角色，顿号分隔的展示串。 */
+    val bannedNames: String = "",
+    /** 绑定的世界书名称。 */
+    val lorebookName: String = "",
+    /** 失败关键词。 */
+    val failKeyword: String = "",
+    /** 失败轮次上限，0 表示不限。 */
+    val failRounds: Int = 0,
+    /** 通关关键词。 */
+    val completionKeyword: String = "",
+    /** 后继场景 ID，逗号分隔的展示串。 */
+    val nextSceneIds: String = ""
 )
 
 /** 剧本编辑页状态。 */

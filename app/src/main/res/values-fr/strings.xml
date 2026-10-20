@@ -1401,4 +1401,12 @@
     <string name="assistant_sandbox">Bac à sable</string>
     <string name="assistant_sandbox_empty">Bac à sable vide</string>
     <string name="gallery_title">Galerie</string>
+    <string name="script_scene_background">Fond</string>
+    <string name="script_scene_cast">Personnages</string>
+    <string name="script_scene_banned">Interdits</string>
+    <string name="script_scene_lorebook">Livre</string>
+    <string name="script_scene_fail_keyword">Échec</string>
+    <string name="script_scene_fail_rounds">Tours</string>
+    <string name="script_scene_completion">Fin</string>
+    <string name="script_scene_next">Suivantes</string>
 </resources>

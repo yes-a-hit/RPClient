@@ -1396,4 +1396,12 @@
     <string name="assistant_sandbox">サンドボックス</string>
     <string name="assistant_sandbox_empty">サンドボックスは空です</string>
     <string name="gallery_title">ギャラリー</string>
+    <string name="script_scene_background">背景</string>
+    <string name="script_scene_cast">登場人物</string>
+    <string name="script_scene_banned">禁止</string>
+    <string name="script_scene_lorebook">世界観</string>
+    <string name="script_scene_fail_keyword">失敗</string>
+    <string name="script_scene_fail_rounds">上限</string>
+    <string name="script_scene_completion">達成</string>
+    <string name="script_scene_next">次の場面</string>
 </resources>

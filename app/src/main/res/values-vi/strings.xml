@@ -1401,4 +1401,12 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="assistant_sandbox">Hộp cát</string>
     <string name="assistant_sandbox_empty">Hộp cát trống</string>
     <string name="gallery_title">Thư viện ảnh</string>
+    <string name="script_scene_background">Nền</string>
+    <string name="script_scene_cast">Nhân vật</string>
+    <string name="script_scene_banned">Cấm</string>
+    <string name="script_scene_lorebook">Sách</string>
+    <string name="script_scene_fail_keyword">Thất bại</string>
+    <string name="script_scene_fail_rounds">Lượt</string>
+    <string name="script_scene_completion">Hoàn thành</string>
+    <string name="script_scene_next">Tiếp theo</string>
 </resources>

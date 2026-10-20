@@ -50,7 +50,23 @@ sealed class ScriptEditorUiIntent {
         val entryPrompt: String,
         val checkpoint: Boolean,
         val loopEnabled: Boolean,
-        val isEntry: Boolean
+        val isEntry: Boolean,
+        /** 背景图检索词，对应图库标签或名称。 */
+        val backgroundKey: String = "",
+        /** 可出场角色名，顿号或逗号分隔。 */
+        val castNames: String = "",
+        /** 禁止出场角色名。 */
+        val bannedNames: String = "",
+        /** 绑定的世界书名称，留空表示不绑定。 */
+        val lorebookName: String = "",
+        /** 失败关键词，命中即失败。 */
+        val failKeyword: String = "",
+        /** 失败轮次上限，0 表示不限制。 */
+        val failRounds: Int = 0,
+        /** 通关关键词，命中即通关。 */
+        val completionKeyword: String = "",
+        /** 后继场景 ID，逗号分隔。 */
+        val nextSceneIds: String = ""
     ) : ScriptEditorUiIntent()
 
     /** 删除场景。 */

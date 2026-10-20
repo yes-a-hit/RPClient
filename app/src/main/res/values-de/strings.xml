@@ -1400,4 +1400,12 @@
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox ist leer</string>
     <string name="gallery_title">Galerie</string>
+    <string name="script_scene_background">Hintergrund</string>
+    <string name="script_scene_cast">Figuren</string>
+    <string name="script_scene_banned">Verboten</string>
+    <string name="script_scene_lorebook">Weltbuch</string>
+    <string name="script_scene_fail_keyword">Scheitern</string>
+    <string name="script_scene_fail_rounds">Runden</string>
+    <string name="script_scene_completion">Abschluss</string>
+    <string name="script_scene_next">Nächste</string>
 </resources>

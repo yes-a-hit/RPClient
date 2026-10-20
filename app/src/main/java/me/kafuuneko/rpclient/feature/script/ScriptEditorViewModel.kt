@@ -7,6 +7,10 @@ import me.kafuuneko.rpclient.feature.script.presentation.ScriptLinkField
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptSceneRow
 import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
+import me.kafuuneko.rpclient.libs.script.ScriptCondition
+import me.kafuuneko.rpclient.libs.script.ScriptConditionType
+import me.kafuuneko.rpclient.libs.script.ScriptCastMember
+import me.kafuuneko.rpclient.libs.script.ScriptLorebook
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
 import me.kafuuneko.rpclient.libs.script.ScriptScene
@@ -145,6 +149,33 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     }
 
     /** 提交场景设置并落盘。设置的入口会顶掉原入口，保证单一入口语义。 */
+
+    /** 把顿号、逗号或空格分隔的名字拆成列表，去重保序。 */
+    private fun splitNames(raw: String): List<String> = raw
+        .split('、', ',', '，', ' ', '\n')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .distinct()
+
+    /** 由关键词与轮次上限组装失败条件；都为空表示不判失败。 */
+    private fun buildFailConditions(intent: ScriptEditorUiIntent.UpdateScene): List<ScriptCondition> {
+        val conditions = mutableListOf<ScriptCondition>()
+        val keyword = intent.failKeyword.trim()
+        if (keyword.isNotBlank()) {
+            conditions += ScriptCondition(
+                type = ScriptConditionType.Keyword,
+                pattern = keyword
+            )
+        }
+        if (intent.failRounds > 0) {
+            conditions += ScriptCondition(
+                type = ScriptConditionType.RoundLimit,
+                threshold = intent.failRounds
+            )
+        }
+        return conditions
+    }
+
     @UiIntentObserver(ScriptEditorUiIntent.UpdateScene::class)
     private suspend fun onUpdateScene(intent: ScriptEditorUiIntent.UpdateScene) {
         mPack = mPack.copy(
@@ -159,7 +190,25 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                         maxRounds = intent.maxRounds.coerceAtLeast(0),
                         entryPrompt = intent.entryPrompt,
                         checkpoint = intent.checkpoint,
-                        loopEnabled = intent.loopEnabled
+                        loopEnabled = intent.loopEnabled,
+                        backgroundKey = intent.backgroundKey.trim(),
+                        cast = splitNames(intent.castNames).map { name ->
+                            ScriptCastMember(name = name)
+                        },
+                        bannedCast = splitNames(intent.bannedNames),
+                        lorebook = intent.lorebookName.trim()
+                            .takeIf { it.isNotBlank() }
+                            ?.let { ScriptLorebook(name = it) },
+                        failConditions = buildFailConditions(intent),
+                        completionCondition = intent.completionKeyword.trim()
+                            .takeIf { it.isNotBlank() }
+                            ?.let { keyword ->
+                                ScriptCondition(
+                                    type = ScriptConditionType.Keyword,
+                                    pattern = keyword
+                                )
+                            },
+                        nextSceneIds = splitNames(intent.nextSceneIds)
                     )
                 }
             }
@@ -219,7 +268,24 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                     entryPrompt = scene.entryPrompt,
                     loopEnabled = scene.loopEnabled,
                     nextIds = scene.nextSceneIds,
-                    unlockIds = scene.unlockedBy
+                    unlockIds = scene.unlockedBy,
+                    backgroundKey = scene.backgroundKey,
+                    castNames = scene.cast.joinToString("、") { it.name },
+                    bannedNames = scene.bannedCast.joinToString("、"),
+                    lorebookName = scene.lorebook?.name.orEmpty(),
+                    failKeyword = scene.failConditions
+                        .firstOrNull { it.type == ScriptConditionType.Keyword }
+                        ?.pattern
+                        .orEmpty(),
+                    failRounds = scene.failConditions
+                        .firstOrNull { it.type == ScriptConditionType.RoundLimit }
+                        ?.threshold
+                        ?: 0,
+                    completionKeyword = scene.completionCondition
+                        ?.takeIf { it.type == ScriptConditionType.Keyword }
+                        ?.pattern
+                        .orEmpty(),
+                    nextSceneIds = scene.nextSceneIds.joinToString("、")
                 )
             },
             editingSceneId = editingSceneId,

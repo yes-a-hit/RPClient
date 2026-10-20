@@ -1401,4 +1401,12 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox kosong</string>
     <string name="gallery_title">Galeri</string>
+    <string name="script_scene_background">Latar</string>
+    <string name="script_scene_cast">Karakter</string>
+    <string name="script_scene_banned">Dilarang</string>
+    <string name="script_scene_lorebook">Buku</string>
+    <string name="script_scene_fail_keyword">Gagal</string>
+    <string name="script_scene_fail_rounds">Ronde</string>
+    <string name="script_scene_completion">Selesai</string>
+    <string name="script_scene_next">Berikut</string>
 </resources>

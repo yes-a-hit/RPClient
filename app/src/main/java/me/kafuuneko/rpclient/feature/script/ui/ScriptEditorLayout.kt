@@ -17,6 +17,8 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Save
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -283,11 +285,6 @@ private fun LinkPickerDialog(
     )
 }
 
-/**
- * 场景设置面板：名称、时间轴、开场文本与三个开关。
- *
- * 本地状态先行，点保存才提交，避免每敲一个字就写盘。
- */
 @Composable
 private fun SceneSettingsDialog(
     row: ScriptSceneRow,
@@ -299,28 +296,100 @@ private fun SceneSettingsDialog(
     var checkpoint by remember(row.id) { mutableStateOf(row.checkpoint) }
     var loop by remember(row.id) { mutableStateOf(row.loopEnabled) }
     var isEntry by remember(row.id) { mutableStateOf(row.isEntry) }
+    var background by remember(row.id) { mutableStateOf(row.backgroundKey) }
+    var castNames by remember(row.id) { mutableStateOf(row.castNames) }
+    var bannedNames by remember(row.id) { mutableStateOf(row.bannedNames) }
+    var lorebookName by remember(row.id) { mutableStateOf(row.lorebookName) }
+    var failKeyword by remember(row.id) { mutableStateOf(row.failKeyword) }
+    var failRounds by remember(row.id) { mutableStateOf(row.failRounds.toString()) }
+    var completionKeyword by remember(row.id) { mutableStateOf(row.completionKeyword) }
+    var nextScenes by remember(row.id) { mutableStateOf(row.nextSceneIds) }
+
     AlertDialog(
         onDismissRequest = { ScriptEditorUiIntent.CloseSceneEditor.emit() },
         title = { Text(stringResource(R.string.script_scene_settings)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.script_scene_name)) },
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = rounds,
                     onValueChange = { rounds = it.filter(Char::isDigit).take(4) },
                     label = { Text(stringResource(R.string.script_scene_rounds)) },
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
                     label = { Text(stringResource(R.string.script_scene_prompt)) },
-                    maxLines = 3
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // 背景图：填图库里的标签或名称，本地匹配不生成
+                OutlinedTextField(
+                    value = background,
+                    onValueChange = { background = it },
+                    label = { Text(stringResource(R.string.script_scene_background)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = castNames,
+                    onValueChange = { castNames = it },
+                    label = { Text(stringResource(R.string.script_scene_cast)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = bannedNames,
+                    onValueChange = { bannedNames = it },
+                    label = { Text(stringResource(R.string.script_scene_banned)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = lorebookName,
+                    onValueChange = { lorebookName = it },
+                    label = { Text(stringResource(R.string.script_scene_lorebook)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = failKeyword,
+                    onValueChange = { failKeyword = it },
+                    label = { Text(stringResource(R.string.script_scene_fail_keyword)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = failRounds,
+                    onValueChange = { failRounds = it.filter(Char::isDigit).take(4) },
+                    label = { Text(stringResource(R.string.script_scene_fail_rounds)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = completionKeyword,
+                    onValueChange = { completionKeyword = it },
+                    label = { Text(stringResource(R.string.script_scene_completion)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = nextScenes,
+                    onValueChange = { nextScenes = it },
+                    label = { Text(stringResource(R.string.script_scene_next)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 SwitchRow(stringResource(R.string.script_row_checkpoint), checkpoint) { checkpoint = it }
                 SwitchRow(stringResource(R.string.script_scene_loop), loop) { loop = it }
@@ -336,7 +405,15 @@ private fun SceneSettingsDialog(
                     entryPrompt = prompt,
                     checkpoint = checkpoint,
                     loopEnabled = loop,
-                    isEntry = isEntry
+                    isEntry = isEntry,
+                    backgroundKey = background,
+                    castNames = castNames,
+                    bannedNames = bannedNames,
+                    lorebookName = lorebookName,
+                    failKeyword = failKeyword,
+                    failRounds = failRounds.toIntOrNull() ?: 0,
+                    completionKeyword = completionKeyword,
+                    nextSceneIds = nextScenes
                 ).emit()
             }) { Text(stringResource(R.string.script_scene_save)) }
         },

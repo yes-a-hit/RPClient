@@ -1404,4 +1404,12 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="assistant_sandbox">Caixa de areia</string>
     <string name="assistant_sandbox_empty">Caixa vazia</string>
     <string name="gallery_title">Galeria</string>
+    <string name="script_scene_background">Fundo (tag)</string>
+    <string name="script_scene_cast">Personagens</string>
+    <string name="script_scene_banned">Proibidos</string>
+    <string name="script_scene_lorebook">Livro</string>
+    <string name="script_scene_fail_keyword">Falha</string>
+    <string name="script_scene_fail_rounds">Rodadas</string>
+    <string name="script_scene_completion">Conclusão</string>
+    <string name="script_scene_next">Próximas</string>
 </resources>

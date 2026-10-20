@@ -1395,4 +1395,12 @@
     <string name="assistant_sandbox">샌드박스</string>
     <string name="assistant_sandbox_empty">샌드박스가 비어 있습니다</string>
     <string name="gallery_title">갤러리</string>
+    <string name="script_scene_background">배경</string>
+    <string name="script_scene_cast">등장 인물</string>
+    <string name="script_scene_banned">금지</string>
+    <string name="script_scene_lorebook">세계관</string>
+    <string name="script_scene_fail_keyword">실패</string>
+    <string name="script_scene_fail_rounds">라운드</string>
+    <string name="script_scene_completion">완료</string>
+    <string name="script_scene_next">다음 장면</string>
 </resources>

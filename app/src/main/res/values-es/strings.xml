@@ -1402,4 +1402,12 @@
     <string name="assistant_sandbox">Sandbox</string>
     <string name="assistant_sandbox_empty">Sandbox vacío</string>
     <string name="gallery_title">Galería</string>
+    <string name="script_scene_background">Fondo</string>
+    <string name="script_scene_cast">Personajes</string>
+    <string name="script_scene_banned">Prohibidos</string>
+    <string name="script_scene_lorebook">Libro</string>
+    <string name="script_scene_fail_keyword">Fallo</string>
+    <string name="script_scene_fail_rounds">Turnos</string>
+    <string name="script_scene_completion">Final</string>
+    <string name="script_scene_next">Siguientes</string>
 </resources>

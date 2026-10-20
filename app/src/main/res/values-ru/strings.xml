@@ -1405,4 +1405,12 @@
     <string name="assistant_sandbox">Песочница</string>
     <string name="assistant_sandbox_empty">Песочница пуста</string>
     <string name="gallery_title">Галерея</string>
+    <string name="script_scene_background">Фон</string>
+    <string name="script_scene_cast">Персонажи</string>
+    <string name="script_scene_banned">Запрет</string>
+    <string name="script_scene_lorebook">Книга</string>
+    <string name="script_scene_fail_keyword">Провал</string>
+    <string name="script_scene_fail_rounds">Раунды</string>
+    <string name="script_scene_completion">Завершение</string>
+    <string name="script_scene_next">Далее</string>
 </resources>
