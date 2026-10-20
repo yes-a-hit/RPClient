@@ -46,7 +46,7 @@ class ScriptAdventureActivity : CoreActivityWithEvent() {
         when (viewEvent) {
             is ScriptAdventureViewEvent.LaunchPlay -> {
                 startActivity(
-                    ScriptPlayActivity.intentOf(this, viewEvent.packId, viewEvent.playId)
+                    ScriptPlayActivity.intentOf(this, viewEvent.packId, viewEvent.playId, viewEvent.characters)
                 )
                 return
             }

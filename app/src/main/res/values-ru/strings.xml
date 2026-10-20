@@ -1391,4 +1391,13 @@
     <string name="adventure_short">Приключение</string>
     <string name="adventure_last_hint">Продолжить приключение?</string>
     <string name="script_play_auto">Автопродолжение</string>
+    <string name="script_play_leave">Выйти</string>
+    <string name="script_play_impersonate">Написать действие</string>
+    <string name="script_play_skip">Пропустить ход</string>
+    <string name="adventure_pick_cast">Выбрать персонажей</string>
+    <string name="adventure_no_characters">Персонажей нет</string>
+    <string name="adventure_start">Начать</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Молчать</string>
+    <string name="script_play_gm_speak">Говорить</string>
 </resources>

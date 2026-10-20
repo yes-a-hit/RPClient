@@ -1387,4 +1387,13 @@
     <string name="adventure_short">Aventure</string>
     <string name="adventure_last_hint">Reprendre l’aventure ?</string>
     <string name="script_play_auto">Avance automatique</string>
+    <string name="script_play_leave">Quitter</string>
+    <string name="script_play_impersonate">Écrire une action</string>
+    <string name="script_play_skip">Avancer sans agir</string>
+    <string name="adventure_pick_cast">Choisir les personnages</string>
+    <string name="adventure_no_characters">Aucun personnage</string>
+    <string name="adventure_start">Commencer</string>
+    <string name="script_play_gm">MJ</string>
+    <string name="script_play_gm_mute">Muet</string>
+    <string name="script_play_gm_speak">Parler</string>
 </resources>

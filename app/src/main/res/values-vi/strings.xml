@@ -1387,4 +1387,13 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="adventure_short">Phiêu lưu</string>
     <string name="adventure_last_hint">Tiếp tục phiêu lưu?</string>
     <string name="script_play_auto">Tự động tiếp</string>
+    <string name="script_play_leave">Rời đi</string>
+    <string name="script_play_impersonate">Viết hộ hành động</string>
+    <string name="script_play_skip">Bỏ lượt</string>
+    <string name="adventure_pick_cast">Chọn nhân vật</string>
+    <string name="adventure_no_characters">Chưa có nhân vật</string>
+    <string name="adventure_start">Bắt đầu</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Cấm nói</string>
+    <string name="script_play_gm_speak">Phát biểu</string>
 </resources>

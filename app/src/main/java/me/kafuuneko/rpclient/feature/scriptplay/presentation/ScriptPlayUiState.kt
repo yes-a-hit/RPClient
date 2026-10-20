@@ -19,6 +19,21 @@ sealed class ScriptPlayUiState {
         val generating: Boolean = false,
         /** 本局已结束时的提示。 */
         val finishedReason: String = "",
+        /** 正在生成玩家代写内容。 */
+        val impersonating: Boolean = false,
+
+        /** 当前场景可出场的角色名，供 GM 面板选择。 */
+        val castNames: List<String> = emptyList(),
+
+        /** GM 面板是否展开。 */
+        val gmPanelVisible: Boolean = false,
+
+        /** 本轮禁言的角色。 */
+        val mutedCharacters: Set<String> = emptySet(),
+
+        /** 本轮指定发言的角色。 */
+        val forcedSpeaker: String? = null,
+
         /** 本轮给出的推荐行动。 */
         val options: List<String> = emptyList(),
 
@@ -59,6 +74,23 @@ sealed class ScriptPlayUiIntent {
 
     /** 切换自动推进。 */
     data object ToggleAutoPlay : ScriptPlayUiIntent()
+
+    /** 让模型替玩家写一句行动，填入输入框由玩家确认。 */
+    data object Impersonate : ScriptPlayUiIntent()
+
+    /** 玩家轮空：不发话，让角色与环境自行推进一轮。 */
+    data object ContinueWithoutInput : ScriptPlayUiIntent()
+
+    /** GM 面板：打开与关闭。 */
+    data object OpenGmPanel : ScriptPlayUiIntent()
+
+    data object CloseGmPanel : ScriptPlayUiIntent()
+
+    /** 切换某个角色的禁言状态。 */
+    data class ToggleMute(val name: String) : ScriptPlayUiIntent()
+
+    /** 指定下一轮必须发言的角色；再点一次取消。 */
+    data class ForceSpeaker(val name: String) : ScriptPlayUiIntent()
 
     data object Back : ScriptPlayUiIntent()
 }

@@ -1386,4 +1386,13 @@
     <string name="adventure_short">Abenteuer</string>
     <string name="adventure_last_hint">Letztes Abenteuer fortsetzen?</string>
     <string name="script_play_auto">Automatisch fortfahren</string>
+    <string name="script_play_leave">Verlassen</string>
+    <string name="script_play_impersonate">Aktion schreiben</string>
+    <string name="script_play_skip">Ohne Aktion weiter</string>
+    <string name="adventure_pick_cast">Anwesende Figuren</string>
+    <string name="adventure_no_characters">Keine Figuren vorhanden</string>
+    <string name="adventure_start">Starten</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Stumm</string>
+    <string name="script_play_gm_speak">Sprechen</string>
 </resources>

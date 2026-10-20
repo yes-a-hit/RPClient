@@ -1387,4 +1387,13 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="adventure_short">Petualangan</string>
     <string name="adventure_last_hint">Lanjutkan petualangan?</string>
     <string name="script_play_auto">Majukan otomatis</string>
+    <string name="script_play_leave">Keluar</string>
+    <string name="script_play_impersonate">Tulis aksi</string>
+    <string name="script_play_skip">Lanjut tanpa aksi</string>
+    <string name="adventure_pick_cast">Pilih karakter</string>
+    <string name="adventure_no_characters">Belum ada karakter</string>
+    <string name="adventure_start">Mulai</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Bisukan</string>
+    <string name="script_play_gm_speak">Bicara</string>
 </resources>

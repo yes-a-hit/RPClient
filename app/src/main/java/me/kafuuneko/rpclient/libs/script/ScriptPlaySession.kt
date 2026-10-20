@@ -123,7 +123,10 @@ object ScriptPlayPromptBuilder {
         pack: ScriptPack,
         scene: ScriptScene,
         roundCount: Int,
-        remainingRounds: Int
+        remainingRounds: Int,
+        activeCharacters: List<String> = emptyList(),
+        mutedCharacters: Set<String> = emptySet(),
+        forcedSpeaker: String? = null
     ): String {
         val builder = StringBuilder()
         builder.append("你正在主持一场角色扮演剧本《").append(pack.name).append("》。\n")
@@ -139,6 +142,24 @@ object ScriptPlayPromptBuilder {
             builder.append("\n【可出场角色】")
             builder.append(scene.cast.joinToString("、") { it.name })
             builder.append('\n')
+        }
+        // GM 本轮干预：禁言名单让某些角色闭嘴，指定发言让场面往想要的方向推
+        if (mutedCharacters.isNotEmpty()) {
+            builder.append("\\n【本轮禁言】")
+            builder.append(mutedCharacters.joinToString("、"))
+            builder.append("，本轮不得让他们说话。\\n")
+        }
+        if (!forcedSpeaker.isNullOrBlank()) {
+            builder.append("\\n【本轮必须发言】")
+            builder.append(forcedSpeaker)
+            builder.append("，本轮至少给他一句台词。\\n")
+        }
+
+        // 玩家自己挑的在场角色，与剧本名单取并集，剧本没写时也能用
+        if (activeCharacters.isNotEmpty()) {
+            builder.append("\n【玩家指定在场】")
+            builder.append(activeCharacters.joinToString("、"))
+            builder.append("\n")
         }
         if (scene.bannedCast.isNotEmpty()) {
             builder.append("【禁止出场角色】")

@@ -1388,4 +1388,13 @@
     <string name="adventure_short">Aventura</string>
     <string name="adventure_last_hint">¿Continuar la aventura?</string>
     <string name="script_play_auto">Avance automático</string>
+    <string name="script_play_leave">Salir</string>
+    <string name="script_play_impersonate">Escribir acción</string>
+    <string name="script_play_skip">Avanzar sin actuar</string>
+    <string name="adventure_pick_cast">Elegir personajes</string>
+    <string name="adventure_no_characters">Sin personajes</string>
+    <string name="adventure_start">Empezar</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Silenciar</string>
+    <string name="script_play_gm_speak">Hablar</string>
 </resources>

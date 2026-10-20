@@ -1382,4 +1382,13 @@
     <string name="adventure_short">冒険</string>
     <string name="adventure_last_hint">前回の冒険は？</string>
     <string name="script_play_auto">自動進行</string>
+    <string name="script_play_leave">退出</string>
+    <string name="script_play_impersonate">行動を代筆</string>
+    <string name="script_play_skip">行動せず進める</string>
+    <string name="adventure_pick_cast">登場人物を選ぶ</string>
+    <string name="adventure_no_characters">キャラクターがいません</string>
+    <string name="adventure_start">開始</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">発言禁止</string>
+    <string name="script_play_gm_speak">発言</string>
 </resources>

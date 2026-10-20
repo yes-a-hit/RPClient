@@ -41,6 +41,7 @@ import org.koin.core.component.inject
  */
 class ScriptPlayViewModel(
     private val mPackId: String,
+    private val mActiveCharacters: List<String>,
     private val mPlayId: String
 ) : CoreViewModelWithEvent<ScriptPlayUiIntent, ScriptPlayUiState>(
     ScriptPlayUiState.Loading
@@ -68,6 +69,12 @@ class ScriptPlayViewModel(
 
     /** 连续自动推进轮数，用于防止无人值守时无限循环。 */
     private var mAutoRounds = 0
+
+    /** 本轮禁言名单，取自界面状态。 */
+    private var mCurrentMuted: Set<String> = emptySet()
+
+    /** 本轮指定发言角色，取自界面状态。 */
+    private var mCurrentForcedSpeaker: String? = null
     private var mPlay: ScriptPlaythrough = ScriptPlaythrough(
         id = mPlayId,
         packId = mPackId,
@@ -143,6 +150,9 @@ class ScriptPlayViewModel(
         if (text.isEmpty()) return
 
         val scene = currentScene(pack) ?: return
+        // GM 干预只作用于本轮，发送时取当前界面状态
+        mCurrentMuted = state.mutedCharacters
+        mCurrentForcedSpeaker = state.forcedSpeaker
         mPlay = mPlay.copy(messages = mPlay.messages + ScriptPlayMessage(PLAYER, text))
         state.copy(input = "", generating = true, messages = mPlay.messages).setup()
 
@@ -188,6 +198,8 @@ class ScriptPlayViewModel(
             ScriptPlayOutcome.Continue -> Unit
         }
         mOptions = parsedReply.options
+        // 指定发言是一次性的，用过就清，避免一直压着同一个角色
+        mCurrentForcedSpeaker = null
         mPlayStore.save(mPlay)
         publish()
 
@@ -237,6 +249,73 @@ class ScriptPlayViewModel(
         if (isStateOf<ScriptPlayUiState.Finished>()) return
         ScriptPlayUiState.Finished.setup()
     }
+
+
+    /**
+     * 让模型代写一句玩家行动。
+     *
+     * 结果只填进输入框，不直接发送——玩家可能想改措辞再发。
+     * 用的还是当前场景上下文，所以写出来的行动与局势一致。
+     */
+    @UiIntentObserver(ScriptPlayUiIntent.Impersonate::class)
+    private suspend fun onImpersonate() {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        val pack = mPack ?: return
+        if (state.generating || state.impersonating) return
+        val scene = currentScene(pack) ?: return
+        state.copy(impersonating = true).setup()
+        val draft = runCatching { requestImpersonation(pack, scene) }.getOrElse { error ->
+            val current = getOrNull<ScriptPlayUiState.Ready>() ?: return
+            current.copy(impersonating = false).setup()
+            ScriptPlayViewEvent.Toast("代写失败：${error.message.orEmpty()}").tryEmit()
+            return
+        }
+        val current = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        current.copy(input = draft.trim(), impersonating = false).setup()
+    }
+
+    /**
+     * 玩家轮空：把「沉默观察」作为隐式行动推进一轮。
+     *
+     * 不落成玩家发言，玩家消息里看不出这句是系统补的。
+     */
+    @UiIntentObserver(ScriptPlayUiIntent.ContinueWithoutInput::class)
+    private suspend fun onContinueWithoutInput() {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        if (state.generating || state.finishedReason.isNotBlank()) return
+        state.copy(input = SILENT_ACTION).setup()
+        onSend()
+    }
+
+    /** 请求一段玩家代写内容。 */
+    private suspend fun requestImpersonation(pack: ScriptPack, scene: ScriptScene): String =
+        withContext(Dispatchers.IO) {
+            val provider = mProviderSelectionResolver.requireDefaultProvider()
+            val client = mClientFactory.create(provider.toConfig())
+            val system = buildString {
+                append("你在为玩家代笔。当前剧本《").append(pack.name).append("》，场景：")
+                append(scene.name).append("。\n")
+                append("根据最近几轮局势，写一句玩家此刻最自然的行动或台词，20 字以内，")
+                append("只输出这句话本身，不要旁白、不要引号、不要解释。")
+            }
+            val messages = buildList {
+                add(LLMMessage(LLMMessageRole.System, system))
+                ScriptPlayPromptBuilder.buildHistory(mPlay.messages, IMPERSONATE_HISTORY)
+                    .forEach { message ->
+                        add(
+                            LLMMessage(
+                                role = if (message.speaker == PLAYER) {
+                                    LLMMessageRole.User
+                                } else {
+                                    LLMMessageRole.Assistant
+                                },
+                                content = "${message.speaker}：${message.content}"
+                            )
+                        )
+                    }
+            }
+            client.generate(LLMGenerationRequest(messages = messages, model = provider.model)).content
+        }
 
     /** 调用模型生成一段场景回复。 */
     private suspend fun requestReply(pack: ScriptPack, scene: ScriptScene, text: String): String =
@@ -338,6 +417,8 @@ class ScriptPlayViewModel(
             messages = mPlay.messages,
             finishedReason = mPlay.endReason,
             options = mOptions,
+            castNames = (currentSceneOrNull()?.cast?.map { it.name }.orEmpty() +
+                mActiveCharacters).distinct(),
             autoPlay = mAutoPlay
         ).setup()
     }
@@ -352,7 +433,51 @@ class ScriptPlayViewModel(
         /** 连续自动推进的最大轮数，防止无人值守时无限消耗额度。 */
         const val MAX_AUTO_ROUNDS = 5
 
+        /** 玩家轮空时使用的隐式行动文本。 */
+        const val SILENT_ACTION = "（沉默观察，让局势自然发展）"
+
+        /** 代写时参考的历史条数。 */
+        const val IMPERSONATE_HISTORY = 8
+
         /** 送给模型的历史条数上限。 */
         const val MAX_HISTORY_MESSAGES = 20
     }
+
+    /** 当前场景，取不到时返回 null。 */
+    private fun currentSceneOrNull(): ScriptScene? = mPack?.let { currentScene(it) }
+
+    /** Open the GM panel. */
+    @UiIntentObserver(ScriptPlayUiIntent.OpenGmPanel::class)
+    private fun onOpenGmPanel() {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        state.copy(gmPanelVisible = true).setup()
+    }
+
+    /** Close the GM panel. */
+    @UiIntentObserver(ScriptPlayUiIntent.CloseGmPanel::class)
+    private fun onCloseGmPanel() {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        state.copy(gmPanelVisible = false).setup()
+    }
+
+    /** Toggle mute for one character. */
+    @UiIntentObserver(ScriptPlayUiIntent.ToggleMute::class)
+    private fun onToggleMute(intent: ScriptPlayUiIntent.ToggleMute) {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        val next = if (intent.name in state.mutedCharacters) {
+            state.mutedCharacters - intent.name
+        } else {
+            state.mutedCharacters + intent.name
+        }
+        state.copy(mutedCharacters = next).setup()
+    }
+
+    /** Force one character to speak next round; tap again to clear. */
+    @UiIntentObserver(ScriptPlayUiIntent.ForceSpeaker::class)
+    private fun onForceSpeaker(intent: ScriptPlayUiIntent.ForceSpeaker) {
+        val state = getOrNull<ScriptPlayUiState.Ready>() ?: return
+        val next = if (state.forcedSpeaker == intent.name) null else intent.name
+        state.copy(forcedSpeaker = next).setup()
+    }
+
 }

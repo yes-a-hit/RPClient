@@ -8,9 +8,15 @@ package me.kafuuneko.rpclient.libs.script
  * 是为了能干净地把选项从正文里剥掉，避免它们被当成剧情重复显示。
  */
 object ScriptPlayOptionParser {
-    /** 选项块的正则：起止标记之间的全部内容。 */
+    /**
+     * 选项块的正则。
+     *
+     * 模型经常忘记写闭合的 `>>>`，所以结尾标记设为可选：
+     * 有就截到标记处，没有就吃到文本末尾。
+     * 否则整块漏解析后会原样留在正文里，玩家会看到一串 `<<<OPTIONS`。
+     */
     private val blockPattern = Regex(
-        "<<<OPTIONS([\\s\\S]*?)>>>",
+        "<<<OPTIONS([\\s\\S]*?)(?:>>>|$)",
         RegexOption.IGNORE_CASE
     )
 

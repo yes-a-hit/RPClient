@@ -18,8 +18,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.PauseCircle
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Gavel
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +92,22 @@ fun ScriptPlayLayout(
                 title = state.packName,
                 onBack = onBack,
                 actions = {
+                    IconButton(onClick = { ScriptPlayUiIntent.ToggleAutoPlay.emit() }) {
+                        Icon(
+                            imageVector = if (state.autoPlay) {
+                                Icons.Rounded.PauseCircle
+                            } else {
+                                Icons.Rounded.PlayCircle
+                            },
+                            contentDescription = stringResource(R.string.script_play_auto)
+                        )
+                    }
+                    IconButton(onClick = { ScriptPlayUiIntent.OpenGmPanel.emit() }) {
+                        Icon(
+                            Icons.Rounded.Gavel,
+                            contentDescription = stringResource(R.string.script_play_gm)
+                        )
+                    }
                     IconButton(onClick = { ScriptPlayUiIntent.RestartScene.emit() }) {
                         Icon(
                             Icons.Rounded.Refresh,
@@ -124,6 +152,33 @@ fun ScriptPlayLayout(
                     }
                 }
             }
+            // 推荐行动：点一下即作为玩家输入发送，免去自己想说什么
+            if (state.options.isNotEmpty() && state.finishedReason.isBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    state.options.forEach { option ->
+                        Text(
+                            text = option,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { ScriptPlayUiIntent.SelectOption(option).emit() }
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
             if (state.finishedReason.isNotBlank()) {
                 Text(
                     text = state.finishedReason,
@@ -131,9 +186,33 @@ fun ScriptPlayLayout(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error
                 )
+                // 结束时给出口，而不是让玩家盯着一行红字
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { ScriptPlayUiIntent.RestartScene.emit() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.script_play_restart))
+                    }
+                    OutlinedButton(
+                        onClick = onBack,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.script_play_leave))
+                    }
+                }
             }
             InputBar(state, emit)
         }
+    }
+
+    if (state.gmPanelVisible) {
+        GmPanel(characters = state.castNames, state = state, emit = emit)
     }
 }
 
@@ -206,6 +285,16 @@ private fun InputBar(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = { ScriptPlayUiIntent.Impersonate.emit() },
+                enabled = !state.generating && !state.impersonating
+            ) {
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = stringResource(R.string.script_play_impersonate),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             OutlinedTextField(
                 value = state.input,
                 onValueChange = { ScriptPlayUiIntent.InputChanged(it).emit() },
@@ -239,10 +328,92 @@ private fun InputBar(
             }
         }
     }
+    if (state.gmPanelVisible) {
+        GmPanel(characters = state.castNames, state = state, emit = emit)
+    }
 }
 
 /** 玩家发言者在存档中的标识。 */
 private const val PLACEHOLDER_PLAYER = "玩家"
+
+/**
+ * GM 面板：禁言某个角色，或指定下一轮必须发言的人。
+ *
+ * 这两个开关只作用于下一轮，避免一直压着同一批角色的嘴。
+ */
+@Composable
+private fun GmPanel(
+    characters: List<String>,
+    state: ScriptPlayUiState.Ready,
+    emit: ScriptPlayUiIntent.() -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { ScriptPlayUiIntent.CloseGmPanel.emit() },
+        title = { Text(stringResource(R.string.script_play_gm)) },
+        text = {
+            if (characters.isEmpty()) {
+                Text(stringResource(R.string.adventure_no_characters))
+            } else {
+                Column {
+                    characters.forEach { name ->
+                        val muted = name in state.mutedCharacters
+                        val forced = state.forcedSpeaker == name
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = name,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            // 禁言：本轮闭嘴
+                            Text(
+                                text = stringResource(R.string.script_play_gm_mute),
+                                modifier = Modifier
+                                    .clickable { ScriptPlayUiIntent.ToggleMute(name).emit() }
+                                    .background(
+                                        color = if (muted) {
+                                            MaterialTheme.colorScheme.errorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            // 指定发言：本轮必须出声
+                            Text(
+                                text = stringResource(R.string.script_play_gm_speak),
+                                modifier = Modifier
+                                    .clickable { ScriptPlayUiIntent.ForceSpeaker(name).emit() }
+                                    .background(
+                                        color = if (forced) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { ScriptPlayUiIntent.CloseGmPanel.emit() }) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
+}
 
 /** 玩家气泡：右对齐、主色底。 */
 @Composable

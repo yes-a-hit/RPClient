@@ -32,11 +32,16 @@ class ScriptPlayActivity : CoreActivityWithEvent() {
         intent.getStringExtra(EXTRA_PLAY_ID).orEmpty().ifBlank { "$mPackId-${System.currentTimeMillis()}" }
     }
 
+    /** 玩家在冒险页选定的在场角色。 */
+    private val mActiveCharacters: List<String> by lazy {
+        intent.getStringArrayListExtra(EXTRA_ACTIVE_CHARACTERS)?.toList().orEmpty()
+    }
+
     private val mViewModel: ScriptPlayViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                return ScriptPlayViewModel(mPackId, mPlayId) as T
+                return ScriptPlayViewModel(mPackId, mActiveCharacters, mPlayId) as T
             }
         }
     }
@@ -81,15 +86,26 @@ class ScriptPlayActivity : CoreActivityWithEvent() {
 
     companion object {
         /** 剧本 ID 参数名，供首页直达某一局使用。 */
+        /** 在场角色参数名。 */
         const val EXTRA_PLAY_PACK_ID = "extra_play_pack_id"
+        const val EXTRA_ACTIVE_CHARACTERS = "extra_active_characters"
+
         /** 存档 ID 参数名。 */
         const val EXTRA_PLAY_ID = "extra_play_id"
 
         /** 开始或继续一局剧本。 */
-        fun intentOf(context: Context, packId: String, playId: String = ""): Intent =
+        fun intentOf(
+            context: Context,
+            packId: String,
+            playId: String = "",
+            activeCharacters: List<String> = emptyList()
+        ): Intent =
             Intent(context, ScriptPlayActivity::class.java).apply {
                 putExtra(EXTRA_PLAY_PACK_ID, packId)
                 if (playId.isNotBlank()) putExtra(EXTRA_PLAY_ID, playId)
+                if (activeCharacters.isNotEmpty()) {
+                    putStringArrayListExtra(EXTRA_ACTIVE_CHARACTERS, ArrayList(activeCharacters))
+                }
             }
     }
 }

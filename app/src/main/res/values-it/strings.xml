@@ -1365,4 +1365,13 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="adventure_short">Avventura</string>
     <string name="adventure_last_hint">Riprendere l’avventura?</string>
     <string name="script_play_auto">Avanzamento automatico</string>
+    <string name="script_play_leave">Esci</string>
+    <string name="script_play_impersonate">Scrivi azione</string>
+    <string name="script_play_skip">Avanza senza azione</string>
+    <string name="adventure_pick_cast">Scegli personaggi</string>
+    <string name="adventure_no_characters">Nessun personaggio</string>
+    <string name="adventure_start">Inizia</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">Silenzia</string>
+    <string name="script_play_gm_speak">Parla</string>
 </resources>

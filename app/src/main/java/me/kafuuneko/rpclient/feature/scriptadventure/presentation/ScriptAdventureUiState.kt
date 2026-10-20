@@ -26,6 +26,12 @@ sealed class ScriptAdventureUiState {
     data class Ready(
         /** 可开局的剧本。 */
         val packs: List<AdventurePackItem> = emptyList(),
+        /** 角色卡名称，供开局时挑选在场角色。 */
+        val characters: List<String> = emptyList(),
+        /** 正在为哪个剧本挑角色；null 表示选择器关闭。 */
+        val pickingForPackId: String? = null,
+        /** 已勾选的在场角色。 */
+        val selectedCharacters: Set<String> = emptySet(),
         /** 已有存档。 */
         val saves: List<AdventureSaveItem> = emptyList()
     ) : ScriptAdventureUiState() {
@@ -41,8 +47,17 @@ sealed class ScriptAdventureUiState {
 sealed class ScriptAdventureUiIntent {
     data object Init : ScriptAdventureUiIntent()
 
+    /** 为指定剧本打开角色选择器。 */
+    data class OpenCharacterPicker(val packId: String) : ScriptAdventureUiIntent()
+
+    /** 勾选或取消一个在场角色。 */
+    data class ToggleCharacter(val name: String) : ScriptAdventureUiIntent()
+
+    /** 关闭角色选择器。 */
+    data object DismissCharacterPicker : ScriptAdventureUiIntent()
+
     /** 用指定剧本开新局。 */
-    data class StartNew(val packId: String) : ScriptAdventureUiIntent()
+    data class StartNew(val packId: String, val characters: List<String> = emptyList()) : ScriptAdventureUiIntent()
 
     /** 继续已有存档。 */
     data class Continue(val playId: String, val packId: String) : ScriptAdventureUiIntent()
@@ -59,7 +74,11 @@ sealed class ScriptAdventureUiIntent {
 /** 剧情冒险事件。 */
 sealed class ScriptAdventureViewEvent : me.kafuuneko.rpclient.libs.core.IViewEvent {
     /** 进入剧本模式。 */
-    data class LaunchPlay(val packId: String, val playId: String) : ScriptAdventureViewEvent()
+    data class LaunchPlay(
+        val packId: String,
+        val playId: String,
+        val characters: List<String> = emptyList()
+    ) : ScriptAdventureViewEvent()
 
     /** 打开剧本库。 */
     data object OpenLibrary : ScriptAdventureViewEvent()

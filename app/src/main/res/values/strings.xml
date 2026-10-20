@@ -1417,4 +1417,13 @@
     <string name="adventure_short">冒险</string>
     <string name="adventure_last_hint">上次的冒险？</string>
     <string name="script_play_auto">自动推进</string>
+    <string name="script_play_leave">离开</string>
+    <string name="script_play_impersonate">代写行动</string>
+    <string name="script_play_skip">轮空推进</string>
+    <string name="adventure_pick_cast">选择在场角色</string>
+    <string name="adventure_no_characters">还没有角色卡</string>
+    <string name="adventure_start">开始</string>
+    <string name="script_play_gm">GM</string>
+    <string name="script_play_gm_mute">禁言</string>
+    <string name="script_play_gm_speak">发言</string>
 </resources>

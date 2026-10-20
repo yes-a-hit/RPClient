@@ -25,6 +25,7 @@ class ScriptAdventureViewModel :
     ), KoinComponent {
     private val mScriptStore by inject<ScriptStore>()
     private val mPlayStore by inject<ScriptPlayStore>()
+    private val mCharacterRepository by inject<me.kafuuneko.rpclient.libs.room.repository.CharacterRepository>()
 
     /** 读取剧本与存档。 */
     @UiIntentObserver(ScriptAdventureUiIntent.Init::class)
@@ -32,11 +33,38 @@ class ScriptAdventureViewModel :
         publish()
     }
 
+
+    /** 打开角色选择器。 */
+    @UiIntentObserver(ScriptAdventureUiIntent.OpenCharacterPicker::class)
+    private fun onOpenCharacterPicker(intent: ScriptAdventureUiIntent.OpenCharacterPicker) {
+        val state = getOrNull<ScriptAdventureUiState.Ready>() ?: return
+        state.copy(pickingForPackId = intent.packId, selectedCharacters = emptySet()).setup()
+    }
+
+    /** 勾选或取消在场角色。 */
+    @UiIntentObserver(ScriptAdventureUiIntent.ToggleCharacter::class)
+    private fun onToggleCharacter(intent: ScriptAdventureUiIntent.ToggleCharacter) {
+        val state = getOrNull<ScriptAdventureUiState.Ready>() ?: return
+        val next = if (intent.name in state.selectedCharacters) {
+            state.selectedCharacters - intent.name
+        } else {
+            state.selectedCharacters + intent.name
+        }
+        state.copy(selectedCharacters = next).setup()
+    }
+
+    /** 关闭选择器。 */
+    @UiIntentObserver(ScriptAdventureUiIntent.DismissCharacterPicker::class)
+    private fun onDismissCharacterPicker() {
+        val state = getOrNull<ScriptAdventureUiState.Ready>() ?: return
+        state.copy(pickingForPackId = null, selectedCharacters = emptySet()).setup()
+    }
+
     /** 用指定剧本开新局。 */
     @UiIntentObserver(ScriptAdventureUiIntent.StartNew::class)
     private fun onStartNew(intent: ScriptAdventureUiIntent.StartNew) {
         // 存档 ID 留空，由剧本模式页按时间戳生成，避免覆盖旧局
-        ScriptAdventureViewEvent.LaunchPlay(intent.packId, "").tryEmit()
+        ScriptAdventureViewEvent.LaunchPlay(intent.packId, "", intent.characters).tryEmit()
     }
 
     /** 继续已有存档。 */
@@ -85,7 +113,14 @@ class ScriptAdventureViewModel :
                 endReason = play.endReason
             )
         }
-        ScriptAdventureUiState.Ready(packs = packs, saves = saves).setup()
+        val characters = runCatching {
+            mCharacterRepository.getAllCharacters().map { it.name }
+        }.getOrDefault(emptyList())
+        ScriptAdventureUiState.Ready(
+            packs = packs,
+            saves = saves,
+            characters = characters
+        ).setup()
     }
 
     /** 模式展示名。 */

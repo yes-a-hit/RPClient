@@ -17,6 +17,9 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -90,7 +93,7 @@ fun ScriptAdventureLayout(
                     SectionTitle(stringResource(R.string.adventure_new))
                 }
                 items(state.packs, key = { it.packId }) { pack ->
-                    PackCard(pack) { ScriptAdventureUiIntent.StartNew(pack.packId).emit() }
+                    PackCard(pack) { ScriptAdventureUiIntent.OpenCharacterPicker(pack.packId).emit() }
                 }
             }
             if (state.isEmpty) {
@@ -103,6 +106,10 @@ fun ScriptAdventureLayout(
                 }
             }
         }
+    }
+
+    if (state.pickingForPackId != null) {
+        CharacterPickerDialog(state, emit)
     }
 }
 
@@ -201,4 +208,54 @@ private fun PackCard(pack: AdventurePackItem, onStart: () -> Unit) {
             }
         }
     }
+}
+
+/** 开局前挑选在场角色；不选则按剧本自带的名单。 */
+@Composable
+private fun CharacterPickerDialog(
+    state: ScriptAdventureUiState.Ready,
+    emit: ScriptAdventureUiIntent.() -> Unit
+) {
+    val packId = state.pickingForPackId ?: return
+    AlertDialog(
+        onDismissRequest = { ScriptAdventureUiIntent.DismissCharacterPicker.emit() },
+        title = { Text(stringResource(R.string.adventure_pick_cast)) },
+        text = {
+            if (state.characters.isEmpty()) {
+                Text(stringResource(R.string.adventure_no_characters))
+            } else {
+                LazyColumn {
+                    items(state.characters) { name ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { ScriptAdventureUiIntent.ToggleCharacter(name).emit() }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = name in state.selectedCharacters,
+                                onCheckedChange = {
+                                    ScriptAdventureUiIntent.ToggleCharacter(name).emit()
+                                }
+                            )
+                            Text(text = name, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                ScriptAdventureUiIntent.StartNew(packId, state.selectedCharacters.toList()).emit()
+            }) {
+                Text(stringResource(R.string.adventure_start))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { ScriptAdventureUiIntent.DismissCharacterPicker.emit() }) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
 }
