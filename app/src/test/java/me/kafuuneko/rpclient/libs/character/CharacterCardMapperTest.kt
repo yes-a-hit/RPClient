@@ -234,4 +234,45 @@ class CharacterCardMapperTest {
             0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE.toByte(), 0x42, 0x60, 0x82.toByte()
         )
     }
+
+    @Test
+    fun roundTripsCustomDataColumns() {
+        // 规范之外的自定义栏目导入后不能丢，导出时按原键名还原
+        val imported = mapper.parseCharacter(
+            """
+            {
+              "spec": "chara_card_v2",
+              "data": {
+                "name": "Iris",
+                "description": "d",
+                "恋爱经验": "三次",
+                "喜好厌恶": {"likes": ["茶"], "hates": ["噪音"]}
+              }
+            }
+            """.trimIndent()
+        ).character
+
+        val exported = JsonParser.parseString(mapper.toV2Json(imported))
+            .asJsonObject.getAsJsonObject("data")
+
+        assertEquals("三次", exported.get("恋爱经验").asString)
+        assertEquals(
+            "茶",
+            exported.getAsJsonObject("喜好厌恶").getAsJsonArray("likes")[0].asString
+        )
+    }
+
+    @Test
+    fun customColumnsSurviveRepeatedRoundTrip() {
+        val once = mapper.parseCharacter(
+            """
+            {"spec":"chara_card_v2","data":{"name":"Iris","隐藏栏目":"值"}}
+            """.trimIndent()
+        ).character
+        val twice = mapper.parseCharacter(mapper.toV2Json(once)).character
+        val exported = JsonParser.parseString(mapper.toV2Json(twice))
+            .asJsonObject.getAsJsonObject("data")
+
+        assertEquals("值", exported.get("隐藏栏目").asString)
+    }
 }

@@ -27,6 +27,9 @@ class CharacterCardMapper(
      * V2 卡片使用根节点 data；旧 V1 卡片直接把角色字段放在根节点。
      * 未识别的 extensions 会原样保存，确保导入再导出时不破坏第三方工具字段。
      */
+    /** 自定义栏目在扩展字段里的留档命名空间。 */
+    private val UNKNOWN_DATA_NAMESPACE = "rpclient_unknown_data"
+
     fun parseCharacter(json: String, avatar: String = "", characterLorebookId: Long = 0L): CharacterCardImport {
         val root = JsonParser.parseString(json).asJsonObject
         val data = root.optJsonObject("data")
@@ -37,7 +40,9 @@ class CharacterCardMapper(
             )
             CharacterCardImport(
                 character = character.copy(
-                    extensionsJson = regexExtraction.extensionsJson
+                    // 把 data 下不认识的自定义栏目一并收进扩展字段，
+                    // 否则「恋爱经验」「喜好厌恶」这类非官方键在导入时直接丢失
+                    extensionsJson = regexExtraction.extensionsJson.withUnknownDataKeys(data)
                 ),
                 embeddedLorebook = data.optJsonObject("character_book")?.toLorebookImport(),
                 regexScripts = regexExtraction.scripts
@@ -89,12 +94,51 @@ class CharacterCardMapper(
             data.add("character_book", lorebook.toCharacterBook(entries))
         }
 
+        // 还原导入时收下的自定义栏目，导出后仍是原来的键名
+        parseObjectOrEmpty(character.extensionsJson)
+            .unknownDataKeys()
+            .forEach { (key, value) -> data.add(key, value) }
+
         // 包装根节点 spec 与 spec_version
         val root = JsonObject()
         root.addProperty("spec", "chara_card_v2")
         root.addProperty("spec_version", "2.0")
         root.add("data", data)
         return mGson.toJson(root)
+    }
+
+    /**
+     * 把 V2 `data` 下不认识的键收进扩展字段。
+     *
+     * 规范之外的自定义栏目（恋爱经验、喜好厌恶等）没有独立列，
+     * 直接丢弃会让「导入再导出」变成信息损失，所以按原键名留档。
+     */
+    private fun String.withUnknownDataKeys(data: JsonObject): String {
+        val known = setOf(
+            "name", "description", "personality", "scenario", "first_mes", "mes_example",
+            "creator_notes", "system_prompt", "post_history_instructions",
+            "alternate_greetings", "tags", "creator", "character_version",
+            "extensions", "character_book",
+            // App 内部字段不属于角色卡规范，也不该被当作自定义栏目带出去
+            "llmProviderId", "characterLorebookId",
+            "depthPromptDepth", "depthPromptPrompt", "depthPromptRole"
+        )
+        val unknown = JsonObject()
+        data.keySet().filterNot { it in known }.forEach { key ->
+            data.get(key)?.let { unknown.add(key, it) }
+        }
+        if (unknown.size() == 0) return this
+        val extensions = runCatching {
+            JsonParser.parseString(this.ifBlank { "{}" }).asJsonObject
+        }.getOrElse { JsonObject() }
+        extensions.add(UNKNOWN_DATA_NAMESPACE, unknown)
+        return mGson.toJson(extensions)
+    }
+
+    /** 取出导入时留档的自定义栏目。 */
+    private fun JsonObject.unknownDataKeys(): Map<String, com.google.gson.JsonElement> {
+        val archived = getAsJsonObject(UNKNOWN_DATA_NAMESPACE) ?: return emptyMap()
+        return archived.keySet().associateWith { archived.get(it) }
     }
 
     /** 将 V2 data 节点解析映射为本地 Character 实体。 */
