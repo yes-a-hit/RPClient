@@ -19,6 +19,8 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.background
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -112,7 +114,14 @@ fun ScriptEditorLayout(
     // 场景设置面板与链接面板互斥，打开其一时另一个不会出现
     val settingsRow = state.settingsRow
     if (settingsRow != null) {
-        SceneSettingsDialog(settingsRow, emit)
+        SceneSettingsDialog(
+            row = settingsRow,
+            characterNames = state.characterNames,
+            lorebookNames = state.lorebookNames,
+            galleryKeys = state.galleryKeys,
+            allScenes = state.rows,
+            emit = emit
+        )
     }
 
     val editingRow = state.editingRow
@@ -288,6 +297,10 @@ private fun LinkPickerDialog(
 @Composable
 private fun SceneSettingsDialog(
     row: ScriptSceneRow,
+    characterNames: List<String>,
+    lorebookNames: List<String>,
+    galleryKeys: List<String>,
+    allScenes: List<ScriptSceneRow>,
     emit: ScriptEditorUiIntent.() -> Unit
 ) {
     var name by remember(row.id) { mutableStateOf(row.name) }
@@ -305,13 +318,18 @@ private fun SceneSettingsDialog(
     var completionKeyword by remember(row.id) { mutableStateOf(row.completionKeyword) }
     var nextScenes by remember(row.id) { mutableStateOf(row.nextSceneIds) }
 
+    // 勾选式编辑：把已选的展示串拆成集合，勾一下再拼回去
+    val selectedCast = remember(row.id, castNames) { castNames.toNameSet() }
+    val selectedBanned = remember(row.id, bannedNames) { bannedNames.toNameSet() }
+    val selectedNext = remember(row.id, nextScenes) { nextScenes.toNameSet() }
+
     AlertDialog(
         onDismissRequest = { ScriptEditorUiIntent.CloseSceneEditor.emit() },
         title = { Text(stringResource(R.string.script_scene_settings)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(
                     value = name,
@@ -334,35 +352,47 @@ private fun SceneSettingsDialog(
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
-                // 背景图：填图库里的标签或名称，本地匹配不生成
-                OutlinedTextField(
-                    value = background,
-                    onValueChange = { background = it },
-                    label = { Text(stringResource(R.string.script_scene_background)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+
+                // 背景：从图库已有标签里点选，点同一个再取消
+                SelectorSection(
+                    title = stringResource(R.string.script_scene_background),
+                    options = galleryKeys,
+                    selected = background.toNameSet(),
+                    onToggle = { key ->
+                        background = if (background == key) "" else key
+                    }
                 )
-                OutlinedTextField(
-                    value = castNames,
-                    onValueChange = { castNames = it },
-                    label = { Text(stringResource(R.string.script_scene_cast)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+
+                // 可出场角色：从角色卡勾选
+                SelectorSection(
+                    title = stringResource(R.string.script_scene_cast),
+                    options = characterNames,
+                    selected = selectedCast,
+                    onToggle = { name2 ->
+                        castNames = castNames.toggleName(name2)
+                    }
                 )
-                OutlinedTextField(
-                    value = bannedNames,
-                    onValueChange = { bannedNames = it },
-                    label = { Text(stringResource(R.string.script_scene_banned)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+
+                // 禁止出场角色
+                SelectorSection(
+                    title = stringResource(R.string.script_scene_banned),
+                    options = characterNames,
+                    selected = selectedBanned,
+                    onToggle = { name2 ->
+                        bannedNames = bannedNames.toggleName(name2)
+                    }
                 )
-                OutlinedTextField(
-                    value = lorebookName,
-                    onValueChange = { lorebookName = it },
-                    label = { Text(stringResource(R.string.script_scene_lorebook)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+
+                // 世界书：单选
+                SelectorSection(
+                    title = stringResource(R.string.script_scene_lorebook),
+                    options = lorebookNames,
+                    selected = lorebookName.toNameSet(),
+                    onToggle = { picked ->
+                        lorebookName = if (lorebookName == picked) "" else picked
+                    }
                 )
+
                 OutlinedTextField(
                     value = failKeyword,
                     onValueChange = { failKeyword = it },
@@ -384,13 +414,17 @@ private fun SceneSettingsDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = nextScenes,
-                    onValueChange = { nextScenes = it },
-                    label = { Text(stringResource(R.string.script_scene_next)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+
+                // 后继场景：从其它场景里勾
+                SelectorSection(
+                    title = stringResource(R.string.script_scene_next),
+                    options = allScenes.filter { it.id != row.id }.map { it.name },
+                    selected = selectedNext,
+                    onToggle = { target ->
+                        nextScenes = nextScenes.toggleName(target)
+                    }
                 )
+
                 SwitchRow(stringResource(R.string.script_row_checkpoint), checkpoint) { checkpoint = it }
                 SwitchRow(stringResource(R.string.script_scene_loop), loop) { loop = it }
                 SwitchRow(stringResource(R.string.script_scene_entry), isEntry) { isEntry = it }
@@ -423,6 +457,68 @@ private fun SceneSettingsDialog(
             }
         }
     )
+}
+
+/** 一组可勾选的候选，勾选态用主色底标出。 */
+@Composable
+private fun SelectorSection(
+    title: String,
+    options: List<String>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (options.isEmpty()) {
+            Text(
+                text = stringResource(R.string.script_scene_no_options),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                options.forEach { option ->
+                    val picked = option in selected
+                    Text(
+                        text = option,
+                        modifier = Modifier
+                            .clickable { onToggle(option) }
+                            .background(
+                                color = if (picked) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 把顿号分隔的展示串拆成集合。 */
+private fun String.toNameSet(): Set<String> = this
+    .split('、', ',', '，')
+    .map { it.trim() }
+    .filter { it.isNotBlank() }
+    .toSet()
+
+/** 勾选或取消一个名字，返回重新拼好的展示串。 */
+private fun String.toggleName(name: String): String {
+    val current = toNameSet().toMutableSet()
+    if (!current.add(name)) current.remove(name)
+    return current.joinToString("、")
 }
 
 /** 一行开关。 */

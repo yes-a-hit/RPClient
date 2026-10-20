@@ -1409,4 +1409,5 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_scene_fail_rounds">Ronde</string>
     <string name="script_scene_completion">Selesai</string>
     <string name="script_scene_next">Berikut</string>
+    <string name="script_scene_no_options">Belum ada pilihan</string>
 </resources>

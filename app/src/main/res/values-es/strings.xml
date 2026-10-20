@@ -1410,4 +1410,5 @@
     <string name="script_scene_fail_rounds">Turnos</string>
     <string name="script_scene_completion">Final</string>
     <string name="script_scene_next">Siguientes</string>
+    <string name="script_scene_no_options">Sin opciones</string>
 </resources>

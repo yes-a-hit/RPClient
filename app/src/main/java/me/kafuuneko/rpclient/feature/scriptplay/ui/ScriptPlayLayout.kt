@@ -33,6 +33,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -119,24 +121,37 @@ fun ScriptPlayLayout(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .imePadding()
-        ) {
-            SceneBar(state, sceneNames, emit)
-            // 场景背景图：图库本地匹配，不生成不扣费，同一场景始终同一张
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 背景铺满整个版面，随场景切换实时更换；
+            // 上面盖一层半透明让文字始终可读
             if (state.backgroundUuid.isNotBlank()) {
                 SceneBackground(
                     uuid = state.backgroundUuid,
                     loadAvatar = loadAvatar,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .padding(horizontal = 12.dp)
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f))
                 )
             }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .imePadding()
+            ) {
+                SceneBar(state, sceneNames, emit)
+                // 在场角色：谁在场一目了然，头像横排可滑
+                if (state.castNames.isNotEmpty()) {
+                    CastStrip(
+                        names = state.castNames,
+                        muted = state.mutedCharacters,
+                        avatarOf = avatarOf,
+                        loadAvatar = loadAvatar
+                    )
+                }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 state = listState,
@@ -220,6 +235,7 @@ fun ScriptPlayLayout(
                 }
             }
             InputBar(state, emit)
+            }
         }
     }
 
@@ -227,6 +243,58 @@ fun ScriptPlayLayout(
         GmPanel(characters = state.castNames, state = state, emit = emit)
     }
 }
+
+/**
+ * 在场角色横排。
+ *
+ * 让玩家随时看清「这一场有谁」，禁言中的角色压一层红色，
+ * 免得点了禁言之后忘了谁被闭麦。
+ */
+@Composable
+private fun CastStrip(
+    names: List<String>,
+    muted: Set<String>,
+    avatarOf: (String) -> String?,
+    loadAvatar: suspend (String) -> androidx.compose.ui.graphics.ImageBitmap?
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        names.forEach { name ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box {
+                    CharacterAvatar(
+                        name = name,
+                        avatarUuid = avatarOf(name),
+                        loadAvatar = loadAvatar
+                    )
+                    if (name in muted) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    MaterialTheme.colorScheme.error.copy(alpha = 0.42f)
+                                )
+                        )
+                    }
+                }
+                Text(
+                    text = name,
+                    modifier = Modifier.padding(top = 2.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
 
 /** 场景条：当前场景、轮次进度与可切换场景。 */
 @Composable

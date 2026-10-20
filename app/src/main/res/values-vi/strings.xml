@@ -1409,4 +1409,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_scene_fail_rounds">Lượt</string>
     <string name="script_scene_completion">Hoàn thành</string>
     <string name="script_scene_next">Tiếp theo</string>
+    <string name="script_scene_no_options">Chưa có lựa chọn</string>
 </resources>

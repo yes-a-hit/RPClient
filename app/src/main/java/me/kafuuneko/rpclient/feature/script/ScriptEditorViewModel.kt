@@ -34,12 +34,27 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
 
     private val mStore by inject<ScriptStore>()
 
+    /** 角色卡名称缓存，供设置面板勾选。 */
+    private var mCharacterNames: List<String> = emptyList()
+
+    /** 世界书名称缓存。 */
+    private var mLorebookNames: List<String> = emptyList()
+
+    /** 图库检索词缓存，作为背景候选项。 */
+    private var mGalleryKeys: List<String> = emptyList()
+    private val mCharacterRepository by
+        inject<me.kafuuneko.rpclient.libs.room.repository.CharacterRepository>()
+    private val mLorebookRepository by
+        inject<me.kafuuneko.rpclient.libs.room.repository.LorebookRepository>()
+    private val mGalleryStore by inject<me.kafuuneko.rpclient.libs.gallery.GalleryStore>()
+
     /** 当前编辑的剧本包。 */
     private var mPack: ScriptPack = SAMPLE_PACK
 
     /** 加载已保存的剧本；没有已保存剧本时回落到示例。 */
     @UiIntentObserver(ScriptEditorUiIntent.Init::class)
     private suspend fun onInit() {
+        loadCandidates()
         if (isStateOf<ScriptEditorUiState.Ready>()) return
         mPack = mStore.loadFirst() ?: SAMPLE_PACK
         publish(null, null)
@@ -149,6 +164,27 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
     }
 
     /** 提交场景设置并落盘。设置的入口会顶掉原入口，保证单一入口语义。 */
+
+
+    /**
+     * 加载设置面板的候选数据。
+     *
+     * 角色卡、世界书、图库都来自各自的仓储，一次读齐后缓存，
+     * 免得每次打开对话框都去查库。
+     */
+    private suspend fun loadCandidates() {
+        mCharacterNames = runCatching {
+            mCharacterRepository.getAllCharacters().map { it.name }
+        }.getOrDefault(emptyList())
+        mLorebookNames = runCatching {
+            mLorebookRepository.getAllLorebooks().map { it.name }
+        }.getOrDefault(emptyList())
+        mGalleryKeys = runCatching {
+            mGalleryStore.list()
+                .flatMap { image -> image.labels + image.name }
+                .distinct()
+        }.getOrDefault(emptyList())
+    }
 
     /** 把顿号、逗号或空格分隔的名字拆成列表，去重保序。 */
     private fun splitNames(raw: String): List<String> = raw
@@ -290,7 +326,10 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             },
             editingSceneId = editingSceneId,
             editingField = editingField,
-            settingsSceneId = settingsSceneId
+            settingsSceneId = settingsSceneId,
+            characterNames = mCharacterNames,
+            lorebookNames = mLorebookNames,
+            galleryKeys = mGalleryKeys
         ).setup()
     }
 

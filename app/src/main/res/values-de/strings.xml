@@ -1408,4 +1408,5 @@
     <string name="script_scene_fail_rounds">Runden</string>
     <string name="script_scene_completion">Abschluss</string>
     <string name="script_scene_next">Nächste</string>
+    <string name="script_scene_no_options">Keine Optionen</string>
 </resources>

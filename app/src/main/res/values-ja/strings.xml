@@ -1404,4 +1404,5 @@
     <string name="script_scene_fail_rounds">上限</string>
     <string name="script_scene_completion">達成</string>
     <string name="script_scene_next">次の場面</string>
+    <string name="script_scene_no_options">選択肢がありません</string>
 </resources>

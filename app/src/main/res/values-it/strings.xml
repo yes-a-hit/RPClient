@@ -1387,4 +1387,5 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_scene_fail_rounds">Turni</string>
     <string name="script_scene_completion">Completato</string>
     <string name="script_scene_next">Successivi</string>
+    <string name="script_scene_no_options">Nessuna opzione</string>
 </resources>

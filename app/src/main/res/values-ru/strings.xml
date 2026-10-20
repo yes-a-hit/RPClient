@@ -1413,4 +1413,5 @@
     <string name="script_scene_fail_rounds">Раунды</string>
     <string name="script_scene_completion">Завершение</string>
     <string name="script_scene_next">Далее</string>
+    <string name="script_scene_no_options">Нет вариантов</string>
 </resources>

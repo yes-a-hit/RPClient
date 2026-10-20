@@ -59,7 +59,13 @@ sealed class ScriptEditorUiState {
         /** 正在编辑哪种链接。 */
         val editingField: ScriptLinkField? = null,
         /** 正在编辑设置的场景 ID。 */
-        val settingsSceneId: String? = null
+        val settingsSceneId: String? = null,
+        /** 可选角色卡名称，供勾选出场与禁止名单。 */
+        val characterNames: List<String> = emptyList(),
+        /** 可选世界书名称。 */
+        val lorebookNames: List<String> = emptyList(),
+        /** 图库里可当背景用的检索词。 */
+        val galleryKeys: List<String> = emptyList()
     ) : ScriptEditorUiState() {
         /** 正在编辑的场景行。 */
         val editingRow: ScriptSceneRow?

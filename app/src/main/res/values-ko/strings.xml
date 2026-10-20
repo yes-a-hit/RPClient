@@ -1403,4 +1403,5 @@
     <string name="script_scene_fail_rounds">라운드</string>
     <string name="script_scene_completion">완료</string>
     <string name="script_scene_next">다음 장면</string>
+    <string name="script_scene_no_options">선택 항목 없음</string>
 </resources>

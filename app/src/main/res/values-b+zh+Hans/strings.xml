@@ -1405,4 +1405,5 @@
     <string name="script_scene_fail_rounds">失败轮次上限</string>
     <string name="script_scene_completion">通关关键词</string>
     <string name="script_scene_next">后继场景</string>
+    <string name="script_scene_no_options">还没有可选项</string>
 </resources>
