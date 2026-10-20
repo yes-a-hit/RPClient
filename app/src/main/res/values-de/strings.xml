@@ -1395,4 +1395,5 @@
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">Stumm</string>
     <string name="script_play_gm_speak">Sprechen</string>
+    <string name="assistant_regenerate">Neu erzeugen</string>
 </resources>

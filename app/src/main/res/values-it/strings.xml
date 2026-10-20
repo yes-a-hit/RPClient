@@ -1374,4 +1374,5 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">Silenzia</string>
     <string name="script_play_gm_speak">Parla</string>
+    <string name="assistant_regenerate">Rigenera</string>
 </resources>

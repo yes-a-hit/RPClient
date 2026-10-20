@@ -1391,4 +1391,5 @@
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">発言禁止</string>
     <string name="script_play_gm_speak">発言</string>
+    <string name="assistant_regenerate">再生成</string>
 </resources>

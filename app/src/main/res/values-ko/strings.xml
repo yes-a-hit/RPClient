@@ -1390,4 +1390,5 @@
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">발언 금지</string>
     <string name="script_play_gm_speak">발언</string>
+    <string name="assistant_regenerate">다시 생성</string>
 </resources>

@@ -16,6 +16,9 @@ sealed class AssistantUiIntent {
     /** 中止当前生成。 */
     data object Stop : AssistantUiIntent()
 
+    /** 重新生成上一条回复。 */
+    data object Regenerate : AssistantUiIntent()
+
     /** 清空会话历史。 */
     data object ClearSession : AssistantUiIntent()
 

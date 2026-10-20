@@ -1400,4 +1400,5 @@
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">Молчать</string>
     <string name="script_play_gm_speak">Говорить</string>
+    <string name="assistant_regenerate">Сгенерировать заново</string>
 </resources>

@@ -1396,4 +1396,5 @@
     <string name="script_play_gm">MJ</string>
     <string name="script_play_gm_mute">Muet</string>
     <string name="script_play_gm_speak">Parler</string>
+    <string name="assistant_regenerate">Régénérer</string>
 </resources>

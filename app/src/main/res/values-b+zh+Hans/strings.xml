@@ -1392,4 +1392,5 @@
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">禁言</string>
     <string name="script_play_gm_speak">发言</string>
+    <string name="assistant_regenerate">重新生成</string>
 </resources>

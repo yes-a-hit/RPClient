@@ -124,6 +124,28 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     /** 中止当前生成，保留已生成的部分。 */
+
+    /**
+     * 重新生成上一条回复。
+     *
+     * 把最后一条玩家消息之后的内容全部丢掉再重跑，
+     * 工具执行结果一并清除，避免旧结果污染新一轮。
+     */
+    @UiIntentObserver(AssistantUiIntent.Regenerate::class)
+    private suspend fun onRegenerate() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        if (state.isGenerating) return
+        val lastUserIndex = mMessages.indexOfLast { it.role == ROLE_USER }
+        if (lastUserIndex < 0) return
+        while (mMessages.size > lastUserIndex + 1) {
+            mMessages.removeAt(mMessages.lastIndex)
+        }
+        persistAndPublish()
+        val current = getOrNull<AssistantUiState.Ready>() ?: return
+        current.copy(isGenerating = true, streamingReply = ", statusText = ").setup()
+        mGenerationJob = viewModelScope.launch { runGeneration() }
+    }
+
     @UiIntentObserver(AssistantUiIntent.Stop::class)
     private fun onStop() {
         mGenerationJob?.cancel()

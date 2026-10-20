@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.NoteAdd
 import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.AlertDialog
@@ -101,6 +102,13 @@ fun AssistantLayout(
                 },
                 actions = {
 
+                    // 抽一鞭子：丢掉上一条回复重跑
+                    IconButton(onClick = { AssistantUiIntent.Regenerate.emit() }) {
+                        Icon(
+                            Icons.Rounded.Refresh,
+                            contentDescription = stringResource(R.string.assistant_regenerate)
+                        )
+                    }
                     IconButton(onClick = { AssistantUiIntent.OpenPromptEditor.emit() }) {
                         Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.assistant_prompt_settings))
                     }

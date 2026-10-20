@@ -1396,4 +1396,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_play_gm">GM</string>
     <string name="script_play_gm_mute">Cấm nói</string>
     <string name="script_play_gm_speak">Phát biểu</string>
+    <string name="assistant_regenerate">Tạo lại</string>
 </resources>
