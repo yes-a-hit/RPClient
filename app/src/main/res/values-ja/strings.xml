@@ -1393,4 +1393,6 @@
     <string name="script_play_gm_speak">発言</string>
     <string name="assistant_regenerate">再生成</string>
     <string name="group_chat_impersonate">自分を演じる</string>
+    <string name="assistant_sandbox">サンドボックス</string>
+    <string name="assistant_sandbox_empty">サンドボックスは空です</string>
 </resources>

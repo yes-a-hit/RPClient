@@ -124,6 +124,26 @@ class AssistantStore(private val mContext: Context) {
         removed
     }
 
+
+    /**
+     * 列出沙箱内的文件，供界面浏览。
+     *
+     * 只返回文件不返回目录层级，路径相对沙箱根，界面直接展示。
+     */
+    fun listSandboxFiles(): List<AssistantSandboxFile> {
+        val rootPath = sandboxRoot.absolutePath
+        return sandboxRoot.walkTopDown()
+            .filter { it.isFile }
+            .map { file ->
+                AssistantSandboxFile(
+                    path = file.absolutePath.removePrefix("$rootPath/"),
+                    size = file.length()
+                )
+            }
+            .sortedBy { it.path }
+            .toList()
+    }
+
     fun sandboxSummary(): String {
         val files = sandboxRoot.walkTopDown().filter { it.isFile }.toList()
         if (files.isEmpty()) return "沙箱为空"
@@ -171,3 +191,11 @@ data class AssistantImportResult(
 
 /** 沙箱内文件名允许的最大长度。 */
 private const val MAX_FILE_NAME_LENGTH = 96
+
+/** 沙箱内的一个文件，供浏览界面展示。 */
+data class AssistantSandboxFile(
+    /** 相对沙箱根的路径。 */
+    val path: String,
+    /** 字节数。 */
+    val size: Long
+)

@@ -38,6 +38,11 @@ sealed class AssistantUiState {
         val sessions: List<me.kafuuneko.rpclient.libs.assistant.AssistantSessionSummary> = emptyList(),
         /** 当前会话 ID。 */
         val currentSessionId: String = "",
+        /** Sandbox files for the browser. */
+        val sandboxFiles: List<me.kafuuneko.rpclient.libs.assistant.AssistantSandboxFile> = emptyList(),
+
+        /** Whether the sandbox browser is open. */
+        val sandboxBrowserVisible: Boolean = false,
         /** 待发送附件：选中后随下一条消息一起发出。 */
     val attachments: List<AssistantAttachment> = emptyList()
     ) : AssistantUiState()
@@ -62,6 +67,10 @@ data class AssistantMessageItem(
     val role: AssistantRole,
     val content: String,
     val toolName: String? = null,
+    /** 沙箱文件列表，供浏览。 */
+
+    /** 沙箱浏览器是否展开。 */
+
     /** 这条消息附带的文件，界面在气泡下方展示。 */
     val attachments: List<AssistantAttachment>? = null
 )

@@ -1428,4 +1428,6 @@
     <string name="script_play_gm_speak">发言</string>
     <string name="assistant_regenerate">重新生成</string>
     <string name="group_chat_impersonate">扮演自己</string>
+    <string name="assistant_sandbox">沙箱</string>
+    <string name="assistant_sandbox_empty">沙箱是空的</string>
 </resources>

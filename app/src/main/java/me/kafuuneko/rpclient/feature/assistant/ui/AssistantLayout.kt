@@ -48,6 +48,7 @@ import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -104,6 +105,13 @@ fun AssistantLayout(
                 },
                 actions = {
 
+                    // 沙箱：看得见里面的文件，能点开能删
+                    IconButton(onClick = { AssistantUiIntent.OpenSandboxBrowser.emit() }) {
+                        Icon(
+                            Icons.Rounded.Folder,
+                            contentDescription = stringResource(R.string.assistant_sandbox)
+                        )
+                    }
                     // 抽一鞭子：丢掉上一条回复重跑
                     IconButton(onClick = { AssistantUiIntent.Regenerate.emit() }) {
                         Icon(
@@ -158,6 +166,10 @@ fun AssistantLayout(
 
     if (state.promptEditorVisible) {
         AssistantPromptEditor(state, emit)
+    }
+
+    if (state.sandboxBrowserVisible) {
+        SandboxBrowserDialog(state, emit)
     }
 }
 
@@ -709,6 +721,74 @@ private fun SessionListDialog(
         },
         dismissButton = {
             TextButton(onClick = { AssistantUiIntent.CloseSessionList.emit() }) {
+                Text(stringResource(R.string.script_picker_done))
+            }
+        }
+    )
+}
+
+
+/** 沙箱浏览器：列出文件，可删除；文本可长按查看内容。 */
+@Composable
+private fun SandboxBrowserDialog(
+    state: AssistantUiState.Ready,
+    emit: AssistantUiIntent.() -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { AssistantUiIntent.CloseSandboxBrowser.emit() },
+        title = { Text(stringResource(R.string.assistant_sandbox)) },
+        text = {
+            if (state.sandboxFiles.isEmpty()) {
+                Text(stringResource(R.string.assistant_sandbox_empty))
+            } else {
+                LazyColumn {
+                    items(state.sandboxFiles) { file ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Rounded.Description,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 8.dp)
+                            ) {
+                                Text(
+                                    text = file.path,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = formatSize(file.size),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    AssistantUiIntent.DeleteSandboxFile(file.path).emit()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { AssistantUiIntent.CloseSandboxBrowser.emit() }) {
                 Text(stringResource(R.string.script_picker_done))
             }
         }

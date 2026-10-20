@@ -1402,4 +1402,6 @@
     <string name="script_play_gm_speak">Говорить</string>
     <string name="assistant_regenerate">Сгенерировать заново</string>
     <string name="group_chat_impersonate">Сыграть себя</string>
+    <string name="assistant_sandbox">Песочница</string>
+    <string name="assistant_sandbox_empty">Песочница пуста</string>
 </resources>

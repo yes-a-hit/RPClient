@@ -1397,4 +1397,6 @@
     <string name="script_play_gm_speak">Sprechen</string>
     <string name="assistant_regenerate">Neu erzeugen</string>
     <string name="group_chat_impersonate">Selbst spielen</string>
+    <string name="assistant_sandbox">Sandbox</string>
+    <string name="assistant_sandbox_empty">Sandbox ist leer</string>
 </resources>

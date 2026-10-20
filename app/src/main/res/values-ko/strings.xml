@@ -1392,4 +1392,6 @@
     <string name="script_play_gm_speak">발언</string>
     <string name="assistant_regenerate">다시 생성</string>
     <string name="group_chat_impersonate">나를 연기</string>
+    <string name="assistant_sandbox">샌드박스</string>
+    <string name="assistant_sandbox_empty">샌드박스가 비어 있습니다</string>
 </resources>

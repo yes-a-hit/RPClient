@@ -205,9 +205,17 @@ class SkillRepository(private val mContext: Context) {
     private fun fileFor(id: String): File = File(mDirectory, "${sanitizeId(id)}$FILE_SUFFIX")
 
     /** 由名称派生稳定且可读的文件名。 */
+    /**
+     * 由名字推导稳定 ID。
+     *
+     * 必须确定性：同一份 Skill 反复导入要落到同一个文件，
+     * 否则每导入一次就多一条副本，永远覆盖不掉。
+     * 名字清洗后为空时才退回到随机后缀，避免多个无名条目互相顶掉。
+     */
     private fun generateId(name: String): String {
-        val base = sanitizeId(name).ifBlank { DEFAULT_ID_PREFIX }
-        return "$base-${UUID.randomUUID().toString().take(8)}"
+        val base = sanitizeId(name)
+        if (base.isNotBlank()) return base.take(MAX_ID_LENGTH)
+        return "$DEFAULT_ID_PREFIX-${UUID.randomUUID().toString().take(8)}"
     }
 
     /** 只保留小写字母、数字、连字符与下划线。 */
@@ -250,6 +258,9 @@ private fun SkillManifest.matches(recentText: String): Boolean {
     return triggers.any { trigger ->
         trigger.isNotBlank() && recentText.contains(trigger, ignoreCase = true)
     }
+
+    /** 查旧记录时用的 ID：与写入时保持一致。 */
+
 }
 
 /** 一次 Skill 导入的结果统计。 */

@@ -58,6 +58,15 @@ sealed class AssistantUiIntent {
     /** 清空沙箱内的全部文件。 */
     data object ClearSandbox : AssistantUiIntent()
 
+    /** 打开沙箱浏览器。 */
+    data object OpenSandboxBrowser : AssistantUiIntent()
+
+    /** 关闭沙箱浏览器。 */
+    data object CloseSandboxBrowser : AssistantUiIntent()
+
+    /** 删除沙箱内的某个文件。 */
+    data class DeleteSandboxFile(val path: String) : AssistantUiIntent()
+
     /** 选择附件，随下一条消息发送。 */
     data class AttachFiles(val uris: List<Uri>) : AssistantUiIntent()
 

@@ -1398,4 +1398,6 @@
     <string name="script_play_gm_speak">Parler</string>
     <string name="assistant_regenerate">Régénérer</string>
     <string name="group_chat_impersonate">Jouer votre rôle</string>
+    <string name="assistant_sandbox">Bac à sable</string>
+    <string name="assistant_sandbox_empty">Bac à sable vide</string>
 </resources>

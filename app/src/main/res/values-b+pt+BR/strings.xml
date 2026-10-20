@@ -1401,4 +1401,6 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_play_gm_speak">Falar</string>
     <string name="assistant_regenerate">Regerar</string>
     <string name="group_chat_impersonate">Interpretar você</string>
+    <string name="assistant_sandbox">Caixa de areia</string>
+    <string name="assistant_sandbox_empty">Caixa vazia</string>
 </resources>

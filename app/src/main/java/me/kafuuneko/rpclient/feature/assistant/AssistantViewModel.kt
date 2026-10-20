@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.assistant
 
+import java.io.File
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -235,36 +236,32 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     @UiIntentObserver(AssistantUiIntent.AttachFiles::class)
     private suspend fun onAttachFiles(intent: AssistantUiIntent.AttachFiles) {
         val state = getOrNull<AssistantUiState.Ready>() ?: return
-        val images = mutableListOf<AssistantAttachment>()
-        val textUris = mutableListOf<Uri>()
-        intent.uris.forEach { uri ->
+        // 图片与文档一视同仁：都进托盘，看得见、能点开，
+        // 文档额外复制进沙箱供工具读写
+        val added = intent.uris.mapNotNull { uri ->
             val name = queryDisplayName(uri)
-            if (name.isBlank()) return@forEach
+            if (name.isBlank()) return@mapNotNull null
             val mime = mContext.contentResolver.getType(uri).orEmpty()
-            if (mime.startsWith("image/")) {
-                images += AssistantAttachment(
-                    uri = uri.toString(),
-                    name = name,
-                    isImage = true,
-                    mimeType = mime,
-                    byteCount = querySize(uri)
-                )
-            } else {
-                textUris += uri
-            }
+            AssistantAttachment(
+                uri = uri.toString(),
+                name = name,
+                isImage = mime.startsWith("image/"),
+                mimeType = mime,
+                byteCount = querySize(uri)
+            )
         }
+        val textUris = added.filterNot { it.isImage }.map { Uri.parse(it.uri) }
 
-        // 文本立刻落进沙箱，界面上只留一条导入结果提示
         var importedNames = emptyList<String>()
         if (textUris.isNotEmpty()) {
             val result = mStore.importFiles(textUris)
-            importedNames = textUris.mapNotNull { uri ->
-                queryDisplayName(uri).ifBlank { null }
-            }.take(result.importedCount)
+            importedNames = added.filterNot { it.isImage }
+                .map { it.name }
+                .take(result.importedCount)
             mImportedFileNames = importedNames
         }
 
-        val merged = (state.attachments + images).distinctBy { it.uri }
+        val merged = (state.attachments + added).distinctBy { it.uri }
         state.copy(
             attachments = merged,
             sandboxHint = mStore.sandboxSummary()
@@ -469,6 +466,35 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     /** 清空沙箱并刷新占用提示。 */
+
+    /** 打开沙箱浏览器，顺便刷新文件列表。 */
+    @UiIntentObserver(AssistantUiIntent.OpenSandboxBrowser::class)
+    private fun onOpenSandboxBrowser() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(
+            sandboxBrowserVisible = true,
+            sandboxFiles = mStore.listSandboxFiles()
+        ).setup()
+    }
+
+    /** 关闭沙箱浏览器。 */
+    @UiIntentObserver(AssistantUiIntent.CloseSandboxBrowser::class)
+    private fun onCloseSandboxBrowser() {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        state.copy(sandboxBrowserVisible = false).setup()
+    }
+
+    /** 删除沙箱里的一个文件。 */
+    @UiIntentObserver(AssistantUiIntent.DeleteSandboxFile::class)
+    private fun onDeleteSandboxFile(intent: AssistantUiIntent.DeleteSandboxFile) {
+        val state = getOrNull<AssistantUiState.Ready>() ?: return
+        runCatching { File(mStore.sandboxRoot, intent.path).delete() }
+        state.copy(
+            sandboxFiles = mStore.listSandboxFiles(),
+            sandboxHint = mStore.sandboxSummary()
+        ).setup()
+    }
+
     @UiIntentObserver(AssistantUiIntent.ClearSandbox::class)
     private suspend fun onClearSandbox() {
         val state = getOrNull<AssistantUiState.Ready>() ?: return
