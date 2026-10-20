@@ -13,6 +13,7 @@ import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantUiIntent
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantUiState
 import me.kafuuneko.rpclient.feature.assistant.presentation.AssistantViewEvent
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.gallery.GalleryImage
 import me.kafuuneko.rpclient.libs.assistant.AssistantImportResult
 import me.kafuuneko.rpclient.libs.assistant.AssistantMessage
 import me.kafuuneko.rpclient.libs.assistant.AssistantPromptBuilder
@@ -54,6 +55,7 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
     private val mClientFactory by inject<LLMClientFactory>()
     private val mFileRepository by inject<FileRepository>()
+    private val mGalleryStore by inject<me.kafuuneko.rpclient.libs.gallery.GalleryStore>()
     private val mContext by inject<android.content.Context>()
 
     /** 当前会话 ID；空表示尚未确定，首次加载时创建或选取最新会话。 */
@@ -65,6 +67,9 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     /** 本轮已收到的部分回复；断流时用它保住已生成的内容。 */
     /** 本轮断流后的自动重试次数。 */
     private var mRetryCount = 0
+
+    /** 图库清单，每次生成前刷新，供模型判断能发什么图。 */
+    private var mGalleryBrief: List<String> = emptyList()
 
     private val mPartialReply = StringBuilder()
 
@@ -146,6 +151,20 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
     }
 
     /** 中止当前生成，保留已生成的部分。 */
+
+    /**
+     * 从回复正文里找图库图片名，命中就返回那张图。
+     *
+     * 模型未必肯输出工具调用块，但它通常会在正文里写出图片名。
+     * 拿这个名字回查图库，比要求它遵守文本协议可靠得多。
+     */
+    private suspend fun matchGalleryImage(visible: String): GalleryImage? {
+        if (visible.isBlank()) return null
+        val images = runCatching { mGalleryStore.list() }.getOrDefault(emptyList())
+        return images.firstOrNull { image ->
+            image.name.isNotBlank() && visible.contains(image.name, ignoreCase = true)
+        }
+    }
 
     /**
      * 重新生成上一条回复。
@@ -530,14 +549,27 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
      */
     private suspend fun runGeneration() {
         mPartialReply.clear()
+        // 生成前刷新图库清单，模型才知道这轮有哪些图可发
+        mGalleryBrief = runCatching {
+            mGalleryStore.list().map { it.toBrief() }
+        }.getOrDefault(emptyList())
         var rounds = 0
         try {
             while (true) {
                 val reply = streamReply()
                 val calls = AssistantToolCatalog.parse(reply)
                 val visible = AssistantToolCatalog.stripToolBlocks(reply)
+                // 模型经常只在正文里说「已发送」却不真的调用工具。
+                // 这里做客户端兜底：提到图库里的图就自动补一张，
+                // 至少玩家能真的看到图，而不是一句空话。
+                val autoImage = if (calls.isEmpty()) matchGalleryImage(visible) else null
                 if (visible.isNotBlank()) {
-                    mMessages += AssistantMessage(role = ROLE_ASSISTANT, content = visible)
+                    val withImage = if (autoImage != null) {
+                        visible + "\n" + "<image uuid=\"" + autoImage.fileUuid + "\" />"
+                    } else {
+                        visible
+                    }
+                    mMessages += AssistantMessage(role = ROLE_ASSISTANT, content = withImage)
                     persistAndPublish()
                 }
                 if (calls.isEmpty() || rounds >= AssistantToolCatalog.MAX_TOOL_ROUNDS) break
@@ -618,7 +650,7 @@ class AssistantViewModel : CoreViewModelWithEvent<AssistantUiIntent, AssistantUi
         val messages = mutableListOf<LLMMessage>()
         messages += LLMMessage(
             role = LLMMessageRole.System,
-            content = AssistantPromptBuilder.buildSystemPrompt()
+            content = AssistantPromptBuilder.buildSystemPrompt(mGalleryBrief)
         )
         mMessages.takeLast(MAX_CONTEXT_MESSAGES).forEach { message ->
             messages += when (message.role) {
