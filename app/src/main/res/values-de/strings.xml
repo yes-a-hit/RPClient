@@ -1409,4 +1409,7 @@
     <string name="script_scene_completion">Abschluss</string>
     <string name="script_scene_next">Nächste</string>
     <string name="script_scene_no_options">Keine Optionen</string>
+    <string name="script_add_scene">Kapitel hinzufügen</string>
+    <string name="script_scene_end_condition">Endbedingung</string>
+    <string name="script_scene_unlock">Freischalten</string>
 </resources>

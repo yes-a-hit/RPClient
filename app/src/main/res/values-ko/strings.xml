@@ -1404,4 +1404,7 @@
     <string name="script_scene_completion">완료</string>
     <string name="script_scene_next">다음 장면</string>
     <string name="script_scene_no_options">선택 항목 없음</string>
+    <string name="script_add_scene">챕터 추가</string>
+    <string name="script_scene_end_condition">챕터 종료 조건</string>
+    <string name="script_scene_unlock">해금</string>
 </resources>

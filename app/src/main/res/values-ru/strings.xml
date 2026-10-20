@@ -1414,4 +1414,7 @@
     <string name="script_scene_completion">Завершение</string>
     <string name="script_scene_next">Далее</string>
     <string name="script_scene_no_options">Нет вариантов</string>
+    <string name="script_add_scene">Добавить главу</string>
+    <string name="script_scene_end_condition">Условие завершения</string>
+    <string name="script_scene_unlock">Открыть</string>
 </resources>

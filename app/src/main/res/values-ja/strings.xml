@@ -1405,4 +1405,7 @@
     <string name="script_scene_completion">達成</string>
     <string name="script_scene_next">次の場面</string>
     <string name="script_scene_no_options">選択肢がありません</string>
+    <string name="script_add_scene">章を追加</string>
+    <string name="script_scene_end_condition">章の終了条件</string>
+    <string name="script_scene_unlock">前提</string>
 </resources>

@@ -1406,4 +1406,7 @@
     <string name="script_scene_completion">通关关键词</string>
     <string name="script_scene_next">后继场景</string>
     <string name="script_scene_no_options">还没有可选项</string>
+    <string name="script_add_scene">添加章节</string>
+    <string name="script_scene_end_condition">章节结局条件</string>
+    <string name="script_scene_unlock">解锁前置</string>
 </resources>

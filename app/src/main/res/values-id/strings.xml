@@ -1410,4 +1410,7 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_scene_completion">Selesai</string>
     <string name="script_scene_next">Berikut</string>
     <string name="script_scene_no_options">Belum ada pilihan</string>
+    <string name="script_add_scene">Tambah bab</string>
+    <string name="script_scene_end_condition">Syarat akhir</string>
+    <string name="script_scene_unlock">Buka kunci</string>
 </resources>

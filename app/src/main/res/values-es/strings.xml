@@ -1411,4 +1411,7 @@
     <string name="script_scene_completion">Final</string>
     <string name="script_scene_next">Siguientes</string>
     <string name="script_scene_no_options">Sin opciones</string>
+    <string name="script_add_scene">Añadir capítulo</string>
+    <string name="script_scene_end_condition">Condición final</string>
+    <string name="script_scene_unlock">Desbloquear</string>
 </resources>

@@ -1413,4 +1413,7 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_scene_completion">Conclusão</string>
     <string name="script_scene_next">Próximas</string>
     <string name="script_scene_no_options">Nada disponível</string>
+    <string name="script_add_scene">Adicionar capítulo</string>
+    <string name="script_scene_end_condition">Condição de fim</string>
+    <string name="script_scene_unlock">Desbloquear</string>
 </resources>

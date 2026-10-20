@@ -1404,4 +1404,7 @@
     <string name="script_scene_completion">通關關鍵詞</string>
     <string name="script_scene_next">後繼場景</string>
     <string name="script_scene_no_options">還沒有可選項</string>
+    <string name="script_add_scene">新增章節</string>
+    <string name="script_scene_end_condition">章節結局條件</string>
+    <string name="script_scene_unlock">解鎖前置</string>
 </resources>
