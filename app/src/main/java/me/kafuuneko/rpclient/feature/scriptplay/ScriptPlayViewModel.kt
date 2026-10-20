@@ -171,7 +171,14 @@ class ScriptPlayViewModel(
             null
         }
         mPlay = mPlay.copy(messages = mPlay.messages + ScriptPlayMessage(PLAYER, text))
-        state.copy(input = "", generating = true, messages = mPlay.messages).setup()
+        // 选项用掉就清空：选完之后还挂在屏幕上会一直挡住对话
+        mOptions = emptyList()
+        state.copy(
+            input = "",
+            generating = true,
+            messages = mPlay.messages,
+            options = emptyList()
+        ).setup()
 
         val reply = runCatching { requestReply(pack, scene, text) }.getOrElse { error ->
             val current = getOrNull<ScriptPlayUiState.Ready>() ?: return
