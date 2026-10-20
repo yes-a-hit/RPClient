@@ -1437,4 +1437,5 @@
     <string name="script_selector_manual">手動新增</string>
     <string name="script_selector_manual_hint">輸入名稱</string>
     <string name="script_selector_add">加入</string>
+    <string name="adventure_edit_pack">編輯劇本</string>
 </resources>

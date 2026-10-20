@@ -1444,4 +1444,5 @@
     <string name="script_selector_manual">Añadir</string>
     <string name="script_selector_manual_hint">Nombre</string>
     <string name="script_selector_add">Incluir</string>
+    <string name="adventure_edit_pack">Editar guion</string>
 </resources>

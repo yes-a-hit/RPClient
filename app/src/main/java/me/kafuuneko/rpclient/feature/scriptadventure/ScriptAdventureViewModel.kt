@@ -87,6 +87,11 @@ class ScriptAdventureViewModel :
         ScriptAdventureViewEvent.OpenLibrary.tryEmit()
     }
 
+    @UiIntentObserver(ScriptAdventureUiIntent.OpenEditor::class)
+    private fun onOpenEditor(intent: ScriptAdventureUiIntent.OpenEditor) {
+        ScriptAdventureViewEvent.OpenEditor(intent.packId).tryEmit()
+    }
+
     @UiIntentObserver(ScriptAdventureUiIntent.Back::class)
     private fun onBack() {
         if (isStateOf<ScriptAdventureUiState.Finished>()) return

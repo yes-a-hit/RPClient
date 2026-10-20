@@ -68,6 +68,9 @@ sealed class ScriptAdventureUiIntent {
     /** 打开剧本库导入或编辑（调试入口）。 */
     data object OpenLibrary : ScriptAdventureUiIntent()
 
+    /** 直接跳到编辑器改这个剧本，不用先绕去剧本库。 */
+    data class OpenEditor(val packId: String) : ScriptAdventureUiIntent()
+
     data object Back : ScriptAdventureUiIntent()
 }
 
@@ -82,4 +85,7 @@ sealed class ScriptAdventureViewEvent : me.kafuuneko.rpclient.libs.core.IViewEve
 
     /** 打开剧本库。 */
     data object OpenLibrary : ScriptAdventureViewEvent()
+
+    /** 打开剧本编辑页。 */
+    data class OpenEditor(val packId: String) : ScriptAdventureViewEvent()
 }

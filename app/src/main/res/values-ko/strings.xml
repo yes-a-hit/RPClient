@@ -1437,4 +1437,5 @@
     <string name="script_selector_manual">직접 추가</string>
     <string name="script_selector_manual_hint">이름 입력</string>
     <string name="script_selector_add">추가</string>
+    <string name="adventure_edit_pack">스크립트 편집</string>
 </resources>

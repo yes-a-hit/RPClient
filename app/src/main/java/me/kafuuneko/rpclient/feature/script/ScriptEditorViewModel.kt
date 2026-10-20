@@ -490,6 +490,20 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
 
     @UiIntentObserver(ScriptEditorUiIntent.UpdateScene::class)
     private suspend fun onUpdateScene(intent: ScriptEditorUiIntent.UpdateScene) {
+        // 保存路径兜住异常：手打的名字、奇怪的轮次都可能踩到边界，
+        // 崩掉会连累整页未保存的编辑
+        runCatching { persistScene(intent) }.onFailure { error ->
+            android.util.Log.e("ScriptEditor", "save scene failed", error)
+            ScriptEditorViewEvent.ImportResult(
+                success = false,
+                detail = error.message.orEmpty(),
+                savedPackCount = 0
+            ).tryEmit()
+        }
+        publish(null, null)
+    }
+
+    private suspend fun persistScene(intent: ScriptEditorUiIntent.UpdateScene) {
         mPack = mPack.copy(
             startSceneId = if (intent.isEntry) intent.sceneId else mPack.startSceneId,
             startSceneIds = if (intent.isEntry) emptyList() else mPack.startSceneIds,
@@ -531,7 +545,6 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             }
         )
         mStore.save(mPack)
-        publish(null, null)
     }
 
     /** 删除场景；最后一个场景不允许删除，避免剧本变成空壳。 */

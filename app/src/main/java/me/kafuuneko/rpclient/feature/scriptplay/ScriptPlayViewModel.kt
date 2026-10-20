@@ -206,16 +206,29 @@ class ScriptPlayViewModel(
             }
 
             is ScriptPlayOutcome.Cleared -> {
-                // 通关后若剧本允许，自动转入自由模式继续玩
-                mFreeMode = ScriptPlayEngine.shouldEnterFreeMode(pack, scene)
-                mPlay = mPlay.copy(
-                    finished = !mFreeMode,
-                    endReason = if (mFreeMode) "" else outcome.reason
-                )
-                if (mFreeMode) {
+                // 本场达标先看有没有下一场：剧本是分章的，
+                // 通关一章就结束整局等于把后面几章全吞掉
+                val nextScene = scene.nextSceneIds
+                    .asSequence()
+                    .mapNotNull { id -> pack.scenes.firstOrNull { it.id == id } }
+                    .firstOrNull()
+                if (nextScene != null) {
+                    enterScene(nextScene, outcome.reason)
+                } else {
+                    // 没有后继才算真的走完；允许的话转自由模式继续玩
+                    mFreeMode = ScriptPlayEngine.shouldEnterFreeMode(pack, scene)
                     mPlay = mPlay.copy(
-                        messages = mPlay.messages + ScriptPlayMessage(SYSTEM, "通关：${outcome.reason}，进入自由模式")
+                        finished = !mFreeMode,
+                        endReason = if (mFreeMode) "" else outcome.reason
                     )
+                    if (mFreeMode) {
+                        mPlay = mPlay.copy(
+                            messages = mPlay.messages + ScriptPlayMessage(
+                                SYSTEM,
+                                "通关：${outcome.reason}，进入自由模式"
+                            )
+                        )
+                    }
                 }
             }
 
@@ -250,6 +263,15 @@ class ScriptPlayViewModel(
     private suspend fun onSwitchScene(intent: ScriptPlayUiIntent.SwitchScene) {
         val pack = mPack ?: return
         val target = pack.scenes.firstOrNull { it.id == intent.sceneId } ?: return
+        enterScene(target)
+    }
+
+    /**
+     * 进入指定场景：重置轮次、压掉旧对白、换背景。
+     *
+     * [note] 是给玩家的转场说明，通关自动转场时带上达成理由。
+     */
+    private suspend fun enterScene(target: ScriptScene, note: String = "") {
         mPlay = mPlay.copy(
             sceneId = target.id,
             roundCount = 0,
@@ -265,11 +287,14 @@ class ScriptPlayViewModel(
                 mPlay.messages
                     .lastOrNull { it.speaker != PLAYER && it.speaker != SYSTEM }
                     ?.let { add(it) }
+                if (note.isNotBlank()) {
+                    add(ScriptPlayMessage(SYSTEM, "上一场达成：$note"))
+                }
                 add(ScriptPlayMessage(SYSTEM, "进入「${target.name}」"))
             }
         )
         mSceneBackground = runCatching {
-            resolveSceneBackground(currentScene(mPack ?: return) ?: return)
+            resolveSceneBackground(target)
         }.getOrDefault("")
         mPlayStore.save(mPlay)
         publish()

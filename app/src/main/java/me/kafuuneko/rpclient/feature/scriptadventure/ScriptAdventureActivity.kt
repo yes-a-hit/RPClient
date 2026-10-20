@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import me.kafuuneko.rpclient.feature.script.ScriptEditorActivity
 import me.kafuuneko.rpclient.feature.script.ScriptLibraryActivity
 import me.kafuuneko.rpclient.feature.script.presentation.ScriptLibraryTab
 import me.kafuuneko.rpclient.feature.scriptadventure.presentation.ScriptAdventureUiIntent
@@ -58,6 +59,11 @@ class ScriptAdventureActivity : CoreActivityWithEvent() {
                 }.onFailure { error ->
                     android.util.Log.e("Adventure", "launch failed", error)
                 }
+                return
+            }
+
+            is ScriptAdventureViewEvent.OpenEditor -> {
+                startActivity(ScriptEditorActivity.intentOf(this, viewEvent.packId))
                 return
             }
 

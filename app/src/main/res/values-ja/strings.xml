@@ -1438,4 +1438,5 @@
     <string name="script_selector_manual">手動追加</string>
     <string name="script_selector_manual_hint">名前を入力</string>
     <string name="script_selector_add">追加</string>
+    <string name="adventure_edit_pack">脚本を編集</string>
 </resources>

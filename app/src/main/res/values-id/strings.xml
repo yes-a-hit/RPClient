@@ -1443,4 +1443,5 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_selector_manual">Tambah</string>
     <string name="script_selector_manual_hint">Nama</string>
     <string name="script_selector_add">Masukkan</string>
+    <string name="adventure_edit_pack">Edit skrip</string>
 </resources>

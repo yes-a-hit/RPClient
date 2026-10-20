@@ -1442,4 +1442,5 @@
     <string name="script_selector_manual">Manuell</string>
     <string name="script_selector_manual_hint">Name</string>
     <string name="script_selector_add">Hinzufügen</string>
+    <string name="adventure_edit_pack">Skript bearbeiten</string>
 </resources>

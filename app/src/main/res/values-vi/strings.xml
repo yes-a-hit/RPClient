@@ -1443,4 +1443,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_selector_manual">Thêm tay</string>
     <string name="script_selector_manual_hint">Nhập tên</string>
     <string name="script_selector_add">Thêm</string>
+    <string name="adventure_edit_pack">Sửa kịch bản</string>
 </resources>

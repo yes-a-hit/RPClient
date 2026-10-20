@@ -33,6 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.Box
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.scriptadventure.presentation.AdventurePackItem
 import me.kafuuneko.rpclient.feature.scriptadventure.presentation.AdventureSaveItem
@@ -95,12 +102,13 @@ fun ScriptAdventureLayout(
                 }
                 items(state.packs, key = { it.packId }) { pack ->
                     PackCard(
-                    pack = pack,
-                    onStart = { ScriptAdventureUiIntent.StartNew(pack.packId).emit() },
-                    onPickCast = {
-                        ScriptAdventureUiIntent.OpenCharacterPicker(pack.packId).emit()
-                    }
-                )
+                        pack = pack,
+                        onStart = { ScriptAdventureUiIntent.StartNew(pack.packId).emit() },
+                        onPickCast = {
+                            ScriptAdventureUiIntent.OpenCharacterPicker(pack.packId).emit()
+                        },
+                        onEdit = { ScriptAdventureUiIntent.OpenEditor(pack.packId).emit() }
+                    )
                 }
             }
             if (state.isEmpty) {
@@ -189,13 +197,17 @@ private fun SaveCard(
 private fun PackCard(
     pack: AdventurePackItem,
     onStart: () -> Unit,
-    onPickCast: () -> Unit
+    onPickCast: () -> Unit,
+    onEdit: () -> Unit
 ) {
+    // 长按弹菜单：编辑剧本与指定在场角色都是次要入口，
+    // 点击仍然直接开局
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            // 点一下直接开局；想指定在场角色时长按，别把选择器做成必经步骤
-            .combinedClickable(onClick = onStart, onLongClick = onPickCast),
+            .combinedClickable(onClick = onStart, onLongClick = { menuOpen = true }),
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 1.dp
     ) {
@@ -220,6 +232,26 @@ private fun PackCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.adventure_edit_pack)) },
+                onClick = {
+                    menuOpen = false
+                    onEdit()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.adventure_pick_cast)) },
+                onClick = {
+                    menuOpen = false
+                    onPickCast()
+                }
+            )
         }
     }
 }

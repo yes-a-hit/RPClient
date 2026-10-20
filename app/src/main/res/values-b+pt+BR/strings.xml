@@ -1446,4 +1446,5 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_selector_manual">Adicionar</string>
     <string name="script_selector_manual_hint">Nome</string>
     <string name="script_selector_add">Incluir</string>
+    <string name="adventure_edit_pack">Editar roteiro</string>
 </resources>
