@@ -1398,4 +1398,5 @@
     <string name="script_play_gm_mute">Silenciar</string>
     <string name="script_play_gm_speak">Hablar</string>
     <string name="assistant_regenerate">Regenerar</string>
+    <string name="group_chat_impersonate">Interpretarte</string>
 </resources>

@@ -250,7 +250,8 @@ private fun GroupChatNormalView(
                     onImageAction = { emitIntent(GroupChatUiIntent.ImageAction(it)) },
                     canContinue = canContinue,
                     onContinue = { emitIntent(GroupChatUiIntent.ContinueLast) },
-                    onSummarize = { emitIntent(GroupChatUiIntent.SummarizeNow) }
+                    onSummarize = { emitIntent(GroupChatUiIntent.SummarizeNow) },
+                    onImpersonate = { emitIntent(GroupChatUiIntent.ImpersonateUser) }
                 )
             }
         }
@@ -1858,7 +1859,8 @@ private fun Composer(
     onImageAction: (MessageImageAction) -> Unit,
     canContinue: Boolean,
     onContinue: () -> Unit,
-    onSummarize: () -> Unit
+    onSummarize: () -> Unit,
+    onImpersonate: () -> Unit
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val sendButtonColor by animateColorAsState(
@@ -1899,6 +1901,13 @@ private fun Composer(
                     label = stringResource(R.string.continue_latest_reply),
                     enabled = canContinue && !generating,
                     onClick = onContinue
+                )
+                // 扮演自己：让模型写一句玩家发言，填进输入框
+                QuickActionPill(
+                    icon = Icons.Rounded.Edit,
+                    label = stringResource(R.string.group_chat_impersonate),
+                    enabled = !generating && !imageState.submitting,
+                    onClick = onImpersonate
                 )
                 QuickActionPill(
                     icon = Icons.Rounded.AutoAwesome,

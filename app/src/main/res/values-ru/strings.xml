@@ -1401,4 +1401,5 @@
     <string name="script_play_gm_mute">Молчать</string>
     <string name="script_play_gm_speak">Говорить</string>
     <string name="assistant_regenerate">Сгенерировать заново</string>
+    <string name="group_chat_impersonate">Сыграть себя</string>
 </resources>

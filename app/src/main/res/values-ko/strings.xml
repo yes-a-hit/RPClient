@@ -1391,4 +1391,5 @@
     <string name="script_play_gm_mute">발언 금지</string>
     <string name="script_play_gm_speak">발언</string>
     <string name="assistant_regenerate">다시 생성</string>
+    <string name="group_chat_impersonate">나를 연기</string>
 </resources>

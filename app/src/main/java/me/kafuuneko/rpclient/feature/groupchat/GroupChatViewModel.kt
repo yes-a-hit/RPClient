@@ -66,6 +66,9 @@ import me.kafuuneko.rpclient.libs.llm.LLMProviderSelectionResolver
 import me.kafuuneko.rpclient.libs.llm.classifyGenerationFailure
 import me.kafuuneko.rpclient.libs.llm.model.isOutputTokenLimitReached
 import me.kafuuneko.rpclient.libs.llm.model.ImageInputSetting
+import me.kafuuneko.rpclient.libs.llm.model.LLMMessage
+import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
+import me.kafuuneko.rpclient.libs.groupchat.model.GroupChatMessageSource
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMStreamEvent
 import me.kafuuneko.rpclient.libs.room.model.MessageImageInput
@@ -612,6 +615,64 @@ class GroupChatViewModel :
      *
      * @param intent 包含草稿文本的意图
      */
+
+    /**
+     * 以玩家身份代写一句发言，结果填入输入框。
+     *
+     * 与单人会话的 Impersonate 同用途：不想自己想说什么时点一下，
+     * 由模型根据群聊局势写一句，玩家改完再发。
+     */
+    @UiIntentObserver(GroupChatUiIntent.ImpersonateUser::class)
+    private suspend fun onImpersonateUser() {
+        val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
+        val sessionId = mSessionId ?: return
+        val provider = runCatching {
+            mProviderSelectionResolver.requireDefaultProvider()
+        }.getOrNull() ?: return
+        // 界面里已有最近消息与成员名单，直接取用，不必再查库
+        val history = uiState.conversationState.messages.takeLast(IMPERSONATE_HISTORY)
+        val system = buildString {
+            append("你在为玩家代笔。当前是群聊场景，在场角色：")
+            append(uiState.members.joinToString("、") { it.name })
+            append("。\n根据最近几轮对话，写一句玩家此刻最自然的发言，20 字以内，")
+            append("只输出这句话本身，不要角色名、不要引号、不要解释。")
+        }
+        val messages = buildList {
+            add(LLMMessage(LLMMessageRole.System, system))
+            history.forEach { message ->
+                add(
+                    LLMMessage(
+                        role = if (message.source == GroupChatMessageSource.User) {
+                            LLMMessageRole.User
+                        } else {
+                            LLMMessageRole.Assistant
+                        },
+                        content = message.content
+                    )
+                )
+            }
+        }
+        val builder = StringBuilder()
+        val failed = runCatching {
+            mLLMRepository.streamGenerateWithProvider(
+                provider = provider,
+                request = LLMGenerationRequest(messages = messages, model = provider.model),
+                routingSessionKey = "group-chat-impersonate:$sessionId"
+            ).collect { event ->
+                if (event is LLMStreamEvent.Delta) builder.append(event.content)
+            }
+        }.exceptionOrNull()
+        if (failed != null) {
+            AppViewEvent.PopupToastMessage(failed.message.orEmpty()).tryEmit()
+            return
+        }
+        val draft = builder.toString().trim()
+        if (draft.isBlank()) return
+        val current = getOrNull<GroupChatUiState.Normal>() ?: return
+        current.copy(
+            conversationState = current.conversationState.copy(inputDraft = draft)
+        ).setup()
+    }
     @UiIntentObserver(GroupChatUiIntent.ChangeInputDraft::class)
     private fun onChangeInputDraft(intent: GroupChatUiIntent.ChangeInputDraft) {
         val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
@@ -2631,6 +2692,9 @@ class GroupChatViewModel :
     )
 
     private companion object {
+        /** 代写时参考的历史条数。 */
+        const val IMPERSONATE_HISTORY = 8
+
         /** 自动群聊模式下，两轮生成之间的短暂缓冲延时（毫秒）。 */
         const val AUTO_MODE_DELAY_MS = 500L
         /** 群聊页面首次和后续向前加载的单页消息数量。 */

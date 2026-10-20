@@ -14,6 +14,9 @@ sealed class GroupChatUiIntent {
     data class Init(val sessionId: String?) : GroupChatUiIntent()
     data object Resume : GroupChatUiIntent()
     data object LoadOlderMessages : GroupChatUiIntent()
+    /** 让模型替玩家写一句发言，填入输入框待确认。 */
+    data object ImpersonateUser : GroupChatUiIntent()
+
     data object Back : GroupChatUiIntent()
     data object OpenSettings : GroupChatUiIntent()
     data object ShowSessionLoreDialog : GroupChatUiIntent()

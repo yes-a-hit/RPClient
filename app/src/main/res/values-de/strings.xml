@@ -1396,4 +1396,5 @@
     <string name="script_play_gm_mute">Stumm</string>
     <string name="script_play_gm_speak">Sprechen</string>
     <string name="assistant_regenerate">Neu erzeugen</string>
+    <string name="group_chat_impersonate">Selbst spielen</string>
 </resources>
