@@ -72,6 +72,8 @@ internal object ScriptPackJson {
             failConditions = item.arrayOr("failConditions").mapNotNull { toCondition(it) },
             completionCondition = item.objOrNull("completionCondition")?.let(::toCondition),
             cast = item.arrayOr("cast").mapNotNull { toCastMember(it) },
+            conditionalCast = item.arrayOr("conditionalCast")
+                .mapNotNull { toCastRule(it) },
             bannedCast = item.stringListOr("bannedCast"),
             maxRounds = item.intOr("maxRounds", 0).coerceAtLeast(0),
             unlockedBy = item.stringListOr("unlockedBy"),
@@ -111,6 +113,19 @@ internal object ScriptPackJson {
         )
     }
 
+
+
+    /** 映射一条条件到场规则；没写名字的丢弃。 */
+    private fun toCastRule(element: com.google.gson.JsonElement): ScriptCastRule? {
+        val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val name = item.stringOr("name")
+        if (name.isBlank()) return null
+        return ScriptCastRule(
+            name = name,
+            condition = item.objOrNull("condition")?.let(::toCondition),
+            description = item.stringOr("description")
+        )
+    }
 
     /** 映射一个剧本变量；没写名字的丢弃。 */
     private fun toVariable(element: com.google.gson.JsonElement): ScriptVariable? {

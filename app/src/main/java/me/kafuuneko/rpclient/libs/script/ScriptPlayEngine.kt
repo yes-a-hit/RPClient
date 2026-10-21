@@ -244,6 +244,31 @@ object ScriptPlayEngine {
         return result
     }
 
+
+    /**
+     * 算出本场实际在场名单。
+     *
+     * 常驻 cast 加条件到场的角色，再去掉禁止名单。
+     * 结果为空是合法的：零角色场景只剩旁白。
+     */
+    fun effectiveCast(
+        scene: ScriptScene,
+        variables: Map<String, Int> = emptyMap(),
+        roundCount: Int = 0,
+        lastReply: String = ""
+    ): List<String> {
+        val base = scene.cast.map { it.name }
+        val arrivals = scene.conditionalCast
+            .filter { rule ->
+                val condition = rule.condition ?: return@filter true
+                matches(condition, roundCount, lastReply, variables)
+            }
+            .map { it.name }
+        return (base + arrivals)
+            .filterNot { it in scene.bannedCast }
+            .distinct()
+    }
+
     /** 按剧本声明的初值建一份变量表。 */
     fun initialVariables(pack: ScriptPack): Map<String, Int> =
         pack.variables

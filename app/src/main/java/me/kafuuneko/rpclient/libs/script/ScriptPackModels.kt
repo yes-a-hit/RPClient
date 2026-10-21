@@ -103,6 +103,13 @@ data class ScriptScene(
     val completionCondition: ScriptCondition? = null,
     /** 允许出场的角色；为空表示不限制。 */
     val cast: List<ScriptCastMember> = emptyList(),
+    /**
+     * 按状态决定是否到场的角色。
+     *
+     * 与 [cast] 的区别：这些是常驻的，条件角色来不来取决于当时的变量。
+     * 同一个场景在不同状态下会遇到不同的人，剧本才有「世界在动」的感觉。
+     */
+    val conditionalCast: List<ScriptCastRule> = emptyList(),
     /** 禁止出场的角色名称，优先级高于 [cast]。 */
     val bannedCast: List<String> = emptyList(),
     /** 本场景最多进行的对话轮数，0 表示不限。 */
@@ -146,6 +153,22 @@ data class ScriptScene(
      * 既不额外花钱，也不会每次换一张让人出戏。
      */
     val backgroundKey: String = ""
+)
+
+/**
+ * 一条「谁会出现」的规则。
+ *
+ * 条件为空表示无条件到场；写了条件就按当前变量判定。
+ * 用它可以让同一场景在不同进度下遇到不同的人，
+ * 不必为每种组合单独抄一份场景。
+ */
+data class ScriptCastRule(
+    /** 角色名，与角色卡或 [ScriptCastMember.name] 对应。 */
+    val name: String = "",
+    /** 到场条件；为空表示总是到场。 */
+    val condition: ScriptCondition? = null,
+    /** 角色设定，供模型参考。 */
+    val description: String = ""
 )
 
 /**

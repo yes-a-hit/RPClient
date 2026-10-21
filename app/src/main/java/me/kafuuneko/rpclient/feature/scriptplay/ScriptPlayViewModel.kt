@@ -344,7 +344,8 @@ class ScriptPlayViewModel(
             variables = mPlay.variables
         ) ?: return
         val key = ScriptPlayEngine.eventKey(scene, event)
-        val baseCast = mPlay.castOverride ?: scene.cast.map { it.name }
+        val baseCast = mPlay.castOverride
+            ?: ScriptPlayEngine.effectiveCast(scene, mPlay.variables)
         val nextCast = ScriptPlayEngine.applyEventCast(baseCast, event)
         val note = event.narration.ifBlank { event.name }
         mPlay = mPlay.copy(
@@ -483,7 +484,10 @@ class ScriptPlayViewModel(
                 roundCount = mPlay.roundCount + 1,
                 remainingRounds = remaining,
                 // 事件改过名单就按改后的走，没人时只剩旁白
-                castOverride = mPlay.castOverride
+                castOverride = mPlay.castOverride ?: ScriptPlayEngine.effectiveCast(
+                scene = scene,
+                variables = mPlay.variables
+            )
             )
             val messages = buildList {
                 add(LLMMessage(LLMMessageRole.System, system))
@@ -588,8 +592,9 @@ class ScriptPlayViewModel(
             },
             backgroundUuid = mSceneBackground,
             castNames = ((mPlay.castOverride
-                ?: currentSceneOrNull()?.cast?.map { it.name }.orEmpty()) + mActiveCharacters)
-                .distinct(),
+                ?: currentSceneOrNull()?.let { scene ->
+                    ScriptPlayEngine.effectiveCast(scene, mPlay.variables)
+                }.orEmpty()) + mActiveCharacters).distinct(),
             autoPlay = mAutoPlay
         ).setup()
     }

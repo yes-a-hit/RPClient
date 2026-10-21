@@ -5,9 +5,28 @@
   "description": "你搬进一栋老式公寓，楼里七个房间各住着人，但走廊灯只亮一半。这栋楼没有主线，谁的门会为你打开，取决于你在楼里攒下的信任。",
   "mode": "Free",
   "variables": [
-    { "name": "信任", "label": "信任", "initial": 0, "min": 0, "max": 10 },
-    { "name": "疑心", "label": "疑心", "initial": 0, "min": 0, "max": 10 },
-    { "name": "线索", "label": "线索", "initial": 0, "min": 0, "max": 5, "visible": true }
+    {
+      "name": "信任",
+      "label": "信任",
+      "initial": 0,
+      "min": 0,
+      "max": 10
+    },
+    {
+      "name": "疑心",
+      "label": "疑心",
+      "initial": 0,
+      "min": 0,
+      "max": 10
+    },
+    {
+      "name": "线索",
+      "label": "线索",
+      "initial": 0,
+      "min": 0,
+      "max": 5,
+      "visible": true
+    }
   ],
   "startSceneId": "hall",
   "startSceneIds": [],
@@ -39,10 +58,38 @@
       "events": [
         {
           "name": "记住名单",
-          "condition": { "type": "Keyword", "pattern": "名单" },
-          "effects": [{ "variable": "线索", "delta": 1 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "名单"
+          },
+          "effects": [
+            {
+              "variable": "线索",
+              "delta": 1
+            }
+          ],
           "narration": "你把被划掉的两个名字记了下来。",
           "once": true
+        }
+      ],
+      "conditionalCast": [
+        {
+          "name": "老陈",
+          "description": "听到动静出门查看的维修工",
+          "condition": {
+            "type": "Variable",
+            "variable": "信任",
+            "threshold": 2
+          }
+        },
+        {
+          "name": "苏眠",
+          "description": "难得愿意开门探头看一眼的翻译",
+          "condition": {
+            "type": "Variable",
+            "variable": "线索",
+            "threshold": 2
+          }
         }
       ]
     },
@@ -68,8 +115,17 @@
       "events": [
         {
           "name": "他松口了",
-          "condition": { "type": "Variable", "variable": "信任", "threshold": 3 },
-          "effects": [{ "variable": "线索", "delta": 1 }],
+          "condition": {
+            "type": "Variable",
+            "variable": "信任",
+            "threshold": 3
+          },
+          "effects": [
+            {
+              "variable": "线索",
+              "delta": 1
+            }
+          ],
           "narration": "老陈让开半步，说了句「进来吧」。",
           "once": true
         }
@@ -89,7 +145,11 @@
       "bannedCast": [],
       "nextSceneIds": [],
       "maxRounds": 12,
-      "unlockCondition": { "type": "Variable", "variable": "信任", "threshold": 2 },
+      "unlockCondition": {
+        "type": "Variable",
+        "variable": "信任",
+        "threshold": 2
+      },
       "suggestedActions": [
         "隔着门缝慢慢说话，不催她",
         "说明自己是新搬来的",
@@ -98,8 +158,17 @@
       "events": [
         {
           "name": "链条摘了",
-          "condition": { "type": "Variable", "variable": "信任", "threshold": 4 },
-          "effects": [{ "variable": "线索", "delta": 1 }],
+          "condition": {
+            "type": "Variable",
+            "variable": "信任",
+            "threshold": 4
+          },
+          "effects": [
+            {
+              "variable": "线索",
+              "delta": 1
+            }
+          ],
           "narration": "链条轻响一声，门开了。",
           "once": true
         }
@@ -113,7 +182,11 @@
       "bannedCast": [],
       "nextSceneIds": [],
       "maxRounds": 0,
-      "unlockCondition": { "type": "Variable", "variable": "线索", "threshold": 2 },
+      "unlockCondition": {
+        "type": "Variable",
+        "variable": "线索",
+        "threshold": 2
+      },
       "suggestedActions": [
         "翻看那些衣服",
         "站在栏杆边往下看",
@@ -122,14 +195,34 @@
       "events": [
         {
           "name": "旧钥匙",
-          "condition": { "type": "Keyword", "pattern": "衣服" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "衣服"
+          },
           "chance": 60,
           "effects": [
-            { "variable": "线索", "delta": 1 },
-            { "variable": "疑心", "delta": 1 }
+            {
+              "variable": "线索",
+              "delta": 1
+            },
+            {
+              "variable": "疑心",
+              "delta": 1
+            }
           ],
           "narration": "口袋里有把生锈的钥匙，不知道开哪扇门。",
           "once": true
+        }
+      ],
+      "conditionalCast": [
+        {
+          "name": "老陈",
+          "description": "上来抽烟的维修工",
+          "condition": {
+            "type": "Variable",
+            "variable": "疑心",
+            "threshold": 2
+          }
         }
       ]
     },
@@ -141,7 +234,11 @@
       "bannedCast": [],
       "nextSceneIds": [],
       "maxRounds": 0,
-      "unlockCondition": { "type": "Variable", "variable": "线索", "threshold": 3 },
+      "unlockCondition": {
+        "type": "Variable",
+        "variable": "线索",
+        "threshold": 3
+      },
       "suggestedActions": [
         "看墙上那块浅色痕迹",
         "翻抽屉",
@@ -150,8 +247,16 @@
       "events": [
         {
           "name": "相框",
-          "condition": { "type": "Keyword", "pattern": "浅色" },
-          "effects": [{ "variable": "线索", "delta": 1 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "浅色"
+          },
+          "effects": [
+            {
+              "variable": "线索",
+              "delta": 1
+            }
+          ],
           "narration": "框子的痕迹比手掌大，挂了很多年才会留下这种印子。",
           "once": true
         }
