@@ -274,7 +274,11 @@ object ScriptPlayPromptBuilder {
             if (profiles.isNotEmpty()) {
                 builder.append("【角色设定】\n")
                 profiles.forEach { builder.append(it).append('\n') }
-                builder.append("按以上设定演出，让他们开口说话、各自行动，不要把场面写成纯旁白。\n")
+                builder.append(
+                    "按以上设定演出。每一轮都必须有角色真正开口说话或用动作回应，" +
+                        "至少一句台词；旁白只用来交代环境与过渡，" +
+                        "不能整段都在描写却没有角色参与。\n"
+                )
             }
         } else if (castOverride != null) {
             // 事件把人都清走了：这一场只有环境与旁白

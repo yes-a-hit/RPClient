@@ -121,7 +121,11 @@ Writing rules:
   }
 Rules for lorebook entries:
 - Each entry covers one self-contained fact, place, faction, or event.
+- Profile fields with real content must each become their own entry:
+  occupation, likes and dislikes, "romantic_history", and "sexual_history".
+  These are the parts a world book most often forgets, so do not fold them
+  into the character description and do not drop them.
 - "keys" holds 2 to 6 trigger keywords that would appear in chat when the entry becomes relevant.
-- Produce 4 to 8 entries that support the character without repeating the description."""
+- Produce 6 to 10 entries that support the character without repeating the description."""
     }
 }
