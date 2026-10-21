@@ -1477,4 +1477,16 @@
     <string name="script_event_once">Una vez</string>
     <string name="script_event_delete">Eliminar</string>
     <string name="character_group_others">Otros</string>
+    <string name="script_variable_kind">Tipo</string>
+    <string name="script_variable_on">Encendido</string>
+    <string name="script_variable_off">Apagado</string>
+    <string name="script_variable_switch_hint">0 apagado, 1 encendido</string>
+    <string name="script_variable_text">Contenido</string>
+    <string name="script_variable_note">Texto</string>
+    <string name="script_variable_group">Grupo</string>
+    <string name="script_variable_group_hint">ej.: Global / Escena</string>
+    <string name="script_dashboard_enabled">Panel de estado</string>
+    <string name="script_scene_dashboard">Mostrar en esta escena</string>
+    <string name="script_event_clue">Pista</string>
+    <string name="script_event_clue_hint">Uno por linea: variable contenido</string>
 </resources>

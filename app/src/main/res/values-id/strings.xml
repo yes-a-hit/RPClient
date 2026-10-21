@@ -1476,4 +1476,16 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_event_once">Sekali</string>
     <string name="script_event_delete">Hapus</string>
     <string name="character_group_others">Lainnya</string>
+    <string name="script_variable_kind">Jenis</string>
+    <string name="script_variable_on">Nyala</string>
+    <string name="script_variable_off">Mati</string>
+    <string name="script_variable_switch_hint">0 mati, 1 nyala</string>
+    <string name="script_variable_text">Isi</string>
+    <string name="script_variable_note">Teks</string>
+    <string name="script_variable_group">Grup</string>
+    <string name="script_variable_group_hint">mis. Global / Adegan</string>
+    <string name="script_dashboard_enabled">Panel status</string>
+    <string name="script_scene_dashboard">Tampilkan di adegan ini</string>
+    <string name="script_event_clue">Petunjuk</string>
+    <string name="script_event_clue_hint">Satu per baris: variabel isi</string>
 </resources>

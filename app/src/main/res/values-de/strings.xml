@@ -1475,4 +1475,16 @@
     <string name="script_event_once">Einmalig</string>
     <string name="script_event_delete">Löschen</string>
     <string name="character_group_others">Sonstige</string>
+    <string name="script_variable_kind">Typ</string>
+    <string name="script_variable_on">An</string>
+    <string name="script_variable_off">Aus</string>
+    <string name="script_variable_switch_hint">0 aus, 1 an</string>
+    <string name="script_variable_text">Inhalt</string>
+    <string name="script_variable_note">Hinweis</string>
+    <string name="script_variable_group">Gruppe</string>
+    <string name="script_variable_group_hint">z. B. Global / Szene</string>
+    <string name="script_dashboard_enabled">Statusanzeige</string>
+    <string name="script_scene_dashboard">In dieser Szene</string>
+    <string name="script_event_clue">Hinweis</string>
+    <string name="script_event_clue_hint">Eine pro Zeile: Variable Inhalt</string>
 </resources>

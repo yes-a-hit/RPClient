@@ -43,6 +43,9 @@ data class ScriptSceneRow(
     val completionKeyword: String = "",
     /** 后继场景 ID，逗号分隔的展示串。 */
     val nextSceneIds: String = "",
+    /** 本场景状态面板显示哪些变量；空表示按剧本可见性走。 */
+    val dashboardItems: List<String> = emptyList(),
+
     /** 本场景的事件列表，供事件编辑器展示。 */
     val events: List<me.kafuuneko.rpclient.libs.script.ScriptEvent> = emptyList(),
 

@@ -1506,4 +1506,16 @@
     <string name="script_event_once">只触发一次</string>
     <string name="script_event_delete">删除事件</string>
     <string name="character_group_others">其他</string>
+    <string name="script_variable_kind">类型</string>
+    <string name="script_variable_on">开时</string>
+    <string name="script_variable_off">关时</string>
+    <string name="script_variable_switch_hint">0 表示关、1 表示开</string>
+    <string name="script_variable_text">默认内容</string>
+    <string name="script_variable_note">说明文字</string>
+    <string name="script_variable_group">分组</string>
+    <string name="script_variable_group_hint">如：全局 / 本场</string>
+    <string name="script_dashboard_enabled">显示状态面板</string>
+    <string name="script_scene_dashboard">本场景显示哪些</string>
+    <string name="script_event_clue">追加线索</string>
+    <string name="script_event_clue_hint">每行「变量名 内容」，如：提示 厨房少了把刀</string>
 </resources>

@@ -1454,4 +1454,16 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_event_once">Una volta</string>
     <string name="script_event_delete">Elimina</string>
     <string name="character_group_others">Altri</string>
+    <string name="script_variable_kind">Tipo</string>
+    <string name="script_variable_on">Acceso</string>
+    <string name="script_variable_off">Spento</string>
+    <string name="script_variable_switch_hint">0 spento, 1 acceso</string>
+    <string name="script_variable_text">Contenuto</string>
+    <string name="script_variable_note">Testo</string>
+    <string name="script_variable_group">Gruppo</string>
+    <string name="script_variable_group_hint">es.: Globale / Scena</string>
+    <string name="script_dashboard_enabled">Pannello stato</string>
+    <string name="script_scene_dashboard">Mostra in questa scena</string>
+    <string name="script_event_clue">Indizio</string>
+    <string name="script_event_clue_hint">Uno per riga: variabile contenuto</string>
 </resources>

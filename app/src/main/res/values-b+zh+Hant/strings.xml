@@ -1470,4 +1470,16 @@
     <string name="script_event_once">只觸發一次</string>
     <string name="script_event_delete">刪除事件</string>
     <string name="character_group_others">其他</string>
+    <string name="script_variable_kind">類型</string>
+    <string name="script_variable_on">開時</string>
+    <string name="script_variable_off">關時</string>
+    <string name="script_variable_switch_hint">0 表示關、1 表示開</string>
+    <string name="script_variable_text">預設內容</string>
+    <string name="script_variable_note">說明文字</string>
+    <string name="script_variable_group">分組</string>
+    <string name="script_variable_group_hint">如：全域 / 本場</string>
+    <string name="script_dashboard_enabled">顯示狀態面板</string>
+    <string name="script_scene_dashboard">本場景顯示哪些</string>
+    <string name="script_event_clue">追加線索</string>
+    <string name="script_event_clue_hint">每行「變數名 內容」，如：提示 廚房少了把刀</string>
 </resources>

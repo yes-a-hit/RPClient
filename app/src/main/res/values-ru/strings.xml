@@ -1480,4 +1480,16 @@
     <string name="script_event_once">Однократно</string>
     <string name="script_event_delete">Удалить</string>
     <string name="character_group_others">Прочие</string>
+    <string name="script_variable_kind">Тип</string>
+    <string name="script_variable_on">Вкл</string>
+    <string name="script_variable_off">Выкл</string>
+    <string name="script_variable_switch_hint">0 выкл, 1 вкл</string>
+    <string name="script_variable_text">Содержание</string>
+    <string name="script_variable_note">Текст</string>
+    <string name="script_variable_group">Группа</string>
+    <string name="script_variable_group_hint">напр.: Общее / Сцена</string>
+    <string name="script_dashboard_enabled">Панель состояния</string>
+    <string name="script_scene_dashboard">Показывать в сцене</string>
+    <string name="script_event_clue">Подсказка</string>
+    <string name="script_event_clue_hint">По одному: переменная текст</string>
 </resources>

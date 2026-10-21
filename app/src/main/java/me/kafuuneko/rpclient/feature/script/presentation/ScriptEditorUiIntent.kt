@@ -145,7 +145,14 @@ sealed class ScriptEditorUiIntent {
         val narration: String,
         val once: Boolean,
         /** 变量副作用，每行一条，格式「变量名 +2」或「变量名 -1」。 */
-        val effectsText: String
+        val effectsText: String,
+        /**
+         * 线索追加，每行一条「变量名 内容」。
+         *
+         * 和数值副作用分开写：线索是攒的，写混在一行里
+         * 既难解析也看不出哪条是线索。
+         */
+        val clueText: String = "" 
     ) : ScriptEditorUiIntent()
 
     /** 删除一条事件。 */

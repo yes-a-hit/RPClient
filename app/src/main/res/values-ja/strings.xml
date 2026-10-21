@@ -1471,4 +1471,16 @@
     <string name="script_event_once">1回のみ</string>
     <string name="script_event_delete">イベント削除</string>
     <string name="character_group_others">その他</string>
+    <string name="script_variable_kind">種類</string>
+    <string name="script_variable_on">オン</string>
+    <string name="script_variable_off">オフ</string>
+    <string name="script_variable_switch_hint">0 でオフ、1 でオン</string>
+    <string name="script_variable_text">内容</string>
+    <string name="script_variable_note">説明</string>
+    <string name="script_variable_group">グループ</string>
+    <string name="script_variable_group_hint">例：全体 / この場面</string>
+    <string name="script_dashboard_enabled">状態パネル</string>
+    <string name="script_scene_dashboard">この場面で表示</string>
+    <string name="script_event_clue">手がかり追加</string>
+    <string name="script_event_clue_hint">1行「変数名 内容」</string>
 </resources>

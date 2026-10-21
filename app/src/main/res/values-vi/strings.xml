@@ -1476,4 +1476,16 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_event_once">Một lần</string>
     <string name="script_event_delete">Xoá</string>
     <string name="character_group_others">Khác</string>
+    <string name="script_variable_kind">Loại</string>
+    <string name="script_variable_on">Bật</string>
+    <string name="script_variable_off">Tắt</string>
+    <string name="script_variable_switch_hint">0 tắt, 1 bật</string>
+    <string name="script_variable_text">Nội dung</string>
+    <string name="script_variable_note">Ghi chú</string>
+    <string name="script_variable_group">Nhóm</string>
+    <string name="script_variable_group_hint">vd: Toàn cục / Cảnh</string>
+    <string name="script_dashboard_enabled">Bảng trạng thái</string>
+    <string name="script_scene_dashboard">Hiện ở cảnh này</string>
+    <string name="script_event_clue">Gợi ý</string>
+    <string name="script_event_clue_hint">Mỗi dòng: biến nội dung</string>
 </resources>

@@ -1470,4 +1470,16 @@
     <string name="script_event_once">한 번만</string>
     <string name="script_event_delete">이벤트 삭제</string>
     <string name="character_group_others">기타</string>
+    <string name="script_variable_kind">종류</string>
+    <string name="script_variable_on">켜짐</string>
+    <string name="script_variable_off">꺼짐</string>
+    <string name="script_variable_switch_hint">0이면 꺼짐, 1이면 켜짐</string>
+    <string name="script_variable_text">내용</string>
+    <string name="script_variable_note">설명</string>
+    <string name="script_variable_group">그룹</string>
+    <string name="script_variable_group_hint">예: 전체 / 이 장면</string>
+    <string name="script_dashboard_enabled">상태 패널</string>
+    <string name="script_scene_dashboard">이 장면에서 표시</string>
+    <string name="script_event_clue">단서 추가</string>
+    <string name="script_event_clue_hint">줄마다 변수명 내용</string>
 </resources>

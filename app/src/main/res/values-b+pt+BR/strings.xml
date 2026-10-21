@@ -1479,4 +1479,16 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_event_once">Uma vez</string>
     <string name="script_event_delete">Excluir</string>
     <string name="character_group_others">Outros</string>
+    <string name="script_variable_kind">Tipo</string>
+    <string name="script_variable_on">Ligado</string>
+    <string name="script_variable_off">Desligado</string>
+    <string name="script_variable_switch_hint">0 desliga, 1 liga</string>
+    <string name="script_variable_text">Conteúdo</string>
+    <string name="script_variable_note">Texto</string>
+    <string name="script_variable_group">Grupo</string>
+    <string name="script_variable_group_hint">ex.: Global / Cena</string>
+    <string name="script_dashboard_enabled">Painel de status</string>
+    <string name="script_scene_dashboard">Mostrar nesta cena</string>
+    <string name="script_event_clue">Pista</string>
+    <string name="script_event_clue_hint">Um por linha: variavel conteudo</string>
 </resources>

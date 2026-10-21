@@ -1476,4 +1476,16 @@
     <string name="script_event_once">Une fois</string>
     <string name="script_event_delete">Supprimer</string>
     <string name="character_group_others">Autres</string>
+    <string name="script_variable_kind">Type</string>
+    <string name="script_variable_on">Actif</string>
+    <string name="script_variable_off">Inactif</string>
+    <string name="script_variable_switch_hint">0 inactif, 1 actif</string>
+    <string name="script_variable_text">Contenu</string>
+    <string name="script_variable_note">Texte</string>
+    <string name="script_variable_group">Groupe</string>
+    <string name="script_variable_group_hint">ex. : Global / Scène</string>
+    <string name="script_dashboard_enabled">Panneau d état</string>
+    <string name="script_scene_dashboard">Afficher dans cette scène</string>
+    <string name="script_event_clue">Indice</string>
+    <string name="script_event_clue_hint">Un par ligne : variable contenu</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -104,6 +105,7 @@ fun ScriptEditorLayout(
                     row = row,
                     generating = state.generating,
                     characterNames = state.characterNames,
+                    variableNames = state.variables.map { it.name },
                     lorebookNames = state.lorebookNames,
                     galleryKeys = state.galleryKeys,
                     allScenes = state.rows,
@@ -151,6 +153,8 @@ private fun ChapterCard(
     characterNames: List<String>,
     lorebookNames: List<String>,
     galleryKeys: List<String>,
+    /** 剧本里定义的全部变量名，供场景选择要显示哪几栏。 */
+    variableNames: List<String>,
     allScenes: List<ScriptSceneRow>,
     emit: ScriptEditorUiIntent.() -> Unit
 ) {
@@ -378,6 +382,21 @@ private fun ChapterCard(
                     ) {
                         Text(stringResource(R.string.script_event_add))
                     }
+                    // 本场景显示哪几栏：空清单代表按剧本可见性走
+                    Text(
+                        text = stringResource(R.string.script_scene_dashboard),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    SelectorSection(
+                        title = "",
+                        options = variableNames,
+                        selected = row.dashboardItems.toSet(),
+                        onToggle = { picked ->
+                            ScriptEditorUiIntent.ToggleSceneDashboardItem(row.id, picked).emit()
+                        }
+                    )
                     SwitchRow(stringResource(R.string.script_row_checkpoint), checkpoint) {
                         checkpoint = it
                     }
@@ -973,6 +992,12 @@ private fun VariableCard(
                     )
                 }
             }
+            // 剧本级总开关：关掉之后整块面板都不出现，
+            // 单栏可见性仍然是每张卡自己的事
+            SwitchRow(
+                stringResource(R.string.script_dashboard_enabled),
+                state.packShowDashboard
+            ) { ScriptEditorUiIntent.ToggleDashboard(it).emit() }
             if (expanded) {
                 if (state.variables.isEmpty()) {
                     Text(
@@ -990,7 +1015,12 @@ private fun VariableCard(
     }
 }
 
-/** 一个变量占两行：定义一行，数值一行，窄屏也塞得下。 */
+/**
+ * 一个变量占多行，按类型只显示相关字段。
+ *
+ * 数字要上下限、开关要两态文案、文本要默认内容——
+ * 全摆出来会让每一行都长得像表单，反而看不清在配什么。
+ */
 @Composable
 private fun VariableRow(
     variable: me.kafuuneko.rpclient.libs.script.ScriptVariable,
@@ -1002,8 +1032,17 @@ private fun VariableRow(
     var min by remember(variable.min) { mutableStateOf(variable.min.toString()) }
     var max by remember(variable.max) { mutableStateOf(variable.max.toString()) }
     var visible by remember(variable.visible) { mutableStateOf(variable.visible) }
+    var kind by remember(variable.kind) { mutableStateOf(variable.kind) }
+    var text by remember(variable.text) { mutableStateOf(variable.text) }
+    var onLabel by remember(variable.onLabel) { mutableStateOf(variable.onLabel) }
+    var offLabel by remember(variable.offLabel) { mutableStateOf(variable.offLabel) }
+    var group by remember(variable.group) { mutableStateOf(variable.group) }
 
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = name,
@@ -1022,43 +1061,124 @@ private fun VariableRow(
                 )
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = label,
-                onValueChange = { label = it },
-                label = { Text(stringResource(R.string.script_variable_label)) },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        OutlinedTextField(
+            value = label,
+            onValueChange = { label = it },
+            label = { Text(stringResource(R.string.script_variable_label)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // 类型用一排筛选片，比下拉框少一次点击
+        Text(
+            text = stringResource(R.string.script_variable_kind),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(vertical = 2.dp)
         ) {
-            listOf(
-                initial to { v: String -> initial = v },
-                min to { v: String -> min = v },
-                max to { v: String -> max = v }
-            ).forEachIndexed { index, pair ->
-                OutlinedTextField(
-                    value = pair.first,
-                    onValueChange = { pair.second(it.filter { c -> c.isDigit() || c == '-' }) },
-                    label = {
-                        Text(
-                            stringResource(
-                                when (index) {
-                                    0 -> R.string.script_variable_initial
-                                    1 -> R.string.script_variable_min
-                                    else -> R.string.script_variable_max
-                                }
-                            )
-                        )
-                    },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
+            me.kafuuneko.rpclient.libs.script.ScriptVariableKind.entries.forEach { option ->
+                FilterChip(
+                    selected = kind == option,
+                    onClick = { kind = option },
+                    label = { Text(option.displayName(), style = MaterialTheme.typography.labelSmall) }
                 )
             }
         }
+
+        when (kind) {
+            me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Number -> {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    listOf(
+                        initial to { v: String -> initial = v },
+                        min to { v: String -> min = v },
+                        max to { v: String -> max = v }
+                    ).forEachIndexed { index, pair ->
+                        OutlinedTextField(
+                            value = pair.first,
+                            onValueChange = {
+                                pair.second(it.filter { c -> c.isDigit() || c == '-' })
+                            },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (index) {
+                                            0 -> R.string.script_variable_initial
+                                            1 -> R.string.script_variable_min
+                                            else -> R.string.script_variable_max
+                                        }
+                                    )
+                                )
+                            },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Switch -> {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = onLabel,
+                        onValueChange = { onLabel = it },
+                        label = { Text(stringResource(R.string.script_variable_on)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = offLabel,
+                        onValueChange = { offLabel = it },
+                        label = { Text(stringResource(R.string.script_variable_off)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.script_variable_switch_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Text -> {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.script_variable_text)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Note -> {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.script_variable_note)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        }
+
+        OutlinedTextField(
+            value = group,
+            onValueChange = { group = it },
+            label = { Text(stringResource(R.string.script_variable_group)) },
+            placeholder = { Text(stringResource(R.string.script_variable_group_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
         SwitchRow(stringResource(R.string.script_variable_visible), visible) { visible = it }
         TextButton(
             onClick = {
@@ -1069,7 +1189,11 @@ private fun VariableRow(
                     initial = initial.toIntOrNull() ?: 0,
                     min = min.toIntOrNull() ?: 0,
                     max = max.toIntOrNull() ?: 100,
-                    visible = visible
+                    visible = visible,
+                    kind = kind,
+                    text = text,
+                    onLabel = onLabel,
+                    offLabel = offLabel
                 ).emit()
             }
         ) {
@@ -1077,6 +1201,16 @@ private fun VariableRow(
         }
     }
 }
+
+/** 类型的中文名。 */
+private fun me.kafuuneko.rpclient.libs.script.ScriptVariableKind.displayName(): String =
+    when (this) {
+        me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Number -> "数字"
+        me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Switch -> "开关"
+        me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Text -> "文本"
+        me.kafuuneko.rpclient.libs.script.ScriptVariableKind.Note -> "线索"
+    }
+
 
 /** 事件摘要一行，够认出是哪条就行。 */
 private fun me.kafuuneko.rpclient.libs.script.ScriptEvent.summary(): String {
@@ -1131,6 +1265,14 @@ private fun EventEditorDialog(
         mutableStateOf(existing?.narration.orEmpty())
     }
     var once by remember(state.eventEditorEventId) { mutableStateOf(existing?.once ?: true) }
+    var clues by remember(state.eventEditorEventId) {
+        mutableStateOf(
+            existing?.effects
+                ?.filter { it.appendText.isNotBlank() }
+                ?.joinToString("\n") { it.variable + " " + it.appendText }
+                .orEmpty()
+        )
+    }
     var effects by remember(state.eventEditorEventId) {
         mutableStateOf(
             existing?.effects?.joinToString("\n") { e ->
@@ -1192,6 +1334,16 @@ private fun EventEditorDialog(
                         .fillMaxWidth()
                         .padding(top = 6.dp),
                     maxLines = 4
+                )
+                OutlinedTextField(
+                    value = clues,
+                    onValueChange = { clues = it },
+                    label = { Text(stringResource(R.string.script_event_clue)) },
+                    placeholder = { Text(stringResource(R.string.script_event_clue_hint)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    maxLines = 3
                 )
                 OutlinedTextField(
                     value = addCast,
@@ -1259,7 +1411,8 @@ private fun EventEditorDialog(
                         gotoSceneId = gotoSceneId,
                         narration = narration,
                         once = once,
-                        effectsText = effects
+                        effectsText = effects,
+                        clueText = clues
                     ).emit()
                 }
             ) {

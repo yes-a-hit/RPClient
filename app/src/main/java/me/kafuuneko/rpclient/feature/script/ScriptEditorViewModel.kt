@@ -286,7 +286,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             gotoSceneId = intent.gotoSceneId.trim(),
             narration = intent.narration.trim(),
             once = intent.once,
-            effects = parseEffects(intent.effectsText)
+            effects = parseEffects(intent.effectsText) + parseClues(intent.clueText)
         )
         val updated = if (intent.eventId.isBlank()) {
             scene.events + event
@@ -324,6 +324,29 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             ?.setup()
         publish(null, null)
     }
+
+
+    /**
+     * 解析线索行，每行「变量名 内容」。
+     *
+     * 内容里允许有空格，所以只按第一个空白切；
+     * 缺变量名或缺内容的行直接跳过，不猜。
+     */
+    private fun parseClues(raw: String): List<ScriptEffect> = raw
+        .lines()
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .mapNotNull { line ->
+            val separator = line.indexOfFirst { it.isWhitespace() }
+            if (separator <= 0) return@mapNotNull null
+            val variable = line.substring(0, separator).trim()
+            val content = line.substring(separator).trim()
+            if (variable.isBlank() || content.isBlank()) {
+                null
+            } else {
+                ScriptEffect(variable, appendText = content)
+            }
+        }
 
     /**
      * 解析副作用文本，每行一条。
@@ -872,6 +895,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                         .orEmpty(),
                     nextSceneIds = scene.nextSceneIds.joinToString("、"),
                     suggestedActions = scene.suggestedActions.joinToString("\n"),
+                    dashboardItems = scene.dashboardItems,
                     events = scene.events,
                     inheritBackground = scene.inheritBackground
                 )
