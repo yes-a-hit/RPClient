@@ -211,6 +211,12 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
         val adjacency = mutableMapOf<String, MutableSet<String>>()
         pack.scenes.forEach { scene ->
             adjacency.getOrPut(scene.id) { mutableSetOf() }.addAll(scene.nextSceneIds)
+            // 事件里的强制转场同样是通路，漏掉会把正常剧本判成孤岛
+            scene.events.forEach { event ->
+                if (event.gotoSceneId.isNotBlank()) {
+                    adjacency.getOrPut(scene.id) { mutableSetOf() }.add(event.gotoSceneId)
+                }
+            }
             scene.unlockedBy.forEach { source ->
                 adjacency.getOrPut(scene.id) { mutableSetOf() }.add(source)
                 adjacency.getOrPut(source) { mutableSetOf() }.add(scene.id)

@@ -112,6 +112,13 @@ data class ScriptScene(
      */
     val suggestedActions: List<String> = emptyList(),
     /**
+     * 场景内的触发事件。
+     *
+     * 用来在对话推进中增删在场角色、插入旁白，或者直接把人赶去别的场景。
+     * 把 cast 清空就得到「零角色」场景——此时玩家只与旁白互动。
+     */
+    val events: List<ScriptEvent> = emptyList(),
+    /**
      * 是否继承剧本级背景。
      *
      * 开启且本场景没指定背景时用剧本级那张；
@@ -168,6 +175,33 @@ data class ScriptLorebookEntry(
     val keys: List<String> = emptyList(),
     /** 是否常驻注入。 */
     val constant: Boolean = false
+)
+
+/**
+ * 场景内的一次触发事件。
+ *
+ * 触发条件留空表示到时即发（配合 [atRound] 做定时事件），
+ * 也可以绑关键词或正则，玩家说到某件事才会发生。
+ */
+data class ScriptEvent(
+    /** 事件标识，用于记录是否已触发；留空时按顺序号代称。 */
+    val id: String = "",
+    /** 展示用的名字，也用作触发时旁白的默认文案。 */
+    val name: String = "",
+    /** 触发条件；为空且 [atRound] 为 0 表示进入场景即触发。 */
+    val condition: ScriptCondition? = null,
+    /** 到达第几轮时触发；0 表示不按轮次。 */
+    val atRound: Int = 0,
+    /** 触发时追加到在场名单的角色。 */
+    val addCast: List<String> = emptyList(),
+    /** 触发时从在场名单移除的角色。 */
+    val removeCast: List<String> = emptyList(),
+    /** 触发后强制转到的场景；留空表示留在原场景。 */
+    val gotoSceneId: String = "",
+    /** 触发时插入的旁白；留空则用 [name]。 */
+    val narration: String = "",
+    /** 是否只触发一次；关闭则条件每次满足都触发。 */
+    val once: Boolean = true
 )
 
 /**

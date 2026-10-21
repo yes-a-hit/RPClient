@@ -240,6 +240,8 @@ class ScriptPlayViewModel(
         mOptions = parsedReply.options.ifEmpty { scene.suggestedActions }
         // 指定发言是一次性的，用过就清，避免一直压着同一个角色
         mCurrentForcedSpeaker = null
+        // 场景事件放在判定之后：一局没结束才继续改场面
+        applySceneEvent(pack, scene, visibleReply)
         mPlayStore.save(mPlay)
         publish()
 
@@ -277,6 +279,8 @@ class ScriptPlayViewModel(
             sceneId = target.id,
             roundCount = 0,
             finished = false,
+            // 换场作废上一场的事件改动，新场景按自己的 cast 起步
+            castOverride = null,
             endReason = "",
             // 章与章之间是天然分段点：旧场景的对白逐字带过去没有意义，
             // 只留走过的场景轨迹和上一场最后一句话，上下文就压得很小
@@ -309,6 +313,40 @@ class ScriptPlayViewModel(
         }
         mPlayStore.save(mPlay)
         publish()
+    }
+
+
+    /**
+     * 处理本轮触发的场景事件。
+     *
+     * 一次性事件记进 firedEvents；改 cast 写 castOverride；
+     * 配了 gotoSceneId 的直接转场，转场后本场景的事件不再继续判定。
+     */
+    private suspend fun applySceneEvent(pack: ScriptPack, scene: ScriptScene, reply: String) {
+        if (mPlay.finished || mPlay.endReason.isNotBlank()) return
+        val event = ScriptPlayEngine.pickEvent(
+            scene = scene,
+            roundCount = mPlay.roundCount,
+            lastReply = reply,
+            firedEventKeys = mPlay.firedEvents.toSet()
+        ) ?: return
+        val key = ScriptPlayEngine.eventKey(scene, event)
+        val baseCast = mPlay.castOverride ?: scene.cast.map { it.name }
+        val nextCast = ScriptPlayEngine.applyEventCast(baseCast, event)
+        val note = event.narration.ifBlank { event.name }
+        mPlay = mPlay.copy(
+            firedEvents = (mPlay.firedEvents + key).distinct(),
+            castOverride = nextCast,
+            messages = if (note.isBlank()) {
+                mPlay.messages
+            } else {
+                mPlay.messages + ScriptPlayMessage(SYSTEM, note)
+            }
+        )
+        val nextId = event.gotoSceneId
+        if (nextId.isNotBlank()) {
+            pack.scenes.firstOrNull { it.id == nextId }?.let { enterScene(it, note) }
+        }
     }
 
     /** 重开当前场景，保留历史并把轮次归零。 */
@@ -425,7 +463,9 @@ class ScriptPlayViewModel(
                 pack = pack,
                 scene = scene,
                 roundCount = mPlay.roundCount + 1,
-                remainingRounds = remaining
+                remainingRounds = remaining,
+                // 事件改过名单就按改后的走，没人时只剩旁白
+                castOverride = mPlay.castOverride
             )
             val messages = buildList {
                 add(LLMMessage(LLMMessageRole.System, system))
@@ -521,8 +561,9 @@ class ScriptPlayViewModel(
                 currentSceneOrNull()?.suggestedActions.orEmpty()
             },
             backgroundUuid = mSceneBackground,
-            castNames = (currentSceneOrNull()?.cast?.map { it.name }.orEmpty() +
-                mActiveCharacters).distinct(),
+            castNames = ((mPlay.castOverride
+                ?: currentSceneOrNull()?.cast?.map { it.name }.orEmpty()) + mActiveCharacters)
+                .distinct(),
             autoPlay = mAutoPlay
         ).setup()
     }

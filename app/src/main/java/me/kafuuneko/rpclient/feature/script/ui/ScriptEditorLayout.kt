@@ -869,7 +869,6 @@ private fun ComingSoonCard() {
             if (expanded) {
                 Column(modifier = Modifier.padding(top = 6.dp)) {
                     listOf(
-                        R.string.script_soon_event,
                         R.string.script_soon_free,
                         R.string.script_soon_fnaf,
                         R.string.script_soon_daily,

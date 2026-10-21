@@ -41,7 +41,20 @@ data class ScriptPlaythrough(
      * 剧本用 `checkpoint` 标记关键场景，进入时记下当时的对话与轮次，
      * 之后走偏了能退回去重来，不用整局重开。
      */
-    val snapshot: ScriptPlaySnapshot? = null
+    val snapshot: ScriptPlaySnapshot? = null,
+    /**
+     * 已触发过的场景事件标识。
+     *
+     * 一次性事件靠它去重；换场景不清空，同一事件不会反复上演。
+     */
+    val firedEvents: List<String> = emptyList(),
+    /**
+     * 事件对在场名单的临时改动。
+     *
+     * 为空时以场景自带的 cast 为准；事件增删角色后写这里，
+     * 清空到零人就是「只与旁白互动」。
+     */
+    val castOverride: List<String>? = null
 )
 
 /** 检查点快照：够还原到进入该场景的那一刻。 */
@@ -147,7 +160,14 @@ object ScriptPlayPromptBuilder {
          * 与 [forcedSpeaker] 的区别：这个是系统按轮转规则算出来的，
          * 玩家没指定时用它，保证多角色场景不会一直是同一个人在说。
          */
-        autoSpeaker: String? = null
+        autoSpeaker: String? = null,
+        /**
+         * 事件改写后的在场名单。
+         *
+         * 传 null 表示没被事件动过，按场景自带 cast 处理；
+         * 传空列表表示这一场真的没人了，只留旁白。
+         */
+        castOverride: List<String>? = null
     ): String {
         val builder = StringBuilder()
         builder.append("你正在主持一场角色扮演剧本《").append(pack.name).append("》。\n")
@@ -159,10 +179,14 @@ object ScriptPlayPromptBuilder {
         buildLorebookSection("全局设定", pack.globalLorebook)?.let(builder::append)
         buildLorebookSection("场景设定", scene.lorebook)?.let(builder::append)
 
-        if (scene.cast.isNotEmpty()) {
+        val effectiveCast = castOverride ?: scene.cast.map { it.name }
+        if (effectiveCast.isNotEmpty()) {
             builder.append("\n【可出场角色】")
-            builder.append(scene.cast.joinToString("、") { it.name })
+            builder.append(effectiveCast.joinToString("、"))
             builder.append('\n')
+        } else if (castOverride != null) {
+            // 事件把人都清走了：这一场只有环境与旁白
+            builder.append("\n【本场没有角色在场】只能以旁白描写环境与动静，不要替任何角色说话。\n")
         }
         // GM 本轮干预：禁言名单让某些角色闭嘴，指定发言让场面往想要的方向推
         if (mutedCharacters.isNotEmpty()) {

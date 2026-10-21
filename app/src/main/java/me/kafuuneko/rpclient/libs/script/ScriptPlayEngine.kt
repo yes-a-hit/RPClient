@@ -98,4 +98,55 @@ object ScriptPlayEngine {
         }
         return pack.scenes.filterNot { it.id == scene.id }
     }
+
+    /**
+     * 挑出本轮该触发的事件。
+     *
+     * 先排除已触发过的一次性事件，再看轮次与条件。
+     * 同一轮只放行一个——两个事件同时改在场名单会让场面失控。
+     *
+     * @param firedEventKeys 已触发事件的标识集合
+     */
+    fun pickEvent(
+        scene: ScriptScene,
+        roundCount: Int,
+        lastReply: String,
+        firedEventKeys: Set<String> = emptySet()
+    ): ScriptEvent? = scene.events.firstOrNull { event ->
+        val blocked = event.once && eventKey(scene, event) in firedEventKeys
+        !blocked && matchesEvent(event, roundCount, lastReply)
+    }
+
+    /** 事件是否满足触发条件：轮次到了，或条件命中。 */
+    fun matchesEvent(event: ScriptEvent, roundCount: Int, lastReply: String): Boolean {
+        val roundHit = event.atRound > 0 && roundCount >= event.atRound
+        val conditionHit = event.condition?.let { matches(it, roundCount, lastReply) } ?: false
+        // 轮次和条件都没配，视为「进入即触发」
+        if (event.atRound <= 0 && event.condition == null) return true
+        return roundHit || conditionHit
+    }
+
+    /**
+     * 事件标识。
+     *
+     * 作者没写 id 时用「场景 + 序号」兜底，
+     * 保证同一份剧本里事件能被稳定记住。
+     */
+    fun eventKey(scene: ScriptScene, event: ScriptEvent): String {
+        if (event.id.isNotBlank()) return event.id
+        return scene.id + "#" + scene.events.indexOf(event)
+    }
+
+    /**
+     * 应用事件对在场名单的影响。
+     *
+     * 移除优先于追加：作者同时写了同名角色时，
+     * 意图通常是「这一场让他退下」。
+     */
+    fun applyEventCast(current: List<String>, event: ScriptEvent): List<String> {
+        val removed = current.filterNot { it in event.removeCast }
+        // 同名同时出现在增删里时按移除算：作者意图是让这个人退下
+        val added = event.addCast.filterNot { it in event.removeCast }
+        return (removed + added).distinct()
+    }
 }

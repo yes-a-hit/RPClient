@@ -82,7 +82,28 @@ internal object ScriptPackJson {
             },
             backgroundKey = item.stringOr("backgroundKey"),
             inheritBackground = item.boolOr("inheritBackground", true),
-            suggestedActions = item.stringListOr("suggestedActions")
+            suggestedActions = item.stringListOr("suggestedActions"),
+            events = item.arrayOr("events").mapNotNull { toEvent(it) }
+        )
+    }
+
+    /** 映射一次场景事件；没写名字也没写条件与轮次的项目丢弃。 */
+    private fun toEvent(element: com.google.gson.JsonElement): ScriptEvent? {
+        val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val atRound = item.intOr("atRound", 0)
+        val condition = item.objOrNull("condition")?.let(::toCondition)
+        val name = item.stringOr("name")
+        if (name.isBlank() && condition == null && atRound <= 0) return null
+        return ScriptEvent(
+            id = item.stringOr("id"),
+            name = name,
+            condition = condition,
+            atRound = atRound.coerceAtLeast(0),
+            addCast = item.stringListOr("addCast"),
+            removeCast = item.stringListOr("removeCast"),
+            gotoSceneId = item.stringOr("gotoSceneId"),
+            narration = item.stringOr("narration"),
+            once = item.boolOr("once", true)
         )
     }
 
