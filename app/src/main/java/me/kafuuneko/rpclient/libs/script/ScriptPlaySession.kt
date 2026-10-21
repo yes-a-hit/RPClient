@@ -34,7 +34,21 @@ data class ScriptPlaythrough(
     val messages: List<ScriptPlayMessage> = emptyList(),
     /** 本局是否已结束，[endReason] 说明结束原因。 */
     val finished: Boolean = false,
-    val endReason: String = ""
+    val endReason: String = "",
+    /**
+     * 最近一次检查点快照。
+     *
+     * 剧本用 `checkpoint` 标记关键场景，进入时记下当时的对话与轮次，
+     * 之后走偏了能退回去重来，不用整局重开。
+     */
+    val snapshot: ScriptPlaySnapshot? = null
+)
+
+/** 检查点快照：够还原到进入该场景的那一刻。 */
+data class ScriptPlaySnapshot(
+    val sceneId: String,
+    val roundCount: Int,
+    val messages: List<ScriptPlayMessage> = emptyList()
 )
 
 /** 场景状态快照，供界面展示。 */

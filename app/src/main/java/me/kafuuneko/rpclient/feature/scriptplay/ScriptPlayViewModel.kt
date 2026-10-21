@@ -15,6 +15,7 @@ import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMMessage
 import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
 import me.kafuuneko.rpclient.libs.script.ScriptPack
+import me.kafuuneko.rpclient.libs.script.ScriptPlaySnapshot
 import me.kafuuneko.rpclient.libs.script.ScriptPlayMessage
 import me.kafuuneko.rpclient.libs.room.repository.CharacterRepository
 import me.kafuuneko.rpclient.libs.script.ScriptPlayLineParser
@@ -296,11 +297,43 @@ class ScriptPlayViewModel(
         mSceneBackground = runCatching {
             resolveSceneBackground(target)
         }.getOrDefault("")
+        // 进入检查点场景时记快照，走偏了能退回来
+        if (target.checkpoint) {
+            mPlay = mPlay.copy(
+                snapshot = ScriptPlaySnapshot(
+                    sceneId = target.id,
+                    roundCount = 0,
+                    messages = mPlay.messages
+                )
+            )
+        }
         mPlayStore.save(mPlay)
         publish()
     }
 
     /** 重开当前场景，保留历史并把轮次归零。 */
+
+    /** 回到最近一次检查点；没有快照时不动作。 */
+    @UiIntentObserver(ScriptPlayUiIntent.RestoreCheckpoint::class)
+    private suspend fun onRestoreCheckpoint() {
+        val snapshot = mPlay.snapshot ?: return
+        mFreeMode = false
+        mOptions = emptyList()
+        mPlay = mPlay.copy(
+            sceneId = snapshot.sceneId,
+            roundCount = snapshot.roundCount,
+            messages = snapshot.messages,
+            finished = false,
+            endReason = "",
+            snapshot = snapshot
+        )
+        mSceneBackground = runCatching {
+            currentSceneOrNull()?.let { resolveSceneBackground(it) }.orEmpty()
+        }.getOrDefault("")
+        mPlayStore.save(mPlay)
+        publish()
+    }
+
     @UiIntentObserver(ScriptPlayUiIntent.RestartScene::class)
     private suspend fun onRestartScene() {
         mPlay = mPlay.copy(roundCount = 0, finished = false, endReason = "")
@@ -471,6 +504,7 @@ class ScriptPlayViewModel(
         }
         ScriptPlayUiState.Ready(
             packName = pack.name,
+            hasCheckpoint = mPlay.snapshot != null,
             scene = ScriptPlaySceneState(
                 sceneId = scene.id,
                 sceneName = scene.name,

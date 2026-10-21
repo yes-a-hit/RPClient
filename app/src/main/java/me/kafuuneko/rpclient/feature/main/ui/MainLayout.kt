@@ -870,11 +870,12 @@ private fun LazyListScope.homeContentSection(
                 color = MaterialTheme.colorScheme.onBackground
             )
             if (!multiSelectMode) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // 用 FlowRow 换行而不是横滑：筛选条一共五项，
+                // 藏到屏幕外玩家根本不知道还有一个
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     FilterChip(
                         selected = state.selectedContentTab == MainHomeContentTab.All,

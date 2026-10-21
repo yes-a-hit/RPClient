@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import me.kafuuneko.rpclient.libs.script.ScriptPlayLineParser
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -116,6 +117,15 @@ fun ScriptPlayLayout(
                             Icons.Rounded.Refresh,
                             contentDescription = stringResource(R.string.script_play_restart)
                         )
+                    }
+                    // 只有走过检查点场景才有得退，没到过就不占位置
+                    if (state.hasCheckpoint) {
+                        IconButton(onClick = { ScriptPlayUiIntent.RestoreCheckpoint.emit() }) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Undo,
+                                contentDescription = stringResource(R.string.script_play_undo)
+                            )
+                        }
                     }
                 }
             )

@@ -87,6 +87,14 @@ class ScriptAdventureViewModel :
         ScriptAdventureViewEvent.OpenLibrary.tryEmit()
     }
 
+
+    /** 展开或收起已结束分组；只改本地状态，不重读磁盘。 */
+    @UiIntentObserver(ScriptAdventureUiIntent.ToggleFinishedSaves::class)
+    private fun onToggleFinishedSaves() {
+        val state = getOrNull<ScriptAdventureUiState.Ready>() ?: return
+        state.copy(finishedExpanded = !state.finishedExpanded).setup()
+    }
+
     @UiIntentObserver(ScriptAdventureUiIntent.OpenEditor::class)
     private fun onOpenEditor(intent: ScriptAdventureUiIntent.OpenEditor) {
         ScriptAdventureViewEvent.OpenEditor(intent.packId).tryEmit()
@@ -108,7 +116,7 @@ class ScriptAdventureViewModel :
                 modeLabel = summary.mode.label()
             )
         }
-        val saves = mPlayStore.list().map { play ->
+        val allSaves = mPlayStore.list().map { play ->
             AdventureSaveItem(
                 playId = play.id,
                 packId = play.packId,
@@ -122,9 +130,13 @@ class ScriptAdventureViewModel :
         val characters = runCatching {
             mCharacterRepository.getAllCharacters().map { it.name }
         }.getOrDefault(emptyList())
+        val previous = getOrNull<ScriptAdventureUiState.Ready>()
         ScriptAdventureUiState.Ready(
             packs = packs,
-            saves = saves,
+            // 继续冒险只留能接着玩的
+            saves = allSaves.filterNot { it.finished },
+            finishedSaves = allSaves.filter { it.finished },
+            finishedExpanded = previous?.finishedExpanded ?: false,
             characters = characters
         ).setup()
     }

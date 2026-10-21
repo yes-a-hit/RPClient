@@ -32,12 +32,21 @@ sealed class ScriptAdventureUiState {
         val pickingForPackId: String? = null,
         /** 已勾选的在场角色。 */
         val selectedCharacters: Set<String> = emptySet(),
-        /** 已有存档。 */
-        val saves: List<AdventureSaveItem> = emptyList()
+        /** 进行中的存档；「继续冒险」只列这些。 */
+        val saves: List<AdventureSaveItem> = emptyList(),
+        /**
+         * 已结束的存档。
+         *
+         * 通关或失败的局仍要能重看与删除，但混在继续列表里
+         * 会让玩家分不清哪条还能接着玩，所以单独一段并默认折叠。
+         */
+        val finishedSaves: List<AdventureSaveItem> = emptyList(),
+        /** 已结束分组是否展开。 */
+        val finishedExpanded: Boolean = false
     ) : ScriptAdventureUiState() {
         /** 完全没有可玩内容时提示导入剧本。 */
         val isEmpty: Boolean
-            get() = packs.isEmpty() && saves.isEmpty()
+            get() = packs.isEmpty() && saves.isEmpty() && finishedSaves.isEmpty()
     }
 
     data object Finished : ScriptAdventureUiState()
@@ -70,6 +79,9 @@ sealed class ScriptAdventureUiIntent {
 
     /** 直接跳到编辑器改这个剧本，不用先绕去剧本库。 */
     data class OpenEditor(val packId: String) : ScriptAdventureUiIntent()
+
+    /** 展开或收起「已结束」的存档分组。 */
+    data object ToggleFinishedSaves : ScriptAdventureUiIntent()
 
     data object Back : ScriptAdventureUiIntent()
 }

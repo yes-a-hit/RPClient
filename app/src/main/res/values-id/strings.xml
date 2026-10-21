@@ -1450,4 +1450,6 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_soon_fnaf">Skrip demo FNAF: lima hari</string>
     <string name="script_soon_daily">Mode harian: kalender dan linimasa</string>
     <string name="script_soon_group">Grup NPC: wujud berbeda</string>
+    <string name="adventure_finished_group">Selesai ({0})</string>
+    <string name="script_play_undo">Kembali ke titik</string>
 </resources>

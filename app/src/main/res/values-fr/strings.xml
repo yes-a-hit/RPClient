@@ -1450,4 +1450,6 @@
     <string name="script_soon_fnaf">Script démo FNAF : cinq jours</string>
     <string name="script_soon_daily">Mode quotidien : calendrier et chronologie</string>
     <string name="script_soon_group">Groupes de PNJ : formes distinctes</string>
+    <string name="adventure_finished_group">Terminés ({0})</string>
+    <string name="script_play_undo">Revenir au point</string>
 </resources>

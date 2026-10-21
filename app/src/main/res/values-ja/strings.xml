@@ -1445,4 +1445,6 @@
     <string name="script_soon_fnaf">FNAF 風スクリプト：五日五場面</string>
     <string name="script_soon_daily">日常モード：カレンダーと時間軸</string>
     <string name="script_soon_group">NPC グループ：変身前後の別姿</string>
+    <string name="adventure_finished_group">終了済み（{0}）</string>
+    <string name="script_play_undo">チェックポイントへ</string>
 </resources>

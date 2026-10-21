@@ -11,6 +11,8 @@ sealed class ScriptPlayUiState {
         val packName: String,
         /** 当前场景状态。 */
         val scene: ScriptPlaySceneState,
+        /** 本局是否留有检查点快照。 */
+        val hasCheckpoint: Boolean = false,
         /** 对话历史。 */
         val messages: List<ScriptPlayMessage> = emptyList(),
         /** 输入框内容。 */
@@ -70,6 +72,9 @@ sealed class ScriptPlayUiIntent {
 
     /** 重开当前场景，轮次归零。 */
     data object RestartScene : ScriptPlayUiIntent()
+
+    /** 回到最近一次检查点。 */
+    data object RestoreCheckpoint : ScriptPlayUiIntent()
 
     /** 返回。 */
     /** 选择一个推荐行动直接发送。 */

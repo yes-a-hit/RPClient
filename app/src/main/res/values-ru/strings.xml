@@ -1454,4 +1454,6 @@
     <string name="script_soon_fnaf">Демо-сценарий FNAF: пять дней</string>
     <string name="script_soon_daily">Бытовой режим: календарь и время</string>
     <string name="script_soon_group">Группы NPC: отдельные облики</string>
+    <string name="adventure_finished_group">Завершено ({0})</string>
+    <string name="script_play_undo">К контрольной точке</string>
 </resources>

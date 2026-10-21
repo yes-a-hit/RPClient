@@ -1480,4 +1480,6 @@
     <string name="script_soon_fnaf">文字版 FNAF 示范剧本：五天五景，失败改为战败演出</string>
     <string name="script_soon_daily">日常模式：日历与时间轴，角色按作息活动</string>
     <string name="script_soon_group">NPC 组切换：人间体与变身各自独立头像与人设</string>
+    <string name="adventure_finished_group">已结束（{0}）</string>
+    <string name="script_play_undo">回到检查点</string>
 </resources>

@@ -1444,4 +1444,6 @@
     <string name="script_soon_fnaf">FNAF 데모 스크립트: 5일</string>
     <string name="script_soon_daily">일상 모드: 달력과 시간축</string>
     <string name="script_soon_group">NPC 그룹: 변신 전후 별도 모습</string>
+    <string name="adventure_finished_group">종료됨 ({0})</string>
+    <string name="script_play_undo">체크포인트로</string>
 </resources>

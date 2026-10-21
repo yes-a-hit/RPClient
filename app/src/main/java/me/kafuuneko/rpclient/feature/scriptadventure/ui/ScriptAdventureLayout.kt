@@ -40,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.scriptadventure.presentation.AdventurePackItem
 import me.kafuuneko.rpclient.feature.scriptadventure.presentation.AdventureSaveItem
@@ -94,6 +96,52 @@ fun ScriptAdventureLayout(
                         },
                         onDelete = { ScriptAdventureUiIntent.DeleteSave(save.playId).emit() }
                     )
+                }
+            }
+            // 已结束的局收进单独一段：默认折叠，不占继续列表的位置
+            if (state.finishedSaves.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                ScriptAdventureUiIntent.ToggleFinishedSaves.emit()
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.adventure_finished_group,
+                                state.finishedSaves.size
+                            ),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Box(modifier = Modifier.weight(1f))
+                        Icon(
+                            if (state.finishedExpanded) {
+                                Icons.Rounded.ExpandLess
+                            } else {
+                                Icons.Rounded.ExpandMore
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (state.finishedExpanded) {
+                    items(state.finishedSaves, key = { it.playId }) { save ->
+                        SaveCard(
+                            save = save,
+                            onContinue = {
+                                ScriptAdventureUiIntent.Continue(save.playId, save.packId).emit()
+                            },
+                            onDelete = {
+                                ScriptAdventureUiIntent.DeleteSave(save.playId).emit()
+                            }
+                        )
+                    }
                 }
             }
             if (state.packs.isNotEmpty()) {
