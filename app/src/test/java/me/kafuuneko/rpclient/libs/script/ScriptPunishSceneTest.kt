@@ -212,4 +212,36 @@ class ScriptPunishSceneTest {
         }
     }
 
+
+    @Test
+    fun `demo three nights wires four dolls with distinct rules`() {
+        // 复杂示范：三晚推进，四个玩偶各有各的克制手段，跳杀场景走超时转场
+        val json = javaClass.classLoader!!.getResourceAsStream("demo-three-nights.json")!!
+            .bufferedReader()
+            .readText()
+
+        val parsed = ScriptPackCodec().decode(json)
+
+        assertTrue("解析失败：$parsed", parsed is ScriptPackParseResult.Success)
+        val pack = (parsed as ScriptPackParseResult.Success).pack
+
+        // 三晚加三个跳杀，加三个下班过场
+        assertEquals(9, pack.scenes.size)
+
+        // 每晚都有轮次上限与超时转场，否则跑完不会结束
+        listOf("night1", "night2", "night3").forEach { id ->
+            val night = pack.scenes.first { it.id == id }
+            assertTrue("$id 缺轮次上限", night.maxRounds > 0)
+            assertTrue("$id 缺超时转场", night.timeoutSceneId.isNotBlank())
+            assertTrue("$id 的跳杀场景不存在",
+                pack.scenes.any { it.id == night.timeoutSceneId })
+        }
+
+        // 三个压力变量对应三只主动攻击的玩偶
+        val vars = pack.variables.map { it.name }.toSet()
+        listOf("邦尼压力", "奇卡压力", "霍斯压力", "弗莱迪压力").forEach {
+            assertTrue("缺少变量 $it", it in vars)
+        }
+    }
+
 }

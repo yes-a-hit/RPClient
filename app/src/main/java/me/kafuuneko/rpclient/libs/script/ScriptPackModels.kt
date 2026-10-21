@@ -390,3 +390,22 @@ data class ScriptOpening(
     /** 开场内容。 */
     val content: String = ""
 )
+
+/**
+ * 这个场景能通向哪些场景。
+ *
+ * 连接方式有好几种：后继、前置解锁、事件转场、战败转场、超时转场。
+ * 集中在这里是因为可达性校验、UI 列表都要用同一份答案——
+ * 散在各处的话，每加一种新连接就得记得补一遍，迟早漏。
+ */
+fun ScriptScene.outgoingSceneIds(): Set<String> = buildSet {
+    addAll(nextSceneIds)
+    if (timeoutSceneId.isNotBlank()) add(timeoutSceneId)
+    events.forEach { event ->
+        if (event.gotoSceneId.isNotBlank()) add(event.gotoSceneId)
+    }
+    failConditions.forEach { condition ->
+        if (condition.failSceneId.isNotBlank()) add(condition.failSceneId)
+    }
+    addAll(unlockedBy)
+}

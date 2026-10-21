@@ -211,22 +211,12 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
         }
         // 构造成邻接表，后继与解锁互为通路
         val adjacency = mutableMapOf<String, MutableSet<String>>()
+        // 出边统一由 outgoingSceneIds 给出：新加连接方式只改那一处
         pack.scenes.forEach { scene ->
-            adjacency.getOrPut(scene.id) { mutableSetOf() }.addAll(scene.nextSceneIds)
-            // 事件里的强制转场同样是通路，漏掉会把正常剧本判成孤岛
-            scene.events.forEach { event ->
-                if (event.gotoSceneId.isNotBlank()) {
-                    adjacency.getOrPut(scene.id) { mutableSetOf() }.add(event.gotoSceneId)
-                }
-            }
-            // 战败场景只能从失败条件进，同样算连接
-            scene.failConditions.forEach { condition ->
-                if (condition.failSceneId.isNotBlank()) {
-                    adjacency.getOrPut(scene.id) { mutableSetOf() }.add(condition.failSceneId)
-                }
-            }
+            adjacency.getOrPut(scene.id) { mutableSetOf() }
+                .addAll(scene.outgoingSceneIds())
+            // 前置解锁是双向的：写到场景上的依赖也要反向连回去
             scene.unlockedBy.forEach { source ->
-                adjacency.getOrPut(scene.id) { mutableSetOf() }.add(source)
                 adjacency.getOrPut(source) { mutableSetOf() }.add(scene.id)
             }
         }

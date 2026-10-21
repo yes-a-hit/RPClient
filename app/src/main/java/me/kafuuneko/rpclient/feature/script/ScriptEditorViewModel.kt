@@ -364,23 +364,25 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         val parts = draft.split("===", limit = 2)
         val description = parts.firstOrNull().orEmpty().trim()
         val openings = parts.getOrNull(1).orEmpty().trim()
-        mPack = mPack.copy(
-            description = description.ifBlank { mPack.description },
-            openings = openings
-                .lines()
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .map { line ->
-                    val separator = line.indexOf('|')
-                    if (separator < 0) {
-                        ScriptOpening(speaker = "", content = line)
-                    } else {
-                        ScriptOpening(
-                            speaker = line.substring(0, separator).trim(),
-                            content = line.substring(separator + 1).trim()
+        // 只补空白栏：已经写过的不覆盖，避免手填的内容被模型冲掉
+        val generatedOpenings = openings
+            .lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { line ->
+                val separator = line.indexOf('|')
+                if (separator < 0) {
+                    ScriptOpening(speaker = "", content = line)
+                } else {
+                    ScriptOpening(
+                        speaker = line.substring(0, separator).trim(),
+                        content = line.substring(separator + 1).trim()
                         )
                     }
                 }
+        mPack = mPack.copy(
+            description = if (mPack.description.isBlank()) description else mPack.description,
+            openings = if (mPack.openings.isEmpty()) generatedOpenings else mPack.openings
         )
         mStore.save(mPack)
         setGenerating("")
@@ -413,7 +415,14 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             mPack = mPack.copy(
                 scenes = mPack.scenes.map { item ->
                     if (item.id == scene.id) {
-                        item.copy(entryPrompt = draft.trim())
+                        // 已有正文就不覆盖，只补空白的章节
+                        item.copy(
+                            entryPrompt = if (item.entryPrompt.isBlank()) {
+                                draft.trim()
+                            } else {
+                                item.entryPrompt
+                            }
+                        )
                     } else {
                         item
                     }
