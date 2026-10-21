@@ -80,6 +80,11 @@ import me.kafuuneko.rpclient.libs.upgrade.AndroidAppVersionCodeProvider
 import me.kafuuneko.rpclient.libs.upgrade.AppModelUpgradeVersionStore
 import me.kafuuneko.rpclient.libs.upgrade.AppUpgradeManager
 import me.kafuuneko.rpclient.libs.upgrade.steps.Upgrade20260103
+import java.security.KeyStore
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
+import me.kafuuneko.rpclient.libs.net.CertificateGuard
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -108,13 +113,37 @@ class RPClientApp : Application() {
  *
  * 业务对象保持无 Activity 引用；页面 ViewModel 通过 KoinComponent 按需获取这些实例。
  */
+
+/**
+ * 取系统默认的 TrustManager。
+ *
+ * Android 上不能直接 `KeyStore.getInstance("AndroidCAStore")` 就完事，
+ * 标准做法是走 `TrustManagerFactory.getDefaultAlgorithm()`，
+ * 它会把系统根与用户安装的 CA 都带上。
+ */
+private fun platformTrustManager(): X509TrustManager {
+    val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    factory.init(null as KeyStore?)
+    return factory.trustManagers
+        .filterIsInstance<X509TrustManager>()
+        .firstOrNull()
+        ?: error("找不到系统 X509TrustManager")
+}
+
 internal val appModules = module {
     single {
-        OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
-            .build()
+        // 在默认 TrustManager 外面再包一层：拒绝已泄露私钥的 CA 签发的证书。
+        // 系统的证书校验照常跑，这里只多做一道名称检查。
+        val trustManager = CertificateGuard.wrap(platformTrustManager())
+        val sslContext = SSLContext.getInstance("TLS").apply {
+            init(null, arrayOf(trustManager), null)
+        }
+        builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+        builder.build()
     }
 
     single { Gson() }
