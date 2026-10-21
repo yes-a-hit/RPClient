@@ -8,6 +8,8 @@ import me.kafuuneko.rpclient.feature.script.presentation.ScriptSceneRow
 import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
 import me.kafuuneko.rpclient.libs.script.ScriptCondition
+import me.kafuuneko.rpclient.libs.script.parseClueLines
+import me.kafuuneko.rpclient.libs.script.parseEffectLines
 import me.kafuuneko.rpclient.libs.script.ScriptConditionType
 import me.kafuuneko.rpclient.libs.script.ScriptCastMember
 import me.kafuuneko.rpclient.libs.script.ScriptLorebook
@@ -286,7 +288,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             gotoSceneId = intent.gotoSceneId.trim(),
             narration = intent.narration.trim(),
             once = intent.once,
-            effects = parseEffects(intent.effectsText) + parseClues(intent.clueText)
+            effects = parseEffectLines(intent.effectsText) + parseClueLines(intent.clueText)
         )
         val updated = if (intent.eventId.isBlank()) {
             scene.events + event
