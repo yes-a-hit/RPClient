@@ -115,15 +115,21 @@ class RPClientApp : Application() {
  */
 
 /**
- * 取系统默认的 TrustManager。
+ * 取系统 TrustManager，**包含用户安装的 CA**。
  *
- * Android 上不能直接 `KeyStore.getInstance("AndroidCAStore")` 就完事，
- * 标准做法是走 `TrustManagerFactory.getDefaultAlgorithm()`，
- * 它会把系统根与用户安装的 CA 都带上。
+ * 这里必须用 `AndroidCAStore`：它把系统根与用户装进「受信任凭据」的 CA 合在一起。
+ * 直接 `factory.init(null)` 拿到的是纯系统根，会让我们自己的
+ * `network_security_config`（声明信任 user）形同虚设——抓包证书装了也连不上。
+ *
+ * 用户证书本身不可怕，可怕的是被污染的那几条链；
+ * eMudhra / emSign 由 [CertificateGuard] 在外层按名称拦掉，两头都不耽误。
  */
 private fun platformTrustManager(): X509TrustManager {
+    val keyStore = runCatching {
+        KeyStore.getInstance("AndroidCAStore").apply { load(null) }
+    }.getOrNull()
     val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-    factory.init(null as KeyStore?)
+    factory.init(keyStore)
     return factory.trustManagers
         .filterIsInstance<X509TrustManager>()
         .firstOrNull()
