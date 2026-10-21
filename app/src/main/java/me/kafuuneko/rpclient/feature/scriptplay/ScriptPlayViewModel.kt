@@ -600,6 +600,7 @@ class ScriptPlayViewModel(
                         kind = variable.kind,
                         text = mPlay.textVariables.orEmpty()[variable.name]
                             ?: variable.text,
+                        group = variable.group,
                         onLabel = variable.onLabel,
                         offLabel = variable.offLabel
                     )

@@ -237,12 +237,15 @@ class ScriptPunishSceneTest {
                 pack.scenes.any { it.id == night.timeoutSceneId })
         }
 
-        // 位置改成文本变量：0/1 表达不了「舞台 / 左走廊 / 通风管」这种多值状态
+        // 位置用文本：0/1 表达不了「舞台 / 左走廊 / 通风管」这种多值状态
         val vars = pack.variables.associateBy { it.name }
-        listOf("邦尼位置", "奇卡位置", "霍斯位置", "弗莱迪位置").forEach {
+        listOf("邦尼位置", "奇卡位置", "弗莱迪位置").forEach {
             assertTrue("缺少变量 $it", it in vars)
             assertEquals(ScriptVariableKind.Text, vars[it]?.kind)
         }
+        // 霍斯不需要位置：他只有「在冲」与「不在冲」两态
+        assertEquals(ScriptVariableKind.Switch, vars["霍斯冲刺"]?.kind)
+        assertTrue("霍斯不该有位置变量", "霍斯位置" !in vars)
         // 右门被撞坏是二态，用开关；耐久另用数字
         assertEquals(ScriptVariableKind.Switch, vars["右门损坏"]?.kind)
         assertEquals(ScriptVariableKind.Number, vars["右门耐久"]?.kind)
@@ -296,6 +299,43 @@ class ScriptPunishSceneTest {
         )
 
         assertEquals(once["线索"], twice["线索"])
+    }
+
+
+    @Test
+    fun `foxy chain reacts to doors and screaming`() {
+        // 霍斯的机制是一串联动：冲刺 → 撞门 → 门坏 → 别人也能进
+        // 单独一个「位置」变量表达不了这套关系
+        val json = javaClass.classLoader!!.getResourceAsStream("demo-three-nights.json")!!
+            .bufferedReader()
+            .readText()
+        val pack = (ScriptPackCodec().decode(json) as ScriptPackParseResult.Success).pack
+        val night3 = pack.scenes.first { it.id == "night3" }
+
+        val names = night3.events.map { it.name }
+        listOf("霍斯起冲", "霍斯撞门", "右门报废", "鬼叫招人", "手电反杀").forEach {
+            assertTrue("缺少事件 $it", it in names)
+        }
+
+        // 门坏之后邦尼能长驱直入，这条依赖右门损坏这个开关
+        assertTrue("缺少事件 门坏之后邦尼长驱直入", "门坏之后邦尼长驱直入" in names)
+        val straightIn = night3.events.first { it.name == "门坏之后邦尼长驱直入" }
+        assertEquals("右门损坏", straightIn.condition?.variable)
+
+        // 手电是唯一能把突破次数压回去的手段
+        val flashlight = night3.events.first { it.name == "手电反杀" }
+        assertTrue(flashlight.effects.any {
+            it.variable == "霍斯突破" && it.delta < 0
+        })
+
+        // 两条失败路径都要在：霍斯撞穿，或邦尼借门进来
+        val failVars = night3.failConditions.mapNotNull { it.variable }.toSet()
+        assertTrue("缺少霍斯突破的失败条件", "霍斯突破" in failVars)
+        assertTrue("缺少邦尼压力的失败条件", "邦尼压力" in failVars)
+
+        // 反杀场景必须能通关，否则被撞进来就是必死
+        val foxyScene = pack.scenes.first { it.id == "jumpscare_foxy" }
+        assertTrue("反杀场景要有通关条件", foxyScene.completionCondition != null)
     }
 
 }

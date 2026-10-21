@@ -15,6 +15,8 @@ data class ScriptStatusItem(
     val kind: ScriptVariableKind = ScriptVariableKind.Number,
     /** 文本变量的当前内容。 */
     val text: String = "",
+    /** 面板分组标题；空表示不分组。 */
+    val group: String = "",
     /** 开关两态文案。 */
     val onLabel: String = "",
     val offLabel: String = ""

@@ -77,6 +77,8 @@ sealed class ScriptEditorUiState {
         val eventEditorSceneId: String = "",
         /** 事件编辑框：正在改哪条事件；空表示新建。 */
         val eventEditorEventId: String = "",
+        /** 剧本级状态面板开关。 */
+        val packShowDashboard: Boolean = true,
         /** 剧本变量定义，供变量面板编辑。 */
         val variables: List<me.kafuuneko.rpclient.libs.script.ScriptVariable> = emptyList(),
 

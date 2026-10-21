@@ -1,5 +1,7 @@
 package me.kafuuneko.rpclient.feature.script.presentation
 
+import me.kafuuneko.rpclient.libs.script.ScriptVariableKind
+
 /** 剧本编辑页的用户意图。 */
 sealed class ScriptEditorUiIntent {
     /** 首次进入，加载剧本。 */
@@ -149,6 +151,15 @@ sealed class ScriptEditorUiIntent {
     /** 删除一条事件。 */
     data class DeleteEvent(val sceneId: String, val eventId: String) : ScriptEditorUiIntent()
 
+    /** 开关剧本级状态面板。 */
+    data class ToggleDashboard(val enabled: Boolean) : ScriptEditorUiIntent()
+
+    /** 勾选或取消某场景面板里的一栏。 */
+    data class ToggleSceneDashboardItem(
+        val sceneId: String,
+        val variableName: String
+    ) : ScriptEditorUiIntent()
+
     data object AddVariable : ScriptEditorUiIntent()
 
     /** 修改某个变量的定义。 */
@@ -159,7 +170,14 @@ sealed class ScriptEditorUiIntent {
         val initial: Int,
         val min: Int,
         val max: Int,
-        val visible: Boolean
+        val visible: Boolean,
+        /** 变量类型，决定面板怎么渲染。 */
+        val kind: ScriptVariableKind = ScriptVariableKind.Number,
+        /** 文本变量的初始内容。 */
+        val text: String = "",
+        /** 开关的两态文案。 */
+        val onLabel: String = "",
+        val offLabel: String = ""
     ) : ScriptEditorUiIntent()
 
     /** 删除某个变量。 */

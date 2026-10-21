@@ -287,6 +287,14 @@ data class ScriptVariable(
     val kind: ScriptVariableKind = ScriptVariableKind.Number,
     /** [ScriptVariableKind.Text] 的初始内容，例如某个玩偶的初始位置。 */
     val text: String = "",
+    /**
+     * 面板分组，例如「全局」与「本场」。
+     *
+     * 全局放跨场景不变的东西（第几夜、总电量），
+     * 局部放这一场才关心的（门开没开、惩罚进度）。
+     * 留空表示不分组，直接跟在上一组后面。
+     */
+    val group: String = "",
     /** [ScriptVariableKind.Switch] 的两态文案，留空用「是 / 否」。 */
     val onLabel: String = "",
     val offLabel: String = ""

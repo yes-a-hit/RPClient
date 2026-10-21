@@ -345,6 +345,42 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             if (variable.isBlank()) null else ScriptEffect(variable, delta)
         }
 
+
+    @UiIntentObserver(ScriptEditorUiIntent.ToggleDashboard::class)
+    private suspend fun onToggleDashboard(intent: ScriptEditorUiIntent.ToggleDashboard) {
+        mPack = mPack.copy(showDashboard = intent.enabled)
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
+    /**
+     * 勾选或取消某场景要显示的一栏。
+     *
+     * 场景列表为空时代表「按剧本可见性走」；一旦开始点选就变成显式清单，
+     * 所以这里在第一次点选时先把当前剧本可见的都填进去，避免整块忽然清空。
+     */
+    @UiIntentObserver(ScriptEditorUiIntent.ToggleSceneDashboardItem::class)
+    private suspend fun onToggleSceneDashboardItem(
+        intent: ScriptEditorUiIntent.ToggleSceneDashboardItem
+    ) {
+        val scene = mPack.scenes.firstOrNull { it.id == intent.sceneId } ?: return
+        val current = scene.dashboardItems.ifEmpty {
+            mPack.variables.filter { it.visible }.map { it.name }
+        }.toMutableSet()
+        if (!current.add(intent.variableName)) current.remove(intent.variableName)
+        mPack = mPack.copy(
+            scenes = mPack.scenes.map { item ->
+                if (item.id == scene.id) {
+                    item.copy(dashboardItems = current.toList())
+                } else {
+                    item
+                }
+            }
+        )
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
     /** 新增变量，名字按序号避开重名。 */
     @UiIntentObserver(ScriptEditorUiIntent.AddVariable::class)
     private suspend fun onAddVariable() {
@@ -383,7 +419,11 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                     initial = intent.initial.coerceIn(intent.min, intent.max),
                     min = intent.min,
                     max = intent.max,
-                    visible = intent.visible
+                    visible = intent.visible,
+                    kind = intent.kind,
+                    text = intent.text,
+                    onLabel = intent.onLabel.trim(),
+                    offLabel = intent.offLabel.trim()
                 )
             }
         }
@@ -792,6 +832,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             packName = mPack.name,
             description = mPack.description,
             packBackground = mPack.backgroundKey,
+            packShowDashboard = mPack.showDashboard,
             variables = mPack.variables,
             // 事件编辑框状态由意图单独维护，这里原样带过去
             eventEditorSceneId = previous?.eventEditorSceneId.orEmpty(),

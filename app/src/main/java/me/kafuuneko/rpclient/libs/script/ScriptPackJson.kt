@@ -152,6 +152,7 @@ internal object ScriptPackJson {
                 ScriptVariableKind.valueOf(item.stringOr("kind").ifBlank { "Number" })
             }.getOrDefault(ScriptVariableKind.Number),
             text = item.stringOr("text"),
+            group = item.stringOr("group"),
             onLabel = item.stringOr("onLabel"),
             offLabel = item.stringOr("offLabel")
         )

@@ -683,7 +683,18 @@ private fun StatusStrip(items: List<ScriptStatusItem>) {
             .padding(horizontal = 12.dp, vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
+        var lastGroup = ""
         items.forEach { item ->
+            // 分组标题只在切换时出现，同组内不重复
+            if (item.group.isNotBlank() && item.group != lastGroup) {
+                lastGroup = item.group
+                Text(
+                    text = item.group,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 3.dp)
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = item.label,

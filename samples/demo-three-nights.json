@@ -11,7 +11,8 @@
       "initial": 100,
       "min": 0,
       "max": 100,
-      "kind": "Number"
+      "kind": "Number",
+      "group": "全局"
     },
     {
       "name": "夜数",
@@ -19,35 +20,44 @@
       "initial": 1,
       "min": 1,
       "max": 3,
-      "kind": "Number"
+      "kind": "Number",
+      "group": "全局"
     },
     {
       "name": "邦尼位置",
       "label": "邦尼",
       "initial": 0,
       "kind": "Text",
-      "text": "舞台"
+      "text": "舞台",
+      "visible": false,
+      "group": ""
     },
     {
       "name": "奇卡位置",
       "label": "奇卡",
       "initial": 0,
       "kind": "Text",
-      "text": "舞台"
+      "text": "舞台",
+      "visible": false,
+      "group": ""
     },
     {
-      "name": "霍斯位置",
+      "name": "霍斯冲刺",
       "label": "霍斯",
       "initial": 0,
-      "kind": "Text",
-      "text": "幕布后"
+      "kind": "Switch",
+      "onLabel": "正在冲刺",
+      "offLabel": "潜伏",
+      "group": "本场"
     },
     {
       "name": "弗莱迪位置",
       "label": "弗莱迪",
       "initial": 0,
       "kind": "Text",
-      "text": "舞台"
+      "text": "舞台",
+      "visible": false,
+      "group": ""
     },
     {
       "name": "右门耐久",
@@ -55,7 +65,9 @@
       "initial": 100,
       "min": 0,
       "max": 100,
-      "kind": "Number"
+      "kind": "Number",
+      "visible": false,
+      "group": ""
     },
     {
       "name": "右门损坏",
@@ -63,13 +75,51 @@
       "initial": 0,
       "kind": "Switch",
       "onLabel": "已损坏",
-      "offLabel": "完好"
+      "offLabel": "完好",
+      "group": "本场"
     },
     {
       "name": "提示",
-      "label": "线索",
+      "label": "在场",
       "kind": "Note",
-      "text": ""
+      "text": "玩偶熊在台上，鼻子似乎可以按",
+      "group": "本场"
+    },
+    {
+      "name": "邦尼压力",
+      "label": "邦尼逼近",
+      "initial": 0,
+      "min": 0,
+      "max": 6,
+      "kind": "Number",
+      "group": "本场"
+    },
+    {
+      "name": "霍斯突破",
+      "label": "霍斯突破",
+      "initial": 0,
+      "min": 0,
+      "max": 3,
+      "kind": "Number",
+      "group": "本场"
+    },
+    {
+      "name": "右门状态",
+      "label": "右门",
+      "initial": 0,
+      "kind": "Switch",
+      "onLabel": "关着",
+      "offLabel": "开着",
+      "group": "本场"
+    },
+    {
+      "name": "左门状态",
+      "label": "左门",
+      "initial": 0,
+      "kind": "Switch",
+      "onLabel": "关着",
+      "offLabel": "开着",
+      "group": "本场"
     }
   ],
   "startSceneId": "night1",
@@ -120,6 +170,10 @@
             {
               "variable": "电量",
               "delta": -10
+            },
+            {
+              "variable": "左门状态",
+              "setTo": 1
             }
           ],
           "narration": "左门闸合拢，电量掉了一格。",
@@ -223,10 +277,10 @@
         "description": "六点到了"
       },
       "dashboardItems": [
-        "电量",
         "夜数",
-        "邦尼位置",
-        "奇卡位置",
+        "电量",
+        "左门状态",
+        "右门状态",
         "提示"
       ]
     },
@@ -332,6 +386,10 @@
             {
               "variable": "奇卡压力",
               "delta": 1
+            },
+            {
+              "variable": "左门状态",
+              "setTo": 1
             }
           ],
           "narration": "左门合上了，但通风管那头的动静更近了——她根本不用走门。",
@@ -377,10 +435,10 @@
         "description": "六点到了"
       },
       "dashboardItems": [
-        "电量",
         "夜数",
-        "邦尼位置",
-        "奇卡位置",
+        "电量",
+        "左门状态",
+        "右门状态",
         "提示"
       ]
     },
@@ -413,7 +471,7 @@
     {
       "id": "night3",
       "name": "第三夜",
-      "entryPrompt": "霍斯醒了。他只在你长时间不看右边走廊时才动，一旦冲刺撞门，用手电筒能照瘫他——但右门撑不了几次，撞碎之后就再没法防。奇卡与邦尼照旧。",
+      "entryPrompt": "霍斯醒了。他只在没人盯着右走廊时才动，一旦冲起来会直撞右门——门撑不了几次。他撞进来之后眼睛怕光，手电照住能把他逼回去。但门一旦被撞坏，邦尼也能直接走进来，而霍斯的鬼叫还会把邦尼招过来。",
       "cast": [],
       "bannedCast": [],
       "nextSceneIds": [
@@ -421,7 +479,7 @@
       ],
       "maxRounds": 14,
       "checkpoint": true,
-      "failText": "霍斯撞碎了右门，冲了进来",
+      "failText": "霍斯连着撞开了右门，冲进值班室",
       "timeoutSceneId": "jumpscare_foxy",
       "suggestedActions": [
         "看右边走廊的监控",
@@ -433,115 +491,186 @@
           "name": "盯住右侧",
           "condition": {
             "type": "Keyword",
-            "pattern": "右边|右侧|右走廊"
+            "pattern": "右边|右侧|右走廊|监控"
           },
           "effects": [
             {
-              "variable": "霍斯压力",
-              "delta": -2
-            },
-            {
-              "variable": "霍斯位置",
-              "setText": "走廊尽头"
-            }
-          ],
-          "narration": "你盯住右走廊，霍斯停在拐角，红色的眼睛一动不动。",
-          "once": false
-        },
-        {
-          "name": "霍斯冲刺",
-          "condition": {
-            "type": "Variable",
-            "variable": "霍斯压力",
-            "threshold": 3,
-            "comparison": "AtLeast"
-          },
-          "chance": 65,
-          "effects": [
-            {
-              "variable": "右门",
-              "delta": -40
+              "variable": "霍斯冲刺",
+              "setTo": 0
             },
             {
               "variable": "电量",
-              "delta": -6
-            },
-            {
-              "variable": "霍斯位置",
-              "setText": "右门口"
+              "delta": -2
             }
           ],
-          "narration": "右门被撞得变形，铰链发出刺耳的声响。",
+          "narration": "你把右走廊的监控拉到最大，霍斯停在拐角，一只坏掉的眼睛对着镜头。",
           "once": false
         },
         {
-          "name": "手电压制",
+          "name": "霍斯起冲",
           "condition": {
             "type": "Keyword",
-            "pattern": "手电|照"
+            "pattern": "左边|左边门|关门|厨房|低头"
           },
+          "chance": 70,
           "effects": [
             {
-              "variable": "霍斯压力",
-              "delta": -3
+              "variable": "霍斯冲刺",
+              "setTo": 1
             },
             {
-              "variable": "电量",
-              "delta": -3
+              "variable": "邦尼位置",
+              "setText": "右走廊"
             }
           ],
-          "narration": "手电光扫过去，霍斯僵在走廊里，像被钉住。",
+          "narration": "右走廊传来一阵急促的刮擦声——他把重心压低了。",
           "once": false
         },
         {
-          "name": "右门失效",
+          "name": "霍斯撞门",
           "condition": {
             "type": "Variable",
-            "variable": "右门",
+            "variable": "霍斯冲刺",
+            "threshold": 1,
+            "comparison": "AtLeast"
+          },
+          "chance": 80,
+          "effects": [
+            {
+              "variable": "霍斯突破",
+              "delta": 1
+            },
+            {
+              "variable": "右门耐久",
+              "delta": -45
+            }
+          ],
+          "narration": "右门被撞得向内凹进去一块，铰链发出哀鸣。",
+          "once": false
+        },
+        {
+          "name": "右门报废",
+          "condition": {
+            "type": "Variable",
+            "variable": "右门耐久",
             "threshold": 0,
             "comparison": "AtMost"
           },
-          "chance": 100,
           "effects": [
             {
-              "variable": "霍斯压力",
-              "delta": 2
+              "variable": "右门损坏",
+              "setTo": 1
+            },
+            {
+              "variable": "邦尼位置",
+              "setText": "右走廊"
+            },
+            {
+              "variable": "右门状态",
+              "setTo": 0
             }
           ],
-          "narration": "右门只剩框架，风从走廊直接吹进值班室。",
+          "narration": "右门整个垮下来，门框只剩半截。从现在起，那条走廊对谁都是敞开的。",
           "once": true
         },
         {
-          "name": "记下右门",
+          "name": "鬼叫招人",
+          "condition": {
+            "type": "Variable",
+            "variable": "霍斯冲刺",
+            "threshold": 1,
+            "comparison": "AtLeast"
+          },
+          "chance": 55,
+          "effects": [
+            {
+              "variable": "邦尼压力",
+              "delta": 1
+            }
+          ],
+          "narration": "霍斯发出一声尖啸，声音在走廊里来回撞。舞台那边有了动静。",
+          "once": false
+        },
+        {
+          "name": "手电反杀",
           "condition": {
             "type": "Keyword",
-            "pattern": "右门|右边|右侧"
+            "pattern": "手电|照|光"
           },
           "effects": [
             {
-              "variable": "提示",
-              "appendText": "右门的轴承是坏的，撞几下就撑不住"
+              "variable": "霍斯突破",
+              "delta": -3
+            },
+            {
+              "variable": "霍斯冲刺",
+              "setTo": 0
+            },
+            {
+              "variable": "电量",
+              "delta": -4
             }
           ],
-          "narration": "门框上有一道旧裂。",
-          "once": true
+          "narration": "你把手电怼到他脸上。他那只完好的眼睛骤然缩紧，整个人像被钉住，然后倒退回走廊深处。",
+          "once": false
+        },
+        {
+          "name": "门坏之后邦尼长驱直入",
+          "condition": {
+            "type": "Variable",
+            "variable": "右门损坏",
+            "threshold": 1,
+            "comparison": "AtLeast"
+          },
+          "chance": 70,
+          "effects": [
+            {
+              "variable": "邦尼压力",
+              "delta": 1
+            },
+            {
+              "variable": "邦尼位置",
+              "setText": "值班室门口"
+            }
+          ],
+          "narration": "没有右门挡着，走廊那头的脚步声一路响到门口才停。",
+          "once": false
+        }
+      ],
+      "dashboardItems": [
+        "夜数",
+        "电量",
+        "左门状态",
+        "右门状态",
+        "右门损坏",
+        "霍斯冲刺",
+        "霍斯突破",
+        "邦尼压力",
+        "提示"
+      ],
+      "failConditions": [
+        {
+          "type": "Variable",
+          "variable": "霍斯突破",
+          "threshold": 2,
+          "comparison": "AtLeast",
+          "description": "霍斯撞开右门冲了进来",
+          "failSceneId": "jumpscare_foxy"
+        },
+        {
+          "type": "Variable",
+          "variable": "邦尼压力",
+          "threshold": 5,
+          "comparison": "AtLeast",
+          "description": "邦尼借着坏掉的右门摸到了你身后",
+          "failSceneId": "jumpscare_bunny"
         }
       ],
       "completionCondition": {
         "type": "RoundLimit",
         "threshold": 14,
         "description": "六点到了"
-      },
-      "dashboardItems": [
-        "电量",
-        "夜数",
-        "邦尼位置",
-        "奇卡位置",
-        "霍斯位置",
-        "右门耐久",
-        "右门损坏",
-        "提示"
-      ]
+      }
     },
     {
       "id": "dawn3",
@@ -630,7 +759,7 @@
     {
       "id": "jumpscare_foxy",
       "name": "跳杀·霍斯",
-      "entryPrompt": "右门碎了。他冲进来的速度比你想的快得多，只剩一只眼睛，另一只位置是空的。他停在你面前，歪着头看你。",
+      "entryPrompt": "右门垮了。他冲进来的速度比你想的快得多，只剩一只眼睛，另一只位置是空的。他停在你面前，歪着头——但那只好眼睛在避光。门框在他身后塌着，这意味着今晚剩下的时间里，谁都能从那走进来。",
       "cast": [
         {
           "name": "霍斯",
@@ -641,22 +770,23 @@
       "bannedCast": [],
       "nextSceneIds": [],
       "maxRounds": 4,
-      "failText": "他的手搭上了你的肩",
+      "failText": "你没能把手电举起来",
       "suggestedActions": [
         "举起手电",
-        "不动",
-        "开口跟它说话"
+        "别动，等他先动",
+        "往门边挪"
       ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "天亮|天亮|离开",
-        "description": "他退回走廊，门框在他身后塌下来"
+        "pattern": "手电|照|光|举",
+        "description": "手电照住了他，他倒退着跌回走廊"
       },
       "dashboardItems": [
-        "右门耐久",
+        "左门状态",
+        "右门状态",
         "右门损坏",
-        "霍斯位置",
+        "霍斯冲刺",
         "提示"
       ]
     }
