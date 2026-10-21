@@ -5,10 +5,34 @@
   "description": "你在一个关了灯的旧游乐厅值夜班，撑到六点就下班。店里有三只玩偶会走动：一只怕黑，一只爱吃，一只总想表演。机器会断电，断了就轮到它们挑你。",
   "mode": "Mainline",
   "variables": [
-    { "name": "电量", "label": "电量", "initial": 100, "min": 0, "max": 100 },
-    { "name": "充能", "label": "充能", "initial": 0, "min": 0, "max": 5 },
-    { "name": "披萨", "label": "披萨", "initial": 0, "min": 0, "max": 5 },
-    { "name": "掌声", "label": "掌声", "initial": 0, "min": 0, "max": 5 }
+    {
+      "name": "电量",
+      "label": "电量",
+      "initial": 100,
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "充能",
+      "label": "充能",
+      "initial": 0,
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "披萨",
+      "label": "披萨",
+      "initial": 0,
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "掌声",
+      "label": "掌声",
+      "initial": 0,
+      "min": 0,
+      "max": 5
+    }
   ],
   "startSceneId": "shift",
   "startSceneIds": [],
@@ -35,7 +59,9 @@
       "entryPrompt": "监控屏幕一格格亮着。左边是舞台，中间是走廊，右边是厨房。电量表在缓慢下降，从 100 开始。你得决定往哪看、关哪扇门——每一秒都在花钱。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["dawn"],
+      "nextSceneIds": [
+        "dawn"
+      ],
       "maxRounds": 14,
       "checkpoint": true,
       "suggestedActions": [
@@ -46,15 +72,28 @@
       "events": [
         {
           "name": "耗电",
-          "condition": { "type": "Keyword", "pattern": "关门" },
-          "effects": [{ "variable": "电量", "delta": -12 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "关门"
+          },
+          "effects": [
+            {
+              "variable": "电量",
+              "delta": -12
+            }
+          ],
           "narration": "门闸合上，电量表掉了一截。",
           "once": false
         },
         {
           "name": "整点巡检",
           "atRound": 4,
-          "effects": [{ "variable": "电量", "delta": -8 }],
+          "effects": [
+            {
+              "variable": "电量",
+              "delta": -8
+            }
+          ],
           "narration": "广播里响起一段走调的摇篮曲。",
           "once": true
         }
@@ -65,7 +104,8 @@
           "variable": "电量",
           "threshold": 0,
           "description": "断电了。舞台那边传来关节活动的咔哒声。",
-          "failSceneId": "punish_bear"
+          "failSceneId": "punish_bear",
+          "comparison": "AtMost"
         },
         {
           "type": "Keyword",
@@ -81,9 +121,8 @@
         }
       ],
       "completionCondition": {
-        "type": "Variable",
-        "variable": "电量",
-        "threshold": 1,
+        "type": "RoundLimit",
+        "threshold": 14,
         "description": "六点到了"
       }
     },
@@ -109,8 +148,16 @@
       "events": [
         {
           "name": "充能一格",
-          "condition": { "type": "Keyword", "pattern": "摇" },
-          "effects": [{ "variable": "充能", "delta": 1 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "摇"
+          },
+          "effects": [
+            {
+              "variable": "充能",
+              "delta": 1
+            }
+          ],
           "narration": "指示灯亮起一格，熊爷的手松了一点点。",
           "once": false
         }
@@ -144,8 +191,16 @@
       "events": [
         {
           "name": "合格",
-          "condition": { "type": "Keyword", "pattern": "披萨" },
-          "effects": [{ "variable": "披萨", "delta": 1 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "披萨"
+          },
+          "effects": [
+            {
+              "variable": "披萨",
+              "delta": 1
+            }
+          ],
           "narration": "烤箱「叮」了一声，鸡姐点了点头。",
           "once": false
         }
@@ -179,8 +234,16 @@
       "events": [
         {
           "name": "掌声",
-          "condition": { "type": "Keyword", "pattern": "唱" },
-          "effects": [{ "variable": "掌声", "delta": 1 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "唱"
+          },
+          "effects": [
+            {
+              "variable": "掌声",
+              "delta": 1
+            }
+          ],
           "narration": "空椅子之间响起掌声，比刚才整齐了些。",
           "once": false
         }

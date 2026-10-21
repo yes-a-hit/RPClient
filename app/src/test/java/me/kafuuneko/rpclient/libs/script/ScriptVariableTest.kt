@@ -266,4 +266,107 @@ class ScriptVariableTest {
             .forEach { assertTrue(it.variable in declared) }
     }
 
+
+    @Test
+    fun `old save without new fields loads without crashing`() {
+        // 旧存档没有 firedEvents 与 variables，Gson 会塞 null 进来；
+        // 读取时补默认值，否则第一次 copy 就 NPE
+        val json = """
+            {
+              "id": "old-1",
+              "packId": "p1",
+              "packName": "旧局",
+              "sceneId": "s1",
+              "roundCount": 3,
+              "finished": false
+            }
+        """.trimIndent()
+
+        val play = com.google.gson.Gson().fromJson(json, ScriptPlaythrough::class.java)
+
+        // 直接反序列化时缺字段会变 null，连 endReason 这种非空声明也逃不掉，
+        // 这正是存档读取改走显式字段解析的原因
+        assertEquals(null, play.firedEvents)
+        assertEquals(null, play.variables)
+        assertEquals(null, play.endReason)
+        assertTrue(play.firedEvents.orEmpty().isEmpty())
+        assertTrue(play.variables.orEmpty().isEmpty())
+    }
+
+
+    @Test
+    fun `AtMost fires when the value drops to the threshold`() {
+        // 电量归零是「掉到 0」，不是「至少 0」——写错会一开局就判死
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Variable,
+            variable = "电量",
+            threshold = 0,
+            comparison = ScriptComparison.AtMost
+        )
+
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "", mapOf("电量" to 100)))
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "", mapOf("电量" to 1)))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "", mapOf("电量" to 0)))
+    }
+
+    @Test
+    fun `AtLeast is the default direction`() {
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Variable,
+            variable = "信任",
+            threshold = 3
+        )
+
+        assertEquals(ScriptComparison.AtLeast, condition.comparison)
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "", mapOf("信任" to 2)))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "", mapOf("信任" to 3)))
+    }
+
+    @Test
+    fun `Equal matches exactly`() {
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Variable,
+            variable = "阶段",
+            threshold = 2,
+            comparison = ScriptComparison.Equal
+        )
+
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "", mapOf("阶段" to 1)))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "", mapOf("阶段" to 2)))
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "", mapOf("阶段" to 3)))
+    }
+
+    @Test
+    fun `json keeps comparison direction`() {
+        val json = """
+            {
+              "formatVersion": 1,
+              "id": "p1",
+              "name": "夜班",
+              "variables": [ { "name": "电量", "initial": 100 } ],
+              "scenes": [
+                {
+                  "id": "s1",
+                  "name": "值班室",
+                  "failConditions": [
+                    {
+                      "type": "Variable",
+                      "variable": "电量",
+                      "threshold": 0,
+                      "comparison": "AtMost"
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val parsed = ScriptPackCodec().decode(json)
+
+        assertTrue("解析失败：$parsed", parsed is ScriptPackParseResult.Success)
+        val condition = (parsed as ScriptPackParseResult.Success)
+            .pack.scenes.single().failConditions.single()
+        assertEquals(ScriptComparison.AtMost, condition.comparison)
+    }
+
 }

@@ -198,12 +198,15 @@ class ScriptPlayViewModel(
             messages = mPlay.messages + ScriptPlayMessage(scene.name, visibleReply),
             roundCount = mPlay.roundCount + 1
         )
+        // 判定同时看玩家说了什么与模型怎么演：
+        // 只看回复的话，玩家说「去厨房」而模型换个说法就判不到
+        val judgedText = text + "\n" + visibleReply
         when (val outcome = ScriptPlayEngine.evaluate(
             scene = scene,
             roundCount = mPlay.roundCount,
-            lastReply = visibleReply,
+            lastReply = judgedText,
             freeMode = mFreeMode,
-            variables = mPlay.variables
+            variables = mPlay.variables.orEmpty()
         )) {
             is ScriptPlayOutcome.Failed -> {
                 // 配了战败场景就先演惩罚：不同来源各走各的，
@@ -253,7 +256,7 @@ class ScriptPlayViewModel(
         // 指定发言是一次性的，用过就清，避免一直压着同一个角色
         mCurrentForcedSpeaker = null
         // 场景事件放在判定之后：一局没结束才继续改场面
-        applySceneEvent(pack, scene, visibleReply)
+        applySceneEvent(pack, scene, judgedText)
         mPlayStore.save(mPlay)
         publish()
 
@@ -340,19 +343,19 @@ class ScriptPlayViewModel(
             scene = scene,
             roundCount = mPlay.roundCount,
             lastReply = reply,
-            firedEventKeys = mPlay.firedEvents.toSet(),
-            variables = mPlay.variables
+            firedEventKeys = mPlay.firedEvents.orEmpty().toSet(),
+            variables = mPlay.variables.orEmpty()
         ) ?: return
         val key = ScriptPlayEngine.eventKey(scene, event)
         val baseCast = mPlay.castOverride
-            ?: ScriptPlayEngine.effectiveCast(scene, mPlay.variables)
+            ?: ScriptPlayEngine.effectiveCast(scene, mPlay.variables.orEmpty())
         val nextCast = ScriptPlayEngine.applyEventCast(baseCast, event)
         val note = event.narration.ifBlank { event.name }
         mPlay = mPlay.copy(
-            firedEvents = (mPlay.firedEvents + key).distinct(),
+            firedEvents = (mPlay.firedEvents.orEmpty() + key).distinct(),
             castOverride = nextCast,
             variables = ScriptPlayEngine.applyEffects(
-                variables = mPlay.variables,
+                variables = mPlay.variables.orEmpty(),
                 effects = event.effects,
                 declared = pack.variables
             ),
@@ -486,8 +489,10 @@ class ScriptPlayViewModel(
                 // 事件改过名单就按改后的走，没人时只剩旁白
                 castOverride = mPlay.castOverride ?: ScriptPlayEngine.effectiveCast(
                 scene = scene,
-                variables = mPlay.variables
-            )
+                variables = mPlay.variables.orEmpty()
+            ),
+            variables = mPlay.variables.orEmpty(),
+            declaredVariables = pack.variables
             )
             val messages = buildList {
                 add(LLMMessage(LLMMessageRole.System, system))
@@ -575,7 +580,7 @@ class ScriptPlayViewModel(
                 // 自由漫游时列出所有已解锁场景，不再只走主线后继
                 nextSceneIds = if (mFreeMode) {
                     mPack?.let { pack ->
-                        ScriptPlayEngine.reachableScenes(pack, scene, mPlay.variables)
+                        ScriptPlayEngine.reachableScenes(pack, scene, mPlay.variables.orEmpty())
                             .map { it.id }
                     } ?: scene.nextSceneIds
                 } else {
@@ -593,7 +598,7 @@ class ScriptPlayViewModel(
             backgroundUuid = mSceneBackground,
             castNames = ((mPlay.castOverride
                 ?: currentSceneOrNull()?.let { scene ->
-                    ScriptPlayEngine.effectiveCast(scene, mPlay.variables)
+                    ScriptPlayEngine.effectiveCast(scene, mPlay.variables.orEmpty())
                 }.orEmpty()) + mActiveCharacters).distinct(),
             autoPlay = mAutoPlay
         ).setup()

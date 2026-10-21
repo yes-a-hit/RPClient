@@ -1428,6 +1428,6 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_soon_fnaf">Script demo FNAF: cinque giorni</string>
     <string name="script_soon_daily">Modalità quotidiana: calendario e cronologia</string>
     <string name="script_soon_group">Gruppi NPC: forme distinte</string>
-    <string name="adventure_finished_group">Conclusi ({0})</string>
+    <string name="adventure_finished_group">Conclusi   (%1$d)</string>
     <string name="script_play_undo">Torna al punto</string>
 </resources>

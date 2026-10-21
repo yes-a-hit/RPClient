@@ -47,7 +47,7 @@ data class ScriptPlaythrough(
      *
      * 一次性事件靠它去重；换场景不清空，同一事件不会反复上演。
      */
-    val firedEvents: List<String> = emptyList(),
+    val firedEvents: List<String>? = null,
     /**
      * 事件对在场名单的临时改动。
      *
@@ -61,7 +61,7 @@ data class ScriptPlaythrough(
      * 玩家行为累积出的状态，条件与事件都读它；
      * 存档带着走，退出再进来不会丢。
      */
-    val variables: Map<String, Int> = emptyMap()
+    val variables: Map<String, Int>? = null
 )
 
 /** 检查点快照：够还原到进入该场景的那一刻。 */
@@ -115,11 +115,57 @@ class ScriptPlayStore(private val mContext: Context) {
         mRoot.listFiles { file -> file.isFile && file.extension == "json" }
             .orEmpty()
             .mapNotNull { file ->
-                runCatching {
-                    Gson().fromJson(file.readText(), ScriptPlaythrough::class.java)
-                }.getOrNull()?.copy(messages = emptyList())
+                runCatching { parsePlay(file.readText()) }.getOrNull()
             }
             .sortedByDescending { it.roundCount }
+    }
+
+
+    /**
+     * 手工解析一条存档。
+     *
+     * 不走 Gson 直接反序列化：它用 Unsafe 建实例、不执行构造体，
+     * 旧存档缺的字段会变成 null，后面任何一次 copy 都会 NPE。
+     * 这里逐字段读取并给默认值，缺什么补什么。
+     */
+    private fun parsePlay(text: String): ScriptPlaythrough? {
+        val obj = runCatching {
+            com.google.gson.JsonParser.parseString(text).asJsonObject
+        }.getOrNull() ?: return null
+        fun str(key: String): String =
+            obj.get(key)?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+        fun int(key: String): Int =
+            obj.get(key)?.takeIf { it.isJsonPrimitive }?.asInt ?: 0
+        fun bool(key: String): Boolean =
+            obj.get(key)?.takeIf { it.isJsonPrimitive }?.asBoolean ?: false
+        val name = str("packName")
+        val sceneId = str("sceneId")
+        if (name.isBlank() && sceneId.isBlank()) return null
+        return ScriptPlaythrough(
+            id = str("id"),
+            packId = str("packId"),
+            packName = name,
+            sceneId = sceneId,
+            roundCount = int("roundCount"),
+            messages = emptyList(),
+            finished = bool("finished"),
+            endReason = str("endReason"),
+            snapshot = obj.get("snapshot")?.let { element ->
+                runCatching {
+                    Gson().fromJson(element, ScriptPlaySnapshot::class.java)
+                }.getOrNull()
+            },
+            firedEvents = obj.getAsJsonArray("firedEvents")
+                ?.mapNotNull { it.takeIf { item -> item.isJsonPrimitive }?.asString }
+                .orEmpty(),
+            castOverride = obj.getAsJsonArray("castOverride")
+                ?.mapNotNull { it.takeIf { item -> item.isJsonPrimitive }?.asString },
+            variables = runCatching {
+                obj.getAsJsonObject("variables")?.entrySet()?.associate { entry ->
+                    entry.key to entry.value.asInt
+                }
+            }.getOrNull()
+        )
     }
 
     /** 删除一局存档。 */
@@ -174,7 +220,15 @@ object ScriptPlayPromptBuilder {
          * 传 null 表示没被事件动过，按场景自带 cast 处理；
          * 传空列表表示这一场真的没人了，只留旁白。
          */
-        castOverride: List<String>? = null
+        castOverride: List<String>? = null,
+        /**
+         * 当前变量快照。
+         *
+         * 不告诉模型的话它会自己编数值，嘴里说的电量和实际判定对不上；
+         * 只注入声明里 visible 的那些，隐藏变量不该被念出来。
+         */
+        variables: Map<String, Int> = emptyMap(),
+        declaredVariables: List<ScriptVariable> = emptyList()
     ): String {
         val builder = StringBuilder()
         builder.append("你正在主持一场角色扮演剧本《").append(pack.name).append("》。\n")
@@ -182,6 +236,20 @@ object ScriptPlayPromptBuilder {
             builder.append(pack.description).append('\n')
         }
         builder.append("\n【当前场景】").append(scene.name).append('\n')
+
+        // 可见变量写进提示词：模型据此叙述，不能自己另编一套数值
+        val shown = declaredVariables.filter { it.visible && it.name.isNotBlank() }
+        if (shown.isNotEmpty()) {
+            builder.append("\n【当前状态】")
+            builder.append(
+                shown.joinToString("、") { variable ->
+                    val label = variable.label.ifBlank { variable.name }
+                    label + " " + (variables[variable.name] ?: variable.initial)
+                }
+            )
+            builder.append("\n以上数值由系统维护，叙述时以此为准，不要另编数字。\n")
+        }
+
 
         buildLorebookSection("全局设定", pack.globalLorebook)?.let(builder::append)
         buildLorebookSection("场景设定", scene.lorebook)?.let(builder::append)

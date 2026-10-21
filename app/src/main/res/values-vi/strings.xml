@@ -1450,6 +1450,6 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_soon_fnaf">Kịch bản demo FNAF: năm ngày</string>
     <string name="script_soon_daily">Chế độ thường nhật: lịch và thời gian</string>
     <string name="script_soon_group">Nhóm NPC: hình thái riêng</string>
-    <string name="adventure_finished_group">Đã xong ({0})</string>
+    <string name="adventure_finished_group">Đã xong   (%1$d)</string>
     <string name="script_play_undo">Về điểm lưu</string>
 </resources>

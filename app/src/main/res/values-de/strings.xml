@@ -1449,6 +1449,6 @@
     <string name="script_soon_fnaf">FNAF-Demo: fünf Tage</string>
     <string name="script_soon_daily">Alltagsmodus: Kalender und Zeitachse</string>
     <string name="script_soon_group">NPC-Gruppen: eigene Formen</string>
-    <string name="adventure_finished_group">Beendet ({0})</string>
+    <string name="adventure_finished_group">Beendet   (%1$d)</string>
     <string name="script_play_undo">Zum Prüfpunkt</string>
 </resources>

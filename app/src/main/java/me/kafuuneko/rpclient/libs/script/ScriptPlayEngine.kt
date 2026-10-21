@@ -94,9 +94,19 @@ object ScriptPlayEngine {
             ScriptConditionType.RoundLimit ->
                 condition.threshold > 0 && roundCount >= condition.threshold
 
-            ScriptConditionType.Variable ->
-                condition.variable.isNotBlank() &&
-                    (variables[condition.variable] ?: 0) >= condition.threshold
+            ScriptConditionType.Variable -> {
+                val name = condition.variable
+                if (name.isBlank()) {
+                    false
+                } else {
+                    val value = variables[name] ?: 0
+                    when (condition.comparison) {
+                        ScriptComparison.AtLeast -> value >= condition.threshold
+                        ScriptComparison.AtMost -> value <= condition.threshold
+                        ScriptComparison.Equal -> value == condition.threshold
+                    }
+                }
+            }
 
             ScriptConditionType.ScoreAtLeast -> false
         }

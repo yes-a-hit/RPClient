@@ -1451,6 +1451,6 @@
     <string name="script_soon_fnaf">Guion demo FNAF: cinco días</string>
     <string name="script_soon_daily">Modo diario: calendario y línea temporal</string>
     <string name="script_soon_group">Grupos de NPC: formas propias</string>
-    <string name="adventure_finished_group">Terminados ({0})</string>
+    <string name="adventure_finished_group">Terminados   (%1$d)</string>
     <string name="script_play_undo">Volver al punto</string>
 </resources>

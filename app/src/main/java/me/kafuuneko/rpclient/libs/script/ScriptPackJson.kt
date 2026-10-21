@@ -203,6 +203,9 @@ internal object ScriptPackJson {
             pattern = item.stringOr("pattern"),
             threshold = item.intOr("threshold", 0),
             variable = item.stringOr("variable"),
+            comparison = runCatching {
+                ScriptComparison.valueOf(item.stringOr("comparison"))
+            }.getOrDefault(ScriptComparison.AtLeast),
             failSceneId = item.stringOr("failSceneId"),
             description = item.stringOr("description")
         )

@@ -296,6 +296,13 @@ data class ScriptCondition(
     /** 变量名，[ScriptConditionType.Variable] 使用：变量值 >= [threshold] 时成立。 */
     val variable: String = "",
     /**
+     * 变量比较方向，[ScriptConditionType.Variable] 使用。
+     *
+     * 默认「至少」适合好感、线索这类攒起来的量；
+     * 电量、警戒这类「掉到多少就出事」的要显式写 AtMost。
+     */
+    val comparison: ScriptComparison = ScriptComparison.AtLeast,
+    /**
      * 命中后转到的场景 ID，只对失败条件有意义。
      *
      * 留空表示照常结束整局；填了就先演一段战败场景，
@@ -305,6 +312,23 @@ data class ScriptCondition(
     /** 展示给用户的失败或通关说明。 */
     val description: String = ""
 )
+
+/**
+ * 变量比较方向。
+ *
+ * 只做三种，够表达「攒够」「耗尽」「正好」三件事，
+ * 组合条件留到以后再说。
+ */
+enum class ScriptComparison {
+    /** 变量值 >= 阈值。 */
+    AtLeast,
+
+    /** 变量值 <= 阈值。 */
+    AtMost,
+
+    /** 变量值 == 阈值。 */
+    Equal
+}
 
 /** 条件类型。 */
 enum class ScriptConditionType {
