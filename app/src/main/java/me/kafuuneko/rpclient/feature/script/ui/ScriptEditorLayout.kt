@@ -93,6 +93,9 @@ fun ScriptEditorLayout(
                 PackInfoCard(state = state, emit = emit)
             }
             item {
+                VariableCard(state = state, emit = emit)
+            }
+            item {
                 CastAdminCard(state = state, emit = emit)
             }
             itemsIndexed(state.rows) { index, row ->
@@ -882,6 +885,152 @@ private fun ComingSoonCard() {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 剧本变量面板。
+ *
+ * 变量是规则驱动的地基：场景解锁、事件触发、成败判定都能引用它。
+ * 没有这个面板，作者只能手改 JSON。
+ */
+@Composable
+private fun VariableCard(
+    state: ScriptEditorUiState.Ready,
+    emit: ScriptEditorUiIntent.() -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        tonalElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.script_variables),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = " · " + state.variables.size,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Box(modifier = Modifier.weight(1f))
+                TextButton(onClick = { ScriptEditorUiIntent.AddVariable.emit() }) {
+                    Text(stringResource(R.string.script_variable_add))
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            if (expanded) {
+                if (state.variables.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.script_variable_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    state.variables.forEach { variable ->
+                        VariableRow(variable, emit)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 一个变量占两行：定义一行，数值一行，窄屏也塞得下。 */
+@Composable
+private fun VariableRow(
+    variable: me.kafuuneko.rpclient.libs.script.ScriptVariable,
+    emit: ScriptEditorUiIntent.() -> Unit
+) {
+    var name by remember(variable.name) { mutableStateOf(variable.name) }
+    var label by remember(variable.label) { mutableStateOf(variable.label) }
+    var initial by remember(variable.initial) { mutableStateOf(variable.initial.toString()) }
+    var min by remember(variable.min) { mutableStateOf(variable.min.toString()) }
+    var max by remember(variable.max) { mutableStateOf(variable.max.toString()) }
+    var visible by remember(variable.visible) { mutableStateOf(variable.visible) }
+
+    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.script_variable_name)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = { ScriptEditorUiIntent.DeleteVariable(variable.name).emit() }
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = label,
+                onValueChange = { label = it },
+                label = { Text(stringResource(R.string.script_variable_label)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            listOf(
+                initial to { v: String -> initial = v },
+                min to { v: String -> min = v },
+                max to { v: String -> max = v }
+            ).forEachIndexed { index, pair ->
+                OutlinedTextField(
+                    value = pair.first,
+                    onValueChange = { pair.second(it.filter { c -> c.isDigit() || c == '-' }) },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (index) {
+                                    0 -> R.string.script_variable_initial
+                                    1 -> R.string.script_variable_min
+                                    else -> R.string.script_variable_max
+                                }
+                            )
+                        )
+                    },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        SwitchRow(stringResource(R.string.script_variable_visible), visible) { visible = it }
+        TextButton(
+            onClick = {
+                ScriptEditorUiIntent.UpdateVariable(
+                    originalName = variable.name,
+                    name = name,
+                    label = label,
+                    initial = initial.toIntOrNull() ?: 0,
+                    min = min.toIntOrNull() ?: 0,
+                    max = max.toIntOrNull() ?: 100,
+                    visible = visible
+                ).emit()
+            }
+        ) {
+            Text(stringResource(R.string.script_scene_save))
         }
     }
 }

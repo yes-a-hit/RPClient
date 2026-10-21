@@ -409,3 +409,35 @@ fun ScriptScene.outgoingSceneIds(): Set<String> = buildSet {
     }
     addAll(unlockedBy)
 }
+
+/**
+ * 把变量改名，连同所有引用一起换。
+ *
+ * 条件、副作用、解锁条件里都按名字引用变量，只改定义不改引用
+ * 会让整份剧本的判定指向一个不存在的名字，等于全废。
+ */
+fun ScriptPack.renameVariable(from: String, to: String): ScriptPack {
+    if (from == to || from.isBlank() || to.isBlank()) return this
+    fun ScriptCondition.renamed(): ScriptCondition =
+        if (variable == from) copy(variable = to) else this
+    return copy(
+        scenes = scenes.map { scene ->
+            scene.copy(
+                failConditions = scene.failConditions.map { it.renamed() },
+                completionCondition = scene.completionCondition?.renamed(),
+                unlockCondition = scene.unlockCondition?.renamed(),
+                events = scene.events.map { event ->
+                    event.copy(
+                        condition = event.condition?.renamed(),
+                        effects = event.effects.map { effect ->
+                            if (effect.variable == from) effect.copy(variable = to) else effect
+                        }
+                    )
+                },
+                conditionalCast = scene.conditionalCast.map { rule ->
+                    rule.copy(condition = rule.condition?.renamed())
+                }
+            )
+        }
+    )
+}

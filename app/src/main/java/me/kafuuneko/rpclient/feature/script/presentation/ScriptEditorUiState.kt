@@ -70,6 +70,9 @@ sealed class ScriptEditorUiState {
         /** 剧本级背景图关键词或名称。 */
         val packBackground: String = "",
 
+        /** 剧本变量定义，供变量面板编辑。 */
+        val variables: List<me.kafuuneko.rpclient.libs.script.ScriptVariable> = emptyList(),
+
         /** 剧本梗概，同时充当全局背景设定。 */
         val description: String = "",
         /** 开场白，已按「发言者|内容」拼成多行文本。 */

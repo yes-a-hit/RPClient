@@ -13,6 +13,8 @@ import me.kafuuneko.rpclient.libs.script.ScriptCastMember
 import me.kafuuneko.rpclient.libs.script.ScriptLorebook
 import me.kafuuneko.rpclient.libs.script.ScriptOpening
 import me.kafuuneko.rpclient.libs.room.entity.toConfig
+import me.kafuuneko.rpclient.libs.script.ScriptVariable
+import me.kafuuneko.rpclient.libs.script.renameVariable
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
 import me.kafuuneko.rpclient.libs.script.ScriptScene
@@ -229,6 +231,84 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
 
 
     /** 更新剧本级信息；开场白从多行文本拆回列表。 */
+
+
+    /** 新增变量，名字按序号避开重名。 */
+    @UiIntentObserver(ScriptEditorUiIntent.AddVariable::class)
+    private suspend fun onAddVariable() {
+        val existing = mPack.variables.map { it.name }.toSet()
+        var index = mPack.variables.size + 1
+        while (("变量" + index) in existing) index++
+        mPack = mPack.copy(
+            variables = mPack.variables + ScriptVariable(
+                name = "变量" + index,
+                initial = 0,
+                min = 0,
+                max = 10,
+                visible = true
+            )
+        )
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
+    /**
+     * 修改变量定义。
+     *
+     * 改名时把条件与副作用里引用的旧名一并替换，
+     * 否则改名就会把整份剧本的判定改瞎。
+     */
+    @UiIntentObserver(ScriptEditorUiIntent.UpdateVariable::class)
+    private suspend fun onUpdateVariable(intent: ScriptEditorUiIntent.UpdateVariable) {
+        val name = intent.name.trim().ifBlank { intent.originalName }
+        val updated = mPack.variables.map { variable ->
+            if (variable.name != intent.originalName) {
+                variable
+            } else {
+                variable.copy(
+                    name = name,
+                    label = intent.label.trim(),
+                    initial = intent.initial.coerceIn(intent.min, intent.max),
+                    min = intent.min,
+                    max = intent.max,
+                    visible = intent.visible
+                )
+            }
+        }
+        val renamed = if (name == intent.originalName) {
+            mPack
+        } else {
+            mPack.renameVariable(intent.originalName, name)
+        }
+        mPack = renamed.copy(variables = updated)
+        mStore.save(mPack)
+        publish(null, null)
+    }
+
+    /** 删除变量；条件里还在引用时一并清掉，避免悬空引用。 */
+    @UiIntentObserver(ScriptEditorUiIntent.DeleteVariable::class)
+    private suspend fun onDeleteVariable(intent: ScriptEditorUiIntent.DeleteVariable) {
+        mPack = mPack.copy(
+            variables = mPack.variables.filterNot { it.name == intent.name },
+            scenes = mPack.scenes.map { scene ->
+                scene.copy(
+                    failConditions = scene.failConditions.filterNot {
+                        it.type == ScriptConditionType.Variable && it.variable == intent.name
+                    },
+                    completionCondition = scene.completionCondition?.takeUnless {
+                        it.type == ScriptConditionType.Variable && it.variable == intent.name
+                    },
+                    events = scene.events.map { event ->
+                        event.copy(
+                            effects = event.effects.filterNot { it.variable == intent.name }
+                        )
+                    }
+                )
+            }
+        )
+        mStore.save(mPack)
+        publish(null, null)
+    }
 
     /** 让模型写梗概与开场白草稿，结果直接落库并刷新界面。 */
 
@@ -599,6 +679,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             packName = mPack.name,
             description = mPack.description,
             packBackground = mPack.backgroundKey,
+            variables = mPack.variables,
             openingsText = mPack.openings.joinToString("\n") { opening ->
                 if (opening.speaker.isBlank()) opening.content
                 else opening.speaker + "|" + opening.content

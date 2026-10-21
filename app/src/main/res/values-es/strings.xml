@@ -1453,4 +1453,13 @@
     <string name="script_soon_group">Grupos de NPC: formas propias</string>
     <string name="adventure_finished_group">Terminados   (%1$d)</string>
     <string name="script_play_undo">Volver al punto</string>
+    <string name="script_variables">Variables</string>
+    <string name="script_variable_add">Añadir</string>
+    <string name="script_variable_empty">Sin variables</string>
+    <string name="script_variable_name">Nombre</string>
+    <string name="script_variable_label">Etiqueta</string>
+    <string name="script_variable_initial">Inicial</string>
+    <string name="script_variable_min">Mín</string>
+    <string name="script_variable_max">Máx</string>
+    <string name="script_variable_visible">Visible</string>
 </resources>

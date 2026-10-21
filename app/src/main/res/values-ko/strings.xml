@@ -1446,4 +1446,13 @@
     <string name="script_soon_group">NPC 그룹: 변신 전후 별도 모습</string>
     <string name="adventure_finished_group">종료됨   (%1$d)</string>
     <string name="script_play_undo">체크포인트로</string>
+    <string name="script_variables">변수</string>
+    <string name="script_variable_add">추가</string>
+    <string name="script_variable_empty">변수가 없습니다</string>
+    <string name="script_variable_name">이름</string>
+    <string name="script_variable_label">표시명</string>
+    <string name="script_variable_initial">초기값</string>
+    <string name="script_variable_min">최소</string>
+    <string name="script_variable_max">최대</string>
+    <string name="script_variable_visible">공개</string>
 </resources>

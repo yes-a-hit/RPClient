@@ -1456,4 +1456,13 @@
     <string name="script_soon_group">Группы NPC: отдельные облики</string>
     <string name="adventure_finished_group">Завершено   (%1$d)</string>
     <string name="script_play_undo">К контрольной точке</string>
+    <string name="script_variables">Переменные</string>
+    <string name="script_variable_add">Добавить</string>
+    <string name="script_variable_empty">Переменных нет</string>
+    <string name="script_variable_name">Имя</string>
+    <string name="script_variable_label">Название</string>
+    <string name="script_variable_initial">Начало</string>
+    <string name="script_variable_min">Мин</string>
+    <string name="script_variable_max">Макс</string>
+    <string name="script_variable_visible">Видно</string>
 </resources>

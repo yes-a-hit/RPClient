@@ -1455,4 +1455,13 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_soon_group">Grupos de NPC: formas com visual próprio</string>
     <string name="adventure_finished_group">Encerrados   (%1$d)</string>
     <string name="script_play_undo">Voltar ao ponto</string>
+    <string name="script_variables">Variáveis</string>
+    <string name="script_variable_add">Adicionar</string>
+    <string name="script_variable_empty">Sem variáveis</string>
+    <string name="script_variable_name">Nome</string>
+    <string name="script_variable_label">Rótulo</string>
+    <string name="script_variable_initial">Inicial</string>
+    <string name="script_variable_min">Mín</string>
+    <string name="script_variable_max">Máx</string>
+    <string name="script_variable_visible">Visível</string>
 </resources>

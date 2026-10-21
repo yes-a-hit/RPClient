@@ -1451,4 +1451,13 @@
     <string name="script_soon_group">NPC-Gruppen: eigene Formen</string>
     <string name="adventure_finished_group">Beendet   (%1$d)</string>
     <string name="script_play_undo">Zum Prüfpunkt</string>
+    <string name="script_variables">Variablen</string>
+    <string name="script_variable_add">Hinzufügen</string>
+    <string name="script_variable_empty">Keine Variablen</string>
+    <string name="script_variable_name">Name</string>
+    <string name="script_variable_label">Anzeige</string>
+    <string name="script_variable_initial">Start</string>
+    <string name="script_variable_min">Min</string>
+    <string name="script_variable_max">Max</string>
+    <string name="script_variable_visible">Sichtbar</string>
 </resources>

@@ -1452,4 +1452,13 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_soon_group">Nhóm NPC: hình thái riêng</string>
     <string name="adventure_finished_group">Đã xong   (%1$d)</string>
     <string name="script_play_undo">Về điểm lưu</string>
+    <string name="script_variables">Biến</string>
+    <string name="script_variable_add">Thêm</string>
+    <string name="script_variable_empty">Chưa có biến</string>
+    <string name="script_variable_name">Tên</string>
+    <string name="script_variable_label">Nhãn</string>
+    <string name="script_variable_initial">Ban đầu</string>
+    <string name="script_variable_min">Min</string>
+    <string name="script_variable_max">Max</string>
+    <string name="script_variable_visible">Hiển thị</string>
 </resources>

@@ -1447,4 +1447,13 @@
     <string name="script_soon_group">NPC グループ：変身前後の別姿</string>
     <string name="adventure_finished_group">終了済み（%1$d）</string>
     <string name="script_play_undo">チェックポイントへ</string>
+    <string name="script_variables">変数</string>
+    <string name="script_variable_add">追加</string>
+    <string name="script_variable_empty">変数はまだありません</string>
+    <string name="script_variable_name">名前</string>
+    <string name="script_variable_label">表示名</string>
+    <string name="script_variable_initial">初期値</string>
+    <string name="script_variable_min">下限</string>
+    <string name="script_variable_max">上限</string>
+    <string name="script_variable_visible">公開</string>
 </resources>

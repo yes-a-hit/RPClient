@@ -1430,4 +1430,13 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_soon_group">Gruppi NPC: forme distinte</string>
     <string name="adventure_finished_group">Conclusi   (%1$d)</string>
     <string name="script_play_undo">Torna al punto</string>
+    <string name="script_variables">Variabili</string>
+    <string name="script_variable_add">Aggiungi</string>
+    <string name="script_variable_empty">Nessuna variabile</string>
+    <string name="script_variable_name">Nome</string>
+    <string name="script_variable_label">Etichetta</string>
+    <string name="script_variable_initial">Iniziale</string>
+    <string name="script_variable_min">Min</string>
+    <string name="script_variable_max">Max</string>
+    <string name="script_variable_visible">Visibile</string>
 </resources>

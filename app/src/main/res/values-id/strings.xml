@@ -1452,4 +1452,13 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_soon_group">Grup NPC: wujud berbeda</string>
     <string name="adventure_finished_group">Selesai   (%1$d)</string>
     <string name="script_play_undo">Kembali ke titik</string>
+    <string name="script_variables">Variabel</string>
+    <string name="script_variable_add">Tambah</string>
+    <string name="script_variable_empty">Belum ada variabel</string>
+    <string name="script_variable_name">Nama</string>
+    <string name="script_variable_label">Label</string>
+    <string name="script_variable_initial">Awal</string>
+    <string name="script_variable_min">Min</string>
+    <string name="script_variable_max">Maks</string>
+    <string name="script_variable_visible">Terlihat</string>
 </resources>

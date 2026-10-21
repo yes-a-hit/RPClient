@@ -1446,4 +1446,13 @@
     <string name="script_soon_group">NPC 組切換：人間體與變身各自獨立頭像與人設</string>
     <string name="adventure_finished_group">已結束（%1$d）</string>
     <string name="script_play_undo">回到檢查點</string>
+    <string name="script_variables">劇本變數</string>
+    <string name="script_variable_add">新增</string>
+    <string name="script_variable_empty">還沒有變數，規則驅動要用它</string>
+    <string name="script_variable_name">名稱</string>
+    <string name="script_variable_label">顯示名</string>
+    <string name="script_variable_initial">初值</string>
+    <string name="script_variable_min">下限</string>
+    <string name="script_variable_max">上限</string>
+    <string name="script_variable_visible">對玩家可見</string>
 </resources>

@@ -114,6 +114,23 @@ sealed class ScriptEditorUiIntent {
      *
      * [sceneId] 为空表示剧本级全局背景，否则是那一章。
      */
+    /** 新增一个剧本变量，默认名按序号生成。 */
+    data object AddVariable : ScriptEditorUiIntent()
+
+    /** 修改某个变量的定义。 */
+    data class UpdateVariable(
+        val originalName: String,
+        val name: String,
+        val label: String,
+        val initial: Int,
+        val min: Int,
+        val max: Int,
+        val visible: Boolean
+    ) : ScriptEditorUiIntent()
+
+    /** 删除某个变量。 */
+    data class DeleteVariable(val name: String) : ScriptEditorUiIntent()
+
     data class PickBackground(val sceneId: String?) : ScriptEditorUiIntent()
 
     /** 选好图之后回来的 URI。 */

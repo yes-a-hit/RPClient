@@ -1452,4 +1452,13 @@
     <string name="script_soon_group">Groupes de PNJ : formes distinctes</string>
     <string name="adventure_finished_group">Terminés   (%1$d)</string>
     <string name="script_play_undo">Revenir au point</string>
+    <string name="script_variables">Variables</string>
+    <string name="script_variable_add">Ajouter</string>
+    <string name="script_variable_empty">Aucune variable</string>
+    <string name="script_variable_name">Nom</string>
+    <string name="script_variable_label">Libellé</string>
+    <string name="script_variable_initial">Initial</string>
+    <string name="script_variable_min">Min</string>
+    <string name="script_variable_max">Max</string>
+    <string name="script_variable_visible">Visible</string>
 </resources>
