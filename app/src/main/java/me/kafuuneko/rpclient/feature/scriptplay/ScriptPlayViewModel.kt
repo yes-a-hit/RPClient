@@ -43,7 +43,14 @@ import org.koin.core.component.inject
  */
 class ScriptPlayViewModel(
     private val mPackId: String,
-    private val mActiveCharacters: List<String>,
+    /**
+     * 开局时带进来的活跃角色。
+     *
+     * 只在进入第一场时并进名单——它是「进来时谁在」的快照，
+     * 不是随场景走的成员表。切场后必须清空，否则上一场的角色
+     * 会一直挂在头像条上，跳到只有一个玩偶的场景也照挂不误。
+     */
+    private var mActiveCharacters: List<String>,
     private val mPlayId: String
 ) : CoreViewModelWithEvent<ScriptPlayUiIntent, ScriptPlayUiState>(
     ScriptPlayUiState.Loading
@@ -291,6 +298,8 @@ class ScriptPlayViewModel(
      * [note] 是给玩家的转场说明，通关自动转场时带上达成理由。
      */
     private suspend fun enterScene(target: ScriptScene, note: String = "") {
+        // 换场就不再是开始时那批人，名单交给新场景自己决定
+        mActiveCharacters = emptyList()
         mPlay = mPlay.copy(
             sceneId = target.id,
             roundCount = 0,
@@ -328,6 +337,8 @@ class ScriptPlayViewModel(
             )
         }
         mPlayStore.save(mPlay)
+        // 新场景可能带来没见过的角色，头像缓存要跟着补一遍
+        loadAvatarCache()
         publish()
     }
 
@@ -547,12 +558,25 @@ class ScriptPlayViewModel(
 
     fun avatarOf(name: String): String? = mAvatarCache[name]
 
-    /** 预加载剧本里出现过的角色头像。 */
+    /**
+     * 预加载剧本里出现过的角色头像。
+     *
+     * 名单要覆盖两层：对话里说过话的人，以及剧本里编排过的所有登场角色。
+     * 只看发言者的后果是——角色进场了却因为还没开口而没有头像，
+     * 头像条上只剩一个字，看起来像是没配图。
+     */
     private suspend fun loadAvatarCache() {
-        val names = mPlay.messages.mapNotNull { message ->
-            ScriptPlayLineParser.parse(message.content)
-                .mapNotNull { it.speaker }
-        }.flatten().toSet()
+        val names = buildSet {
+            mPlay.messages.forEach { message ->
+                ScriptPlayLineParser.parse(message.content)
+                    .mapNotNull { it.speaker }
+                    .forEach { add(it) }
+            }
+            mPack?.scenes?.forEach { scene ->
+                scene.cast.forEach { add(it.name) }
+                scene.conditionalCast.forEach { add(it.name) }
+            }
+        }
         if (names.isEmpty()) return
         val characters = runCatching { mCharacterRepository.getAllCharacters() }.getOrDefault(emptyList())
         characters.forEach { character ->
@@ -630,10 +654,19 @@ class ScriptPlayViewModel(
                 currentSceneOrNull()?.suggestedActions.orEmpty()
             },
             backgroundUuid = mSceneBackground,
-            castNames = ((mPlay.castOverride
-                ?: currentSceneOrNull()?.let { scene ->
-                    ScriptPlayEngine.effectiveCast(scene, mPlay.variables.orEmpty())
-                }.orEmpty()) + mActiveCharacters).distinct(),
+            castNames = run {
+                val fromScene = mPlay.castOverride
+                    ?: currentSceneOrNull()?.let { scene ->
+                        ScriptPlayEngine.effectiveCast(scene, mPlay.variables.orEmpty())
+                    }.orEmpty()
+                val merged = (fromScene + mActiveCharacters).distinct()
+                android.util.Log.d(
+                    "ScriptPlay",
+                    "scene=" + mPlay.sceneId + " override=" + mPlay.castOverride +
+                        " active=" + mActiveCharacters + " => " + merged
+                )
+                merged
+            },
             autoPlay = mAutoPlay
         ).setup()
     }

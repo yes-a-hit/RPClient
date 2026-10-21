@@ -145,7 +145,18 @@
       "id": "night1",
       "name": "第一夜",
       "entryPrompt": "监控屏一格格亮着：舞台、左走廊、右走廊、厨房、通风管。电量从 100 开始缓慢下降。这一晚主要是邦尼在动，其他三只还没醒透。撑到六点就下班。",
-      "cast": [],
+      "cast": [
+        {
+          "name": "邦尼",
+          "required": true,
+          "description": "高大的兔子玩偶，站在舞台左侧。它不动的时候看不出哪里不对，但它一直在看值班室的方向。"
+        },
+        {
+          "name": "奇卡",
+          "required": true,
+          "description": "系围裙的鸡形玩偶，舞台右侧。手里那盘东西从没放下过。"
+        }
+      ],
       "bannedCast": [],
       "nextSceneIds": [
         "dawn1"
@@ -314,7 +325,18 @@
       "id": "night2",
       "name": "第二夜",
       "entryPrompt": "今晚奇卡也醒了。她闻得到你身上的味道——用诱饵气味能把她引去厨房，但关左门对她没用，她会从通风管绕进来。邦尼照旧会偷电。",
-      "cast": [],
+      "cast": [
+        {
+          "name": "邦尼",
+          "required": true,
+          "description": "高大的兔子玩偶。今晚它不怎么待在台上。"
+        },
+        {
+          "name": "奇卡",
+          "required": true,
+          "description": "系围裙的鸡形玩偶。她的围裙上有新鲜的面粉。"
+        }
+      ],
       "bannedCast": [],
       "nextSceneIds": [
         "dawn2"
@@ -472,7 +494,23 @@
       "id": "night3",
       "name": "第三夜",
       "entryPrompt": "霍斯醒了。他只在没人盯着右走廊时才动，一旦冲起来会直撞右门——门撑不了几次。他撞进来之后眼睛怕光，手电照住能把他逼回去。但门一旦被撞坏，邦尼也能直接走进来，而霍斯的鬼叫还会把邦尼招过来。",
-      "cast": [],
+      "cast": [
+        {
+          "name": "邦尼",
+          "required": true,
+          "description": "高大的兔子玩偶，动作比前两晚快。"
+        },
+        {
+          "name": "奇卡",
+          "required": true,
+          "description": "系围裙的鸡形玩偶。"
+        },
+        {
+          "name": "霍斯",
+          "required": true,
+          "description": "破损的狐狸玩偶，只剩一只眼睛。他停在你面前，歪着头。"
+        }
+      ],
       "bannedCast": [],
       "nextSceneIds": [
         "dawn3"
