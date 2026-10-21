@@ -1475,4 +1475,5 @@
     <string name="script_event_narration">Narration</string>
     <string name="script_event_once">Une fois</string>
     <string name="script_event_delete">Supprimer</string>
+    <string name="character_group_others">Autres</string>
 </resources>

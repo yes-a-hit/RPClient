@@ -453,4 +453,79 @@ class ScriptPackCodecTest {
         }
     }
 
+
+    @Test
+    fun `variables carry dashboard grouping and kind`() {
+        // 分组与类型决定面板怎么画：全局放宏观项、本场放局内信息
+        val json = """
+            {
+              "formatVersion": 1,
+              "id": "p1",
+              "name": "夜班",
+              "showDashboard": false,
+              "variables": [
+                {
+                  "name": "夜数", "kind": "Number", "group": "全局",
+                  "initial": 1, "min": 1, "max": 3
+                },
+                {
+                  "name": "右门", "kind": "Switch", "group": "本场",
+                  "onLabel": "关着", "offLabel": "开着"
+                },
+                { "name": "在场", "kind": "Note", "text": "熊的鼻子可以按" }
+              ],
+              "scenes": [
+                {
+                  "id": "s1",
+                  "name": "值班室",
+                  "dashboardItems": ["夜数", "右门", "在场"]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val parsed = ScriptPackCodec().decode(json)
+
+        assertTrue("解析失败：$parsed", parsed is ScriptPackParseResult.Success)
+        val pack = (parsed as ScriptPackParseResult.Success).pack
+
+        // 剧本级开关关掉时整块面板都不出现
+        assertEquals(false, pack.showDashboard)
+
+        val vars = pack.variables.associateBy { it.name }
+        assertEquals(ScriptVariableKind.Number, vars["夜数"]?.kind)
+        assertEquals("全局", vars["夜数"]?.group)
+        assertEquals(ScriptVariableKind.Switch, vars["右门"]?.kind)
+        assertEquals("关着", vars["右门"]?.onLabel)
+        assertEquals("开着", vars["右门"]?.offLabel)
+        assertEquals(ScriptVariableKind.Note, vars["在场"]?.kind)
+        assertEquals("熊的鼻子可以按", vars["在场"]?.text)
+
+        // 场景点名要哪几栏，缺省才回落到变量可见性
+        assertEquals(
+            listOf("夜数", "右门", "在场"),
+            pack.scenes.single().dashboardItems
+        )
+    }
+
+    @Test
+    fun `unknown variable kind falls back to number`() {
+        // 手写 JSON 写错枚举值不该让整份剧本读不出来
+        val json = """
+            {
+              "formatVersion": 1,
+              "id": "p1",
+              "name": "夜班",
+              "variables": [ { "name": "电量", "kind": "Float128" } ],
+              "scenes": [ { "id": "s1", "name": "值班室" } ]
+            }
+        """.trimIndent()
+
+        val parsed = ScriptPackCodec().decode(json)
+
+        assertTrue(parsed is ScriptPackParseResult.Success)
+        val variable = (parsed as ScriptPackParseResult.Success).pack.variables.single()
+        assertEquals(ScriptVariableKind.Number, variable.kind)
+    }
+
 }

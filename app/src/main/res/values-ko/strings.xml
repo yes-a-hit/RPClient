@@ -1469,4 +1469,5 @@
     <string name="script_event_narration">삽입 내레이션</string>
     <string name="script_event_once">한 번만</string>
     <string name="script_event_delete">이벤트 삭제</string>
+    <string name="character_group_others">기타</string>
 </resources>

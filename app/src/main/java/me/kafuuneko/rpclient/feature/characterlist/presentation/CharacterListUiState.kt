@@ -15,6 +15,13 @@ sealed class CharacterListUiState {
         val selectedCharacterId: Long? = null,
         /** 当前页面或流程可使用的角色列表。 */
         val characters: List<CharacterListItem> = emptyList(),
+        /**
+         * 按标签分好的组；为空表示不分组，直接平铺。
+         *
+         * 只有某个标签覆盖到多个角色时才值得分组——单独一张卡自成一组
+         * 只是把列表拆得更碎。
+         */
+        val tagGroups: List<CharacterTagGroup> = emptyList(),
         /** 当前页面互斥展示的对话框状态。 */
         val dialogState: CharacterListDialogState = CharacterListDialogState.None
     ) : CharacterListUiState()
@@ -47,6 +54,16 @@ sealed class CharacterListDialogState {
         val failureCount: Int
     ) : CharacterListDialogState()
 }
+
+/**
+ * 一组同标签的角色。
+ *
+ * [tag] 为空表示这是没能归进任何组的剩余部分。
+ */
+data class CharacterTagGroup(
+    val tag: String,
+    val characters: List<CharacterListItem>
+)
 
 /** 角色列表读取或导入期间的阻塞状态。 */
 sealed class CharacterListLoadState {

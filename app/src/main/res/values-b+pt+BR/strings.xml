@@ -1478,4 +1478,5 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_event_narration">Narração</string>
     <string name="script_event_once">Uma vez</string>
     <string name="script_event_delete">Excluir</string>
+    <string name="character_group_others">Outros</string>
 </resources>

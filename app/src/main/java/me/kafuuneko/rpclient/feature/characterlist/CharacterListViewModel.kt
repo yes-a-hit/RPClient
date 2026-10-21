@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.characterlist.model.CharacterListItem
+import me.kafuuneko.rpclient.feature.characterlist.model.groupCharactersByTag
 import me.kafuuneko.rpclient.feature.characterlist.presentation.CharacterListDialogState
+import me.kafuuneko.rpclient.feature.characterlist.presentation.CharacterTagGroup
 import me.kafuuneko.rpclient.feature.characterlist.presentation.CharacterImportStage
 import me.kafuuneko.rpclient.feature.characterlist.presentation.CharacterListLoadState
 import me.kafuuneko.rpclient.feature.characterlist.presentation.CharacterListUiIntent
@@ -66,12 +68,6 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
     private var mPendingImport: CharacterCardImportBatch? = null
 
     /** 初始化角色列表，进入加载中状态并拉取数据库数据。 */
-    @UiIntentObserver(CharacterListUiIntent.Init::class)
-    private suspend fun onInit() {
-        if (!isStateOf<CharacterListUiState.None>()) return
-        CharacterListUiState.Normal(loadState = CharacterListLoadState.Loading).setup()
-        refreshCharacters(selectedCharacterId = null)
-    }
 
     /** 页面恢复可见时刷新角色列表数据（导入或导出传输任务进行中时不打断）。 */
     @UiIntentObserver(CharacterListUiIntent.Resume::class)
@@ -97,9 +93,11 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
     @UiIntentObserver(CharacterListUiIntent.ChangeSearchText::class)
     private fun onChangeSearchText(intent: CharacterListUiIntent.ChangeSearchText) {
         val uiState = getOrNull<CharacterListUiState.Normal>() ?: return
+        val visible = renderCharacters(intent.value)
         uiState.copy(
             searchText = intent.value,
-            characters = renderCharacters(intent.value)
+            characters = visible,
+            tagGroups = groupCharactersByTag(visible)
         ).setup()
     }
 
@@ -518,10 +516,12 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
         mAllCharacterItems = allCharacterItems
         mSearchCorpus = searchCorpus
         // 驱动 UI 状态展示
+        val visibleItems = renderCharacters(current.searchText)
         current.copy(
             loadState = CharacterListLoadState.None,
             selectedCharacterId = characters.firstOrNull { it.id == selectedCharacterId }?.id,
-            characters = renderCharacters(current.searchText)
+            characters = visibleItems,
+            tagGroups = groupCharactersByTag(visibleItems)
         ).setup()
         scheduleVisibleAvatarLoads()
     }
@@ -602,9 +602,14 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
     }
 
     /** 发布当前渲染的角色列表至 UI 状态。 */
+    /** 发布当前渲染的角色列表到 UI 状态。 */
     private fun publishRenderedCharacters() {
         val current = getOrNull<CharacterListUiState.Normal>() ?: return
-        current.copy(characters = renderCharacters(current.searchText)).setup()
+        val visible = renderCharacters(current.searchText)
+        current.copy(
+            characters = visible,
+            tagGroups = groupCharactersByTag(visible)
+        ).setup()
     }
 
     /** 取消指定角色的头像加载任务并移除任务记录。 */

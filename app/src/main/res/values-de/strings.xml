@@ -1474,4 +1474,5 @@
     <string name="script_event_narration">Erzählung</string>
     <string name="script_event_once">Einmalig</string>
     <string name="script_event_delete">Löschen</string>
+    <string name="character_group_others">Sonstige</string>
 </resources>

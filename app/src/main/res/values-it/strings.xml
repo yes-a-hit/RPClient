@@ -1453,4 +1453,5 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_event_narration">Narrazione</string>
     <string name="script_event_once">Una volta</string>
     <string name="script_event_delete">Elimina</string>
+    <string name="character_group_others">Altri</string>
 </resources>

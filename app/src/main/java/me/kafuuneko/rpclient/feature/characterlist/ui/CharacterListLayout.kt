@@ -153,13 +153,42 @@ private fun CharacterListNormal(
             if (state.loadState != CharacterListLoadState.Loading && characters.isEmpty()) {
                 item { EmptyCharacterCard(emit) }
             }
-            items(characters, key = { it.id }) { character ->
-                CharacterListCard(
-                    character = character,
-                    selected = character.id == state.selectedCharacterId,
-                    onClick = { CharacterListUiIntent.SelectCharacter(character.id).emit() },
-                    onExport = { CharacterListUiIntent.ExportCharacterJsonClick(character.id).emit() }
-                )
+            if (state.tagGroups.isEmpty()) {
+                // 没形成有效分组就平铺，别为了分组把列表切碎
+                items(characters, key = { it.id }) { character ->
+                    CharacterListCard(
+                        character = character,
+                        selected = character.id == state.selectedCharacterId,
+                        onClick = { CharacterListUiIntent.SelectCharacter(character.id).emit() },
+                        onExport = {
+                            CharacterListUiIntent.ExportCharacterJsonClick(character.id).emit()
+                        }
+                    )
+                }
+            } else {
+                state.tagGroups.forEach { group ->
+                    item(key = "header-" + group.tag) {
+                        RpSectionHeader(
+                            title = if (group.tag.isBlank()) {
+                                stringResource(R.string.character_group_others)
+                            } else {
+                                group.tag
+                            }
+                        )
+                    }
+                    items(group.characters, key = { it.id }) { character ->
+                        CharacterListCard(
+                            character = character,
+                            selected = character.id == state.selectedCharacterId,
+                            onClick = {
+                                CharacterListUiIntent.SelectCharacter(character.id).emit()
+                            },
+                            onExport = {
+                                CharacterListUiIntent.ExportCharacterJsonClick(character.id).emit()
+                            }
+                        )
+                    }
+                }
             }
         }
     }

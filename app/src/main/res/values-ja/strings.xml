@@ -1470,4 +1470,5 @@
     <string name="script_event_narration">挿入ナレーション</string>
     <string name="script_event_once">1回のみ</string>
     <string name="script_event_delete">イベント削除</string>
+    <string name="character_group_others">その他</string>
 </resources>

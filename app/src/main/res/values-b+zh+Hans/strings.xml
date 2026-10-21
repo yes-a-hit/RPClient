@@ -1471,4 +1471,5 @@
     <string name="script_event_narration">插入旁白</string>
     <string name="script_event_once">只触发一次</string>
     <string name="script_event_delete">删除事件</string>
+    <string name="character_group_others">其他</string>
 </resources>

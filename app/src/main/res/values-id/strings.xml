@@ -1475,4 +1475,5 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_event_narration">Narasi</string>
     <string name="script_event_once">Sekali</string>
     <string name="script_event_delete">Hapus</string>
+    <string name="character_group_others">Lainnya</string>
 </resources>
