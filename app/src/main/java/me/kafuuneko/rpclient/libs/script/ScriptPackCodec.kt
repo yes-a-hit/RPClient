@@ -219,6 +219,12 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
                     adjacency.getOrPut(scene.id) { mutableSetOf() }.add(event.gotoSceneId)
                 }
             }
+            // 战败场景只能从失败条件进，同样算连接
+            scene.failConditions.forEach { condition ->
+                if (condition.failSceneId.isNotBlank()) {
+                    adjacency.getOrPut(scene.id) { mutableSetOf() }.add(condition.failSceneId)
+                }
+            }
             scene.unlockedBy.forEach { source ->
                 adjacency.getOrPut(scene.id) { mutableSetOf() }.add(source)
                 adjacency.getOrPut(source) { mutableSetOf() }.add(scene.id)

@@ -188,6 +188,7 @@ internal object ScriptPackJson {
             pattern = item.stringOr("pattern"),
             threshold = item.intOr("threshold", 0),
             variable = item.stringOr("variable"),
+            failSceneId = item.stringOr("failSceneId"),
             description = item.stringOr("description")
         )
     }

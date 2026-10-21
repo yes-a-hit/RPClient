@@ -272,6 +272,13 @@ data class ScriptCondition(
     val threshold: Int = 0,
     /** 变量名，[ScriptConditionType.Variable] 使用：变量值 >= [threshold] 时成立。 */
     val variable: String = "",
+    /**
+     * 命中后转到的场景 ID，只对失败条件有意义。
+     *
+     * 留空表示照常结束整局；填了就先演一段战败场景，
+     * 不同失败来源可以各自指向不同的惩罚场景。
+     */
+    val failSceneId: String = "",
     /** 展示给用户的失败或通关说明。 */
     val description: String = ""
 )

@@ -206,7 +206,16 @@ class ScriptPlayViewModel(
             variables = mPlay.variables
         )) {
             is ScriptPlayOutcome.Failed -> {
-                mPlay = mPlay.copy(finished = true, endReason = outcome.reason)
+                // 配了战败场景就先演惩罚：不同来源各走各的，
+                // 没配才照常收官
+                val punishScene = outcome.gotoSceneId
+                    .takeIf { it.isNotBlank() }
+                    ?.let { id -> pack.scenes.firstOrNull { it.id == id } }
+                if (punishScene != null) {
+                    enterScene(punishScene, outcome.reason)
+                } else {
+                    mPlay = mPlay.copy(finished = true, endReason = outcome.reason)
+                }
             }
 
             is ScriptPlayOutcome.Cleared -> {

@@ -1,0 +1,214 @@
+{
+  "formatVersion": 1,
+  "id": "demo-night-shift",
+  "name": "夜班：三只玩偶",
+  "description": "你在一个关了灯的旧游乐厅值夜班，撑到六点就下班。店里有三只玩偶会走动：一只怕黑，一只爱吃，一只总想表演。机器会断电，断了就轮到它们挑你。",
+  "mode": "Mainline",
+  "variables": [
+    { "name": "电量", "label": "电量", "initial": 100, "min": 0, "max": 100 },
+    { "name": "充能", "label": "充能", "initial": 0, "min": 0, "max": 5 },
+    { "name": "披萨", "label": "披萨", "initial": 0, "min": 0, "max": 5 },
+    { "name": "掌声", "label": "掌声", "initial": 0, "min": 0, "max": 5 }
+  ],
+  "startSceneId": "shift",
+  "startSceneIds": [],
+  "freeModeAfterClear": false,
+  "enableGm": true,
+  "enableDice": true,
+  "showCompletion": true,
+  "shareSettings": false,
+  "backgroundKey": "",
+  "openings": [
+    {
+      "speaker": "",
+      "content": "值班室的灯管闪了两下才亮起来。三只玩偶在舞台上一动不动，但它们的姿势和你下午看到的不一样。"
+    },
+    {
+      "speaker": "",
+      "content": "墙上的告示只剩半张：请不要在凌晨三点后离开值班室。"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "shift",
+      "name": "值班室",
+      "entryPrompt": "监控屏幕一格格亮着。左边是舞台，中间是走廊，右边是厨房。电量表在缓慢下降，从 100 开始。你得决定往哪看、关哪扇门——每一秒都在花钱。",
+      "cast": [],
+      "bannedCast": [],
+      "nextSceneIds": ["dawn"],
+      "maxRounds": 14,
+      "checkpoint": true,
+      "suggestedActions": [
+        "盯住走廊那条通道",
+        "关掉左门省电",
+        "看一眼厨房的摄像头"
+      ],
+      "events": [
+        {
+          "name": "耗电",
+          "condition": { "type": "Keyword", "pattern": "关门" },
+          "effects": [{ "variable": "电量", "delta": -12 }],
+          "narration": "门闸合上，电量表掉了一截。",
+          "once": false
+        },
+        {
+          "name": "整点巡检",
+          "atRound": 4,
+          "effects": [{ "variable": "电量", "delta": -8 }],
+          "narration": "广播里响起一段走调的摇篮曲。",
+          "once": true
+        }
+      ],
+      "failConditions": [
+        {
+          "type": "Variable",
+          "variable": "电量",
+          "threshold": 0,
+          "description": "断电了。舞台那边传来关节活动的咔哒声。",
+          "failSceneId": "punish_bear"
+        },
+        {
+          "type": "Keyword",
+          "pattern": "去厨房",
+          "description": "你不该离开值班室。厨房的门在你身后合上了。",
+          "failSceneId": "punish_chicken"
+        },
+        {
+          "type": "Keyword",
+          "pattern": "上台",
+          "description": "你走上舞台。幕布落下之前，有人替你鼓了掌。",
+          "failSceneId": "punish_bunny"
+        }
+      ],
+      "completionCondition": {
+        "type": "Variable",
+        "variable": "电量",
+        "threshold": 1,
+        "description": "六点到了"
+      }
+    },
+    {
+      "id": "punish_bear",
+      "name": "惩罚·摇曲柄",
+      "entryPrompt": "电源彻底黑了。黑暗里有一只手按在你肩上，很重，带着绒毛的触感。它把你拽到墙角一台老式发电装置前——摇柄上缠着胶带，显然被很多人握过。它不说话，只是把摇柄塞进你手里。",
+      "cast": [
+        {
+          "name": "熊爷",
+          "required": true,
+          "description": "高大的玩偶熊，动作缓慢但绝不停下。它不杀你，它让你干活。只要你摇得够让它满意，它就会松手放你走；一旦停下，它就站得更近一点。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "suggestedActions": [
+        "开始摇曲柄",
+        "用力摇快一点",
+        "假装听不懂，往门口挪"
+      ],
+      "events": [
+        {
+          "name": "充能一格",
+          "condition": { "type": "Keyword", "pattern": "摇" },
+          "effects": [{ "variable": "充能", "delta": 1 }],
+          "narration": "指示灯亮起一格，熊爷的手松了一点点。",
+          "once": false
+        }
+      ],
+      "completionCondition": {
+        "type": "Variable",
+        "variable": "充能",
+        "threshold": 3,
+        "description": "熊爷收回手，退进黑暗里，放你走了"
+      }
+    },
+    {
+      "id": "punish_chicken",
+      "name": "惩罚·做披萨",
+      "entryPrompt": "厨房的灯忽然全亮，刺得眼睛发疼。料理台上摆着三团面团，旁边是永远不够用的配料。一只系着围裙的鸡形玩偶站在烤箱边，翅膀夹着订单，一张接一张地往你面前推。",
+      "cast": [
+        {
+          "name": "鸡姐",
+          "required": true,
+          "description": "系围裙的鸡形玩偶，极度热衷于「工作」。它不会伤害你，只会不断加单：揉面、抹酱、进炉、装盘。做得对就点头，做错了就把单子重新推给你。它要的只是一份合格的披萨。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "suggestedActions": [
+        "先揉面，按它给的单子来",
+        "问它到底要几张",
+        "把面团推开，拒绝干活"
+      ],
+      "events": [
+        {
+          "name": "合格",
+          "condition": { "type": "Keyword", "pattern": "披萨" },
+          "effects": [{ "variable": "披萨", "delta": 1 }],
+          "narration": "烤箱「叮」了一声，鸡姐点了点头。",
+          "once": false
+        }
+      ],
+      "completionCondition": {
+        "type": "Variable",
+        "variable": "披萨",
+        "threshold": 3,
+        "description": "鸡姐满意了，把围裙解下来，拉开门示意你离开"
+      }
+    },
+    {
+      "id": "punish_bunny",
+      "name": "惩罚·表演",
+      "entryPrompt": "你站在舞台上，聚光灯只照亮你一个人。台下没有观众，只有一排空椅子——但你能听见掌声，稀稀落落地响着，来自没有人的地方。那只兔子玩偶站在台侧，朝你做了个请开始的手势。",
+      "cast": [
+        {
+          "name": "老兔",
+          "required": true,
+          "description": "旧兔子玩偶，一手拿着话筒，一手抬向观众席。它想让你的表演足够久、足够好看。它不催你，但只要你停下来，掌声就会变得更响、更近，像是在清点观众的人数。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "suggestedActions": [
+        "开口唱点什么",
+        "讲一个笑话",
+        "直接问它要演多久"
+      ],
+      "events": [
+        {
+          "name": "掌声",
+          "condition": { "type": "Keyword", "pattern": "唱" },
+          "effects": [{ "variable": "掌声", "delta": 1 }],
+          "narration": "空椅子之间响起掌声，比刚才整齐了些。",
+          "once": false
+        }
+      ],
+      "completionCondition": {
+        "type": "Variable",
+        "variable": "掌声",
+        "threshold": 3,
+        "description": "老兔鞠了一躬，替你拉开幕布，请你下台"
+      }
+    },
+    {
+      "id": "dawn",
+      "name": "六点",
+      "entryPrompt": "窗外开始发白。玩偶们回到舞台，姿势和昨晚一样。你可以收拾东西下班了。",
+      "cast": [],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "suggestedActions": [
+        "关灯，锁门，回家",
+        "回头再看一眼舞台"
+      ],
+      "completionCondition": {
+        "type": "Keyword",
+        "pattern": "下班",
+        "description": "你活着撑过了一夜"
+      }
+    }
+  ]
+}

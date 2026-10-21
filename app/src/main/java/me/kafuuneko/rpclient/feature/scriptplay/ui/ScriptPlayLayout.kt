@@ -243,6 +243,17 @@ fun ScriptPlayLayout(
                         Text(stringResource(R.string.script_play_leave))
                     }
                 }
+                // 有检查点时多给一条退路：整局重来太狠，回到上一个岔口就够
+                if (state.hasCheckpoint) {
+                    OutlinedButton(
+                        onClick = { ScriptPlayUiIntent.RestoreCheckpoint.emit() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 2.dp)
+                    ) {
+                        Text(stringResource(R.string.script_play_undo))
+                    }
+                }
             }
             InputBar(state, emit)
             }

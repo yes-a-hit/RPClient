@@ -8,7 +8,15 @@ sealed class ScriptPlayOutcome {
     data object Continue : ScriptPlayOutcome()
 
     /** 判定失败，[reason] 为可展示的原因。 */
-    data class Failed(val reason: String) : ScriptPlayOutcome()
+    data class Failed(
+        val reason: String,
+        /**
+         * 战败后要转到的场景。
+         *
+         * 留空就照常结束整局；填了先演惩罚场景。
+         */
+        val gotoSceneId: String = ""
+    ) : ScriptPlayOutcome()
 
     /** 判定通关，[reason] 为可展示的原因。 */
     data class Cleared(val reason: String) : ScriptPlayOutcome()
@@ -45,7 +53,8 @@ object ScriptPlayEngine {
                 matches(condition, roundCount, lastReply, variables)
             }?.let { condition ->
                 return ScriptPlayOutcome.Failed(
-                    condition.description.ifBlank { "触发了失败条件" }
+                    reason = condition.description.ifBlank { "触发了失败条件" },
+                    gotoSceneId = condition.failSceneId
                 )
             }
         }
