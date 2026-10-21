@@ -112,6 +112,10 @@ data class ScriptScene(
     val conditionalCast: List<ScriptCastRule> = emptyList(),
     /** 禁止出场的角色名称，优先级高于 [cast]。 */
     val bannedCast: List<String> = emptyList(),
+    /** 轮次用尽时的提示；留空用默认文案。 */
+    val failText: String = "",
+    /** 轮次用尽后转到的场景；留空表示直接收官。 */
+    val timeoutSceneId: String = "",
     /** 本场景最多进行的对话轮数，0 表示不限。 */
     val maxRounds: Int = 0,
     /** 前置场景：这些场景都经历过才解锁；为空表示一开始就可达。 */

@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptPlayUiIntent
+import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptStatusItem
 import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptPlayUiState
 import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptPlayViewEvent
 import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
@@ -492,7 +493,8 @@ class ScriptPlayViewModel(
                 variables = mPlay.variables.orEmpty()
             ),
             variables = mPlay.variables.orEmpty(),
-            declaredVariables = pack.variables
+            declaredVariables = pack.variables,
+            castProfiles = buildCastProfiles(scene, pack)
             )
             val messages = buildList {
                 add(LLMMessage(LLMMessageRole.System, system))
@@ -572,6 +574,15 @@ class ScriptPlayViewModel(
         ScriptPlayUiState.Ready(
             packName = pack.name,
             hasCheckpoint = mPlay.snapshot != null,
+            statusItems = pack.variables
+                .filter { it.visible && it.name.isNotBlank() }
+                .map { variable ->
+                    ScriptStatusItem(
+                        label = variable.label.ifBlank { variable.name },
+                        value = mPlay.variables.orEmpty()[variable.name] ?: variable.initial,
+                        max = if (variable.max in 1..9999) variable.max else 0
+                    )
+                },
             scene = ScriptPlaySceneState(
                 sceneId = scene.id,
                 sceneName = scene.name,
@@ -636,6 +647,39 @@ class ScriptPlayViewModel(
      * 都说过一轮了再从头开始，避免整场只有一个人在讲话。
      * 禁言中的角色直接排除。
      */
+    /**
+     * 拼本次在场角色的档案。
+     *
+     * 优先用场景里写的设定，其次回查角色卡的描述与性格；
+     * 两边都没有就留空，模型至少还知道名字。
+     */
+    private suspend fun buildCastProfiles(
+        scene: ScriptScene,
+        pack: ScriptPack
+    ): Map<String, String> {
+        val names = mPlay.castOverride
+            ?: ScriptPlayEngine.effectiveCast(scene, mPlay.variables.orEmpty())
+        if (names.isEmpty()) return emptyMap()
+        val fromScene = scene.cast.associate { it.name to it.description }
+        val fromConditional = scene.conditionalCast.associate { it.name to it.description }
+        val cards = runCatching {
+            mCharacterRepository.getAllCharacters().associateBy { it.name }
+        }.getOrDefault(emptyMap())
+        return names.associateWith { name ->
+            val written = (fromScene[name] ?: fromConditional[name]).orEmpty()
+            if (written.isNotBlank()) {
+                written
+            } else {
+                // 场景没写就回查角色卡，拼性格与设定
+                cards[name]?.let { card ->
+                    listOf(card.description, card.personality)
+                        .filter { it.isNotBlank() }
+                        .joinToString("；")
+                }.orEmpty()
+            }
+        }.filterValues { it.isNotBlank() }
+    }
+
     private fun nextAutoSpeaker(scene: ScriptScene, muted: Set<String>): String? {
         val cast = scene.cast.map { it.name }.filterNot { it in muted }
         if (cast.isEmpty()) return null

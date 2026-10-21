@@ -52,6 +52,8 @@ import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material3.LinearProgressIndicator
+import me.kafuuneko.rpclient.feature.scriptplay.presentation.ScriptStatusItem
 import me.kafuuneko.rpclient.libs.script.ScriptPlayLineParser
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -153,6 +155,10 @@ fun ScriptPlayLayout(
                     .imePadding()
             ) {
                 SceneBar(state, sceneNames, emit)
+                // 状态面板：只有轮次的话玩家不知道自己处于什么处境
+                if (state.statusItems.isNotEmpty()) {
+                    StatusStrip(state.statusItems)
+                }
                 // 在场角色：谁在场一目了然，头像横排可滑
                 if (state.castNames.isNotEmpty()) {
                     CastStrip(
@@ -657,6 +663,48 @@ private fun CharacterAvatar(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
+        }
+    }
+}
+
+/**
+ * 状态条。
+ *
+ * 把作者标了可见的变量摊开：电量、信任、线索这类让玩家知道自己
+ * 处境如何。有上限的顺便画条进度，光看数字不好判断还剩多少。
+ */
+@Composable
+private fun StatusStrip(items: List<ScriptStatusItem>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        items.forEach { item ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = item.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(64.dp)
+                )
+                if (item.max > 0) {
+                    LinearProgressIndicator(
+                        progress = { (item.value.toFloat() / item.max).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(4.dp),
+                    )
+                } else {
+                    Box(modifier = Modifier.weight(1f))
+                }
+                Text(
+                    text = if (item.max > 0) "${item.value}/${item.max}" else "${item.value}",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
         }
     }
 }

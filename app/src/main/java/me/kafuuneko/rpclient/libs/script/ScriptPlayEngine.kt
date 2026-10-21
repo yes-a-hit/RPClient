@@ -65,6 +65,14 @@ object ScriptPlayEngine {
                 )
             }
         }
+        // 轮次用尽也算结局。之前只认作者手写的失败条件，
+        // 场景设了 maxRounds 却什么都不会发生，玩家能无限聊下去。
+        if (!freeMode && scene.maxRounds > 0 && roundCount >= scene.maxRounds) {
+            return ScriptPlayOutcome.Failed(
+                reason = scene.failText.ifBlank { "时间到了，这一场没有结果" },
+                gotoSceneId = scene.timeoutSceneId
+            )
+        }
         return ScriptPlayOutcome.Continue
     }
 

@@ -228,7 +228,14 @@ object ScriptPlayPromptBuilder {
          * 只注入声明里 visible 的那些，隐藏变量不该被念出来。
          */
         variables: Map<String, Int> = emptyMap(),
-        declaredVariables: List<ScriptVariable> = emptyList()
+        declaredVariables: List<ScriptVariable> = emptyList(),
+        /**
+         * 在场角色的档案，名字到设定的映射。
+         *
+         * 只给名字模型只会写旁白，不知道这个人是什么性格、怎么说话；
+         * 把角色卡里的设定带进来，角色才真的参与对话。
+         */
+        castProfiles: Map<String, String> = emptyMap()
     ): String {
         val builder = StringBuilder()
         builder.append("你正在主持一场角色扮演剧本《").append(pack.name).append("》。\n")
@@ -259,6 +266,16 @@ object ScriptPlayPromptBuilder {
             builder.append("\n【可出场角色】")
             builder.append(effectiveCast.joinToString("、"))
             builder.append('\n')
+            // 有档案就把人设摊开：模型据此演出，而不是只念旁白
+            val profiles = effectiveCast.mapNotNull { name ->
+                val profile = castProfiles[name]?.trim().orEmpty()
+                if (profile.isBlank()) null else "$name：$profile"
+            }
+            if (profiles.isNotEmpty()) {
+                builder.append("【角色设定】\n")
+                profiles.forEach { builder.append(it).append('\n') }
+                builder.append("按以上设定演出，让他们开口说话、各自行动，不要把场面写成纯旁白。\n")
+            }
         } else if (castOverride != null) {
             // 事件把人都清走了：这一场只有环境与旁白
             builder.append("\n【本场没有角色在场】只能以旁白描写环境与动静，不要替任何角色说话。\n")

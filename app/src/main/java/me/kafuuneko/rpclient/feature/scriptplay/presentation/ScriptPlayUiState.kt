@@ -3,6 +3,15 @@ package me.kafuuneko.rpclient.feature.scriptplay.presentation
 import me.kafuuneko.rpclient.libs.script.ScriptPlayMessage
 import me.kafuuneko.rpclient.libs.script.ScriptPlaySceneState
 
+/** 状态面板的一行。 */
+data class ScriptStatusItem(
+    /** 展示名，作者没填就用变量名。 */
+    val label: String,
+    val value: Int,
+    /** 数值上限，用于画进度条；0 表示不画。 */
+    val max: Int = 0
+)
+
 /** 剧本模式的页面状态。 */
 sealed class ScriptPlayUiState {
     data object Loading : ScriptPlayUiState()
@@ -13,6 +22,13 @@ sealed class ScriptPlayUiState {
         val scene: ScriptPlaySceneState,
         /** 本局是否留有检查点快照。 */
         val hasCheckpoint: Boolean = false,
+        /**
+         * 状态面板条目：展示名与当前值。
+         *
+         * 只放作者标了可见的变量——好感这类藏起来的量
+         * 摊在界面上就没意思了。
+         */
+        val statusItems: List<ScriptStatusItem> = emptyList(),
         /** 对话历史。 */
         val messages: List<ScriptPlayMessage> = emptyList(),
         /** 输入框内容。 */

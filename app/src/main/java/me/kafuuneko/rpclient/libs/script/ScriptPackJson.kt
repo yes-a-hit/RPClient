@@ -75,6 +75,8 @@ internal object ScriptPackJson {
             conditionalCast = item.arrayOr("conditionalCast")
                 .mapNotNull { toCastRule(it) },
             bannedCast = item.stringListOr("bannedCast"),
+            failText = item.stringOr("failText"),
+            timeoutSceneId = item.stringOr("timeoutSceneId"),
             maxRounds = item.intOr("maxRounds", 0).coerceAtLeast(0),
             unlockedBy = item.stringListOr("unlockedBy"),
             layout = item.objOrNull("layout")?.let { layout ->

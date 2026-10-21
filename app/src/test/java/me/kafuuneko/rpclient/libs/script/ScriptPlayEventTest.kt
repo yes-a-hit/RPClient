@@ -162,4 +162,60 @@ class ScriptPlayEventTest {
         assertEquals("人都走了", event.narration)
         assertTrue(event.once)
     }
+
+    @Test
+    fun `round limit ends the scene even without a fail condition`() {
+        // 之前 maxRounds 只是摆设，跑完什么都不发生，玩家能无限聊
+        val scene = ScriptScene(
+            id = "s1",
+            name = "值班室",
+            maxRounds = 3,
+            failText = "天亮了，你还没撑住"
+        )
+
+        assertEquals(ScriptPlayOutcome.Continue, ScriptPlayEngine.evaluate(scene, 2, ""))
+        val outcome = ScriptPlayEngine.evaluate(scene, 3, "")
+        assertTrue(outcome is ScriptPlayOutcome.Failed)
+        assertEquals("天亮了，你还没撑住", (outcome as ScriptPlayOutcome.Failed).reason)
+    }
+
+    @Test
+    fun `round limit can hand over to a designated scene`() {
+        val scene = ScriptScene(
+            id = "s1",
+            name = "值班室",
+            maxRounds = 2,
+            timeoutSceneId = "punish_bear"
+        )
+
+        val outcome = ScriptPlayEngine.evaluate(scene, 5, "")
+
+        assertEquals("punish_bear", (outcome as ScriptPlayOutcome.Failed).gotoSceneId)
+    }
+
+    @Test
+    fun `completion wins over round limit`() {
+        // 同一轮既达标又到上限时按通关算，别把成功写成失败
+        val scene = ScriptScene(
+            id = "s1",
+            name = "值班室",
+            maxRounds = 3,
+            completionCondition = ScriptCondition(
+                type = ScriptConditionType.Keyword,
+                pattern = "下班"
+            )
+        )
+
+        val outcome = ScriptPlayEngine.evaluate(scene, 3, "我下班了")
+
+        assertTrue(outcome is ScriptPlayOutcome.Cleared)
+    }
+
+    @Test
+    fun `zero round limit means unlimited`() {
+        val scene = ScriptScene(id = "s1", name = "自由场", maxRounds = 0)
+
+        assertEquals(ScriptPlayOutcome.Continue, ScriptPlayEngine.evaluate(scene, 99, ""))
+    }
+
 }
