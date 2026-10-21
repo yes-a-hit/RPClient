@@ -1,0 +1,162 @@
+{
+  "formatVersion": 1,
+  "id": "demo-open-house",
+  "name": "旧公寓的七个房间",
+  "description": "你搬进一栋老式公寓，楼里七个房间各住着人，但走廊灯只亮一半。这栋楼没有主线，谁的门会为你打开，取决于你在楼里攒下的信任。",
+  "mode": "Free",
+  "variables": [
+    { "name": "信任", "label": "信任", "initial": 0, "min": 0, "max": 10 },
+    { "name": "疑心", "label": "疑心", "initial": 0, "min": 0, "max": 10 },
+    { "name": "线索", "label": "线索", "initial": 0, "min": 0, "max": 5, "visible": true }
+  ],
+  "startSceneId": "hall",
+  "startSceneIds": [],
+  "freeModeAfterClear": true,
+  "enableGm": true,
+  "enableDice": true,
+  "showCompletion": false,
+  "shareSettings": false,
+  "openings": [
+    {
+      "speaker": "",
+      "content": "钥匙插进锁孔的时候卡了一下。门开了，走廊尽头有个人影迅速缩回房间，关门声很轻。"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "hall",
+      "name": "走廊",
+      "entryPrompt": "三楼走廊，七扇门，只有三扇底下透着光。墙上的公告板贴着一张泛黄的住户名单，名单上有两个名字被人用笔划掉了。",
+      "cast": [],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "suggestedActions": [
+        "去看公告板上的名单",
+        "敲最近的那扇门",
+        "回房，先不管这些"
+      ],
+      "events": [
+        {
+          "name": "记住名单",
+          "condition": { "type": "Keyword", "pattern": "名单" },
+          "effects": [{ "variable": "线索", "delta": 1 }],
+          "narration": "你把被划掉的两个名字记了下来。",
+          "once": true
+        }
+      ]
+    },
+    {
+      "id": "room_a",
+      "name": "301 老陈",
+      "entryPrompt": "开门的是个五十来岁的男人，手上有机油味。他没问你有什么事，只是挡在门口，等你先说。",
+      "cast": [
+        {
+          "name": "老陈",
+          "required": true,
+          "description": "五十三岁，维修工，在这栋楼住了十九年。话少，只信做过事的人。他对被划掉的那两个名字讳莫如深。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 12,
+      "suggestedActions": [
+        "问他走廊的灯为什么只亮一半",
+        "直接问名单上被划掉的人",
+        "说自己刚搬来，想认识邻居"
+      ],
+      "events": [
+        {
+          "name": "他松口了",
+          "condition": { "type": "Variable", "variable": "信任", "threshold": 3 },
+          "effects": [{ "variable": "线索", "delta": 1 }],
+          "narration": "老陈让开半步，说了句「进来吧」。",
+          "once": true
+        }
+      ]
+    },
+    {
+      "id": "room_b",
+      "name": "303 苏眠",
+      "entryPrompt": "门开了一条缝，链条还挂着。里面很暗，只有电脑屏幕的光。她隔着门缝看你，不出声。",
+      "cast": [
+        {
+          "name": "苏眠",
+          "required": true,
+          "description": "二十六岁，在家做翻译，昼夜颠倒。极怕生人，但对愿意耐心等的人会慢慢打开。她见过上一任住户搬走那晚的事。"
+        }
+      ],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 12,
+      "unlockCondition": { "type": "Variable", "variable": "信任", "threshold": 2 },
+      "suggestedActions": [
+        "隔着门缝慢慢说话，不催她",
+        "说明自己是新搬来的",
+        "退开一步，让她安心"
+      ],
+      "events": [
+        {
+          "name": "链条摘了",
+          "condition": { "type": "Variable", "variable": "信任", "threshold": 4 },
+          "effects": [{ "variable": "线索", "delta": 1 }],
+          "narration": "链条轻响一声，门开了。",
+          "once": true
+        }
+      ]
+    },
+    {
+      "id": "roof",
+      "name": "天台",
+      "entryPrompt": "通往天台的铁门没锁。风很大，晾衣绳上挂着几件没人收的衣服，看尺寸不是成年人。",
+      "cast": [],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "unlockCondition": { "type": "Variable", "variable": "线索", "threshold": 2 },
+      "suggestedActions": [
+        "翻看那些衣服",
+        "站在栏杆边往下看",
+        "回楼里"
+      ],
+      "events": [
+        {
+          "name": "旧钥匙",
+          "condition": { "type": "Keyword", "pattern": "衣服" },
+          "chance": 60,
+          "effects": [
+            { "variable": "线索", "delta": 1 },
+            { "variable": "疑心", "delta": 1 }
+          ],
+          "narration": "口袋里有把生锈的钥匙，不知道开哪扇门。",
+          "once": true
+        }
+      ]
+    },
+    {
+      "id": "room_c",
+      "name": "305 空房间",
+      "entryPrompt": "门虚掩着，里面家具都还在，落了一层灰。墙上有块颜色更浅的方形，像是挂过什么又摘了下来。",
+      "cast": [],
+      "bannedCast": [],
+      "nextSceneIds": [],
+      "maxRounds": 0,
+      "unlockCondition": { "type": "Variable", "variable": "线索", "threshold": 3 },
+      "suggestedActions": [
+        "看墙上那块浅色痕迹",
+        "翻抽屉",
+        "退出去，把门带上"
+      ],
+      "events": [
+        {
+          "name": "相框",
+          "condition": { "type": "Keyword", "pattern": "浅色" },
+          "effects": [{ "variable": "线索", "delta": 1 }],
+          "narration": "框子的痕迹比手掌大，挂了很多年才会留下这种印子。",
+          "once": true
+        }
+      ]
+    }
+  ],
+  "backgroundKey": ""
+}

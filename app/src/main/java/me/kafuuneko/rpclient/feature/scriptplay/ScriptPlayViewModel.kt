@@ -106,7 +106,9 @@ class ScriptPlayViewModel(
             id = mPlayId,
             packId = pack.id,
             packName = pack.name,
-            sceneId = resolveStartScene(pack).id
+            sceneId = resolveStartScene(pack).id,
+            // 新局按剧本声明的初值铺一遍变量
+            variables = ScriptPlayEngine.initialVariables(pack)
         )
         // 进场先把当前场景的背景图解析好，publish 里直接读缓存
         mSceneBackground = runCatching {
@@ -200,7 +202,8 @@ class ScriptPlayViewModel(
             scene = scene,
             roundCount = mPlay.roundCount,
             lastReply = visibleReply,
-            freeMode = mFreeMode
+            freeMode = mFreeMode,
+            variables = mPlay.variables
         )) {
             is ScriptPlayOutcome.Failed -> {
                 mPlay = mPlay.copy(finished = true, endReason = outcome.reason)
@@ -328,7 +331,8 @@ class ScriptPlayViewModel(
             scene = scene,
             roundCount = mPlay.roundCount,
             lastReply = reply,
-            firedEventKeys = mPlay.firedEvents.toSet()
+            firedEventKeys = mPlay.firedEvents.toSet(),
+            variables = mPlay.variables
         ) ?: return
         val key = ScriptPlayEngine.eventKey(scene, event)
         val baseCast = mPlay.castOverride ?: scene.cast.map { it.name }
@@ -337,6 +341,11 @@ class ScriptPlayViewModel(
         mPlay = mPlay.copy(
             firedEvents = (mPlay.firedEvents + key).distinct(),
             castOverride = nextCast,
+            variables = ScriptPlayEngine.applyEffects(
+                variables = mPlay.variables,
+                effects = event.effects,
+                declared = pack.variables
+            ),
             messages = if (note.isBlank()) {
                 mPlay.messages
             } else {
@@ -550,7 +559,15 @@ class ScriptPlayViewModel(
                 sceneName = scene.name,
                 maxRounds = scene.maxRounds,
                 roundCount = mPlay.roundCount,
-                nextSceneIds = scene.nextSceneIds,
+                // 自由漫游时列出所有已解锁场景，不再只走主线后继
+                nextSceneIds = if (mFreeMode) {
+                    mPack?.let { pack ->
+                        ScriptPlayEngine.reachableScenes(pack, scene, mPlay.variables)
+                            .map { it.id }
+                    } ?: scene.nextSceneIds
+                } else {
+                    scene.nextSceneIds
+                },
                 checkpoint = scene.checkpoint
             ),
             messages = mPlay.messages,

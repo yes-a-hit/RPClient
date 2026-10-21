@@ -1,5 +1,7 @@
 package me.kafuuneko.rpclient.libs.script
 
+import kotlin.random.Random
+
 /** 一次对话回合的判定结果。 */
 sealed class ScriptPlayOutcome {
     /** 继续当前场景。 */
@@ -35,11 +37,12 @@ object ScriptPlayEngine {
         scene: ScriptScene,
         roundCount: Int,
         lastReply: String,
-        freeMode: Boolean = false
+        freeMode: Boolean = false,
+        variables: Map<String, Int> = emptyMap()
     ): ScriptPlayOutcome {
         if (!freeMode) {
             scene.failConditions.firstOrNull { condition ->
-                matches(condition, roundCount, lastReply)
+                matches(condition, roundCount, lastReply, variables)
             }?.let { condition ->
                 return ScriptPlayOutcome.Failed(
                     condition.description.ifBlank { "触发了失败条件" }
@@ -47,7 +50,7 @@ object ScriptPlayEngine {
             }
         }
         scene.completionCondition?.let { condition ->
-            if (matches(condition, roundCount, lastReply)) {
+            if (matches(condition, roundCount, lastReply, variables)) {
                 return ScriptPlayOutcome.Cleared(
                     condition.description.ifBlank { "达成了通关条件" }
                 )
@@ -61,8 +64,15 @@ object ScriptPlayEngine {
      *
      * [ScriptConditionType.ScoreAtLeast] 需要外部评分源，当前没有评分链路，
      * 因此按不命中处理，避免误判通关。
+     *
+     * @param variables 当前变量快照，[ScriptConditionType.Variable] 用
      */
-    fun matches(condition: ScriptCondition, roundCount: Int, lastReply: String): Boolean =
+    fun matches(
+        condition: ScriptCondition,
+        roundCount: Int,
+        lastReply: String,
+        variables: Map<String, Int> = emptyMap()
+    ): Boolean =
         when (condition.type) {
             ScriptConditionType.Keyword ->
                 condition.pattern.isNotBlank() && lastReply.contains(condition.pattern)
@@ -74,6 +84,10 @@ object ScriptPlayEngine {
 
             ScriptConditionType.RoundLimit ->
                 condition.threshold > 0 && roundCount >= condition.threshold
+
+            ScriptConditionType.Variable ->
+                condition.variable.isNotBlank() &&
+                    (variables[condition.variable] ?: 0) >= condition.threshold
 
             ScriptConditionType.ScoreAtLeast -> false
         }
@@ -92,11 +106,29 @@ object ScriptPlayEngine {
      *
      * 主线场景的后继优先；没有后继时退回全部场景，保证自由模式下仍能走动。
      */
-    fun reachableScenes(pack: ScriptPack, scene: ScriptScene): List<ScriptScene> {
+    fun reachableScenes(
+        pack: ScriptPack,
+        scene: ScriptScene,
+        variables: Map<String, Int> = emptyMap()
+    ): List<ScriptScene> {
         if (scene.nextSceneIds.isNotEmpty()) {
             return scene.nextSceneIds.mapNotNull { id -> pack.scenes.firstOrNull { it.id == id } }
         }
-        return pack.scenes.filterNot { it.id == scene.id }
+        // 自由漫游时按解锁条件筛：状态没到，这扇门就是关着的
+        return pack.scenes.filterNot { it.id == scene.id }.filter { target ->
+            isUnlocked(target, variables)
+        }
+    }
+
+    /**
+     * 场景是否已解锁。
+     *
+     * 没写解锁条件的视为常开；写了的要求变量达到阈值。
+     * 只影响自由漫游，主线推进不看这条，免得条件写错把主线卡死。
+     */
+    fun isUnlocked(scene: ScriptScene, variables: Map<String, Int>): Boolean {
+        val condition = scene.unlockCondition ?: return true
+        return matches(condition, roundCount = 0, lastReply = "", variables = variables)
     }
 
     /**
@@ -106,24 +138,51 @@ object ScriptPlayEngine {
      * 同一轮只放行一个——两个事件同时改在场名单会让场面失控。
      *
      * @param firedEventKeys 已触发事件的标识集合
+     * @param variables 当前变量快照
+     * @param random 随机源；传固定种子就能复现同一场
      */
     fun pickEvent(
         scene: ScriptScene,
         roundCount: Int,
         lastReply: String,
-        firedEventKeys: Set<String> = emptySet()
+        firedEventKeys: Set<String> = emptySet(),
+        variables: Map<String, Int> = emptyMap(),
+        random: Random = Random.Default
     ): ScriptEvent? = scene.events.firstOrNull { event ->
         val blocked = event.once && eventKey(scene, event) in firedEventKeys
-        !blocked && matchesEvent(event, roundCount, lastReply)
+        !blocked &&
+            matchesEvent(event, roundCount, lastReply, variables) &&
+            rollChance(event.chance, random)
     }
 
-    /** 事件是否满足触发条件：轮次到了，或条件命中。 */
-    fun matchesEvent(event: ScriptEvent, roundCount: Int, lastReply: String): Boolean {
+    /**
+     * 事件是否满足触发条件：轮次到了，或条件命中。
+     *
+     * 轮次和条件都没配时视为「进入即触发」。
+     */
+    fun matchesEvent(
+        event: ScriptEvent,
+        roundCount: Int,
+        lastReply: String,
+        variables: Map<String, Int> = emptyMap()
+    ): Boolean {
         val roundHit = event.atRound > 0 && roundCount >= event.atRound
-        val conditionHit = event.condition?.let { matches(it, roundCount, lastReply) } ?: false
-        // 轮次和条件都没配，视为「进入即触发」
+        val conditionHit = event.condition
+            ?.let { matches(it, roundCount, lastReply, variables) }
+            ?: false
         if (event.atRound <= 0 && event.condition == null) return true
         return roundHit || conditionHit
+    }
+
+    /**
+     * 按百分比掷一次概率。
+     *
+     * 100 直接放行、0 直接拦下，避免为了必发或必不发还去摇一次随机。
+     */
+    fun rollChance(chance: Int, random: Random = Random.Default): Boolean = when {
+        chance >= 100 -> true
+        chance <= 0 -> false
+        else -> random.nextInt(100) < chance
     }
 
     /**
@@ -149,4 +208,36 @@ object ScriptPlayEngine {
         val added = event.addCast.filterNot { it in event.removeCast }
         return (removed + added).distinct()
     }
+
+    /**
+     * 应用事件对变量的改动。
+     *
+     * 按剧本里的 min/max 钳制——好感度冲到 999 没有意义，
+     * 而且会让后续阈值判定全部失效。
+     */
+    fun applyEffects(
+        variables: Map<String, Int>,
+        effects: List<ScriptEffect>,
+        declared: List<ScriptVariable> = emptyList()
+    ): Map<String, Int> {
+        if (effects.isEmpty()) return variables
+        val result = variables.toMutableMap()
+        effects.forEach { effect ->
+            if (effect.variable.isBlank()) return@forEach
+            val current = result[effect.variable] ?: 0
+            val next = effect.setTo ?: (current + effect.delta)
+            val bounds = declared.firstOrNull { it.name == effect.variable }
+            result[effect.variable] = next.coerceIn(
+                bounds?.min ?: Int.MIN_VALUE,
+                bounds?.max ?: Int.MAX_VALUE
+            )
+        }
+        return result
+    }
+
+    /** 按剧本声明的初值建一份变量表。 */
+    fun initialVariables(pack: ScriptPack): Map<String, Int> =
+        pack.variables
+            .filter { it.name.isNotBlank() }
+            .associate { it.name to it.initial.coerceIn(it.min, it.max) }
 }

@@ -28,7 +28,8 @@ internal object ScriptPackJson {
         openings = root.arrayOr("openings").mapNotNull { toOpening(it) },
         backgroundKey = root.stringOr("backgroundKey"),
         showCompletion = root.boolOr("showCompletion", true),
-        shareSettings = root.boolOr("shareSettings", false)
+        shareSettings = root.boolOr("shareSettings", false),
+        variables = root.arrayOr("variables").mapNotNull { toVariable(it) }
     )
 
     /** 映射一条开场白；内容为空时丢弃。 */
@@ -83,7 +84,8 @@ internal object ScriptPackJson {
             backgroundKey = item.stringOr("backgroundKey"),
             inheritBackground = item.boolOr("inheritBackground", true),
             suggestedActions = item.stringListOr("suggestedActions"),
-            events = item.arrayOr("events").mapNotNull { toEvent(it) }
+            events = item.arrayOr("events").mapNotNull { toEvent(it) },
+            unlockCondition = item.objOrNull("unlockCondition")?.let(::toCondition)
         )
     }
 
@@ -103,7 +105,40 @@ internal object ScriptPackJson {
             removeCast = item.stringListOr("removeCast"),
             gotoSceneId = item.stringOr("gotoSceneId"),
             narration = item.stringOr("narration"),
-            once = item.boolOr("once", true)
+            once = item.boolOr("once", true),
+            chance = item.intOr("chance", 100).coerceIn(0, 100),
+            effects = item.arrayOr("effects").mapNotNull { toEffect(it) }
+        )
+    }
+
+
+    /** 映射一个剧本变量；没写名字的丢弃。 */
+    private fun toVariable(element: com.google.gson.JsonElement): ScriptVariable? {
+        val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val name = item.stringOr("name")
+        if (name.isBlank()) return null
+        val initial = item.intOr("initial", 0)
+        return ScriptVariable(
+            name = name,
+            initial = initial,
+            min = item.intOr("min", Int.MIN_VALUE),
+            max = item.intOr("max", Int.MAX_VALUE),
+            label = item.stringOr("label"),
+            visible = item.boolOr("visible", true)
+        )
+    }
+
+    /** 映射一条副作用；没写变量名的丢弃。 */
+    private fun toEffect(element: com.google.gson.JsonElement): ScriptEffect? {
+        val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val variable = item.stringOr("variable")
+        if (variable.isBlank()) return null
+        // setTo 有写的才算「直接赋值」，没写就按增量
+        val setTo = if (item.has("setTo")) item.intOr("setTo", 0) else null
+        return ScriptEffect(
+            variable = variable,
+            delta = item.intOr("delta", 0),
+            setTo = setTo
         )
     }
 
@@ -152,6 +187,7 @@ internal object ScriptPackJson {
             type = type,
             pattern = item.stringOr("pattern"),
             threshold = item.intOr("threshold", 0),
+            variable = item.stringOr("variable"),
             description = item.stringOr("description")
         )
     }

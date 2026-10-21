@@ -202,6 +202,8 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
      */
     private fun findUnreachableScenes(pack: ScriptPack): List<String> {
         if (pack.scenes.isEmpty()) return emptyList()
+        // 自由模式本来就不靠链接推进，玩家想去哪去哪，不做链式可达校验
+        if (pack.mode == ScriptMode.Free) return emptyList()
         val entries = buildSet {
             addAll(pack.startSceneIds)
             if (pack.startSceneId.isNotBlank()) add(pack.startSceneId)
@@ -230,7 +232,12 @@ class ScriptPackCodec(private val mGson: Gson = defaultGson()) {
                 if (visited.add(next)) queue.add(next)
             }
         }
-        return pack.scenes.map { it.id }.filterNot { it in visited }
+        return pack.scenes
+            .filterNot { it.id in visited }
+            // 靠状态解锁的场景本来就不该出现在链上：
+            // 它的开放条件是变量，不是从哪条路走进来
+            .filterNot { it.unlockCondition != null }
+            .map { it.id }
     }
 
     /**

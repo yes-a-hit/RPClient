@@ -54,7 +54,14 @@ data class ScriptPlaythrough(
      * 为空时以场景自带的 cast 为准；事件增删角色后写这里，
      * 清空到零人就是「只与旁白互动」。
      */
-    val castOverride: List<String>? = null
+    val castOverride: List<String>? = null,
+    /**
+     * 剧本变量当前值。
+     *
+     * 玩家行为累积出的状态，条件与事件都读它；
+     * 存档带着走，退出再进来不会丢。
+     */
+    val variables: Map<String, Int> = emptyMap()
 )
 
 /** 检查点快照：够还原到进入该场景的那一刻。 */

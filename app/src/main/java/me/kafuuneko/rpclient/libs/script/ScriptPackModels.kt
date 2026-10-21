@@ -50,7 +50,14 @@ data class ScriptPack(
     /** 成功条件是否对玩家可见。 */
     val showCompletion: Boolean = true,
     /** 设定是否允许其他玩家查看。 */
-    val shareSettings: Boolean = false
+    val shareSettings: Boolean = false,
+    /**
+     * 剧本级数值变量。
+     *
+     * 玩家行为通过这些数值累积出后果，条件与事件按它们判定，
+     * 是开放剧本与规则驱动玩法的地基。
+     */
+    val variables: List<ScriptVariable> = emptyList()
 ) {
     companion object {
         /** 当前支持的剧本结构版本。 */
@@ -118,6 +125,13 @@ data class ScriptScene(
      * 把 cast 清空就得到「零角色」场景——此时玩家只与旁白互动。
      */
     val events: List<ScriptEvent> = emptyList(),
+    /**
+     * 进入本场景需要满足的状态条件。
+     *
+     * 只在自由模式里起作用：条件不满足时这扇门就是关着的。
+     * 主线推进不受限，免得作者写错条件把主线卡死。
+     */
+    val unlockCondition: ScriptCondition? = null,
     /**
      * 是否继承剧本级背景。
      *
@@ -201,7 +215,47 @@ data class ScriptEvent(
     /** 触发时插入的旁白；留空则用 [name]。 */
     val narration: String = "",
     /** 是否只触发一次；关闭则条件每次满足都触发。 */
-    val once: Boolean = true
+    val once: Boolean = true,
+    /** 触发概率百分比，100 表示必发。给随机事件用。 */
+    val chance: Int = 100,
+    /** 触发时对剧本变量做的改动。 */
+    val effects: List<ScriptEffect> = emptyList()
+)
+
+/**
+ * 剧本级数值变量。
+ *
+ * 让玩家行为有累积后果：好感、警戒、资源都靠它表达。
+ * 场景解锁、事件触发、成败判定都可以拿它当条件，
+ * 剧本才从「写死的分支」变成「按状态涌出走向」。
+ */
+data class ScriptVariable(
+    /** 变量名，条件与副作用里按它引用。 */
+    val name: String = "",
+    /** 初始值。 */
+    val initial: Int = 0,
+    /** 下限；运行时钳制。 */
+    val min: Int = Int.MIN_VALUE,
+    /** 上限；运行时钳制。 */
+    val max: Int = Int.MAX_VALUE,
+    /** 界面展示名，留空则直接用 [name]。 */
+    val label: String = "",
+    /** 是否在界面上露给玩家；好感度这类可以藏起来。 */
+    val visible: Boolean = true
+)
+
+/**
+ * 对变量的改动。
+ *
+ * [setTo] 优先于 [delta]：写了固定值就不再按增量算。
+ */
+data class ScriptEffect(
+    /** 目标变量名。 */
+    val variable: String = "",
+    /** 增量，可为负。 */
+    val delta: Int = 0,
+    /** 直接赋值；为 null 时用 [delta]。 */
+    val setTo: Int? = null
 )
 
 /**
@@ -216,6 +270,8 @@ data class ScriptCondition(
     val pattern: String = "",
     /** 轮次或数值阈值，[ScriptConditionType.RoundLimit] 与 [ScriptConditionType.ScoreAtLeast] 使用。 */
     val threshold: Int = 0,
+    /** 变量名，[ScriptConditionType.Variable] 使用：变量值 >= [threshold] 时成立。 */
+    val variable: String = "",
     /** 展示给用户的失败或通关说明。 */
     val description: String = ""
 )
@@ -232,7 +288,15 @@ enum class ScriptConditionType {
     RoundLimit,
 
     /** 场景评分达到阈值。 */
-    ScoreAtLeast
+    ScoreAtLeast,
+
+    /**
+     * 剧本变量达到阈值。
+     *
+     * 让条件能跟着玩家行为走：好感够了才开门、
+     * 警戒超标就被赶出去，全靠这一条。
+     */
+    Variable
 }
 
 /**
