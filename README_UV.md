@@ -246,6 +246,41 @@
 - 导出到文件（现在只到剪贴板与分享）
 - 导入前预览，确认后再落库
 
+### 待办：版本号与签名
+
+**一、versionCode 从不递增**
+
+`app/build.gradle.kts` 里写死 `versionCode = 20260301`，改代码重打包还是同一个数字。
+系统据此认为新包与旧包等价，覆盖安装时既不提示更新，也容易与签名问题叠加成
+「装不上」。版本号应该由 `UV_VERSION` 派生，例如
+`20260301 + 版本号去点后的数字`，每次交付自动递增。
+
+**二、版本名看不到 UV 号**
+
+手机「应用信息」里一直显示 `2026.3.1-dev`。`UV_VERSION`
+只用在发布脚本的产物文件名上，没进 `versionName`。
+目标是 `2026.3.1-uv0.74` 这种形态，装到手机上能一眼看出是第几版。
+
+**三、签名不固定，导致覆盖安装失败**
+
+目前 debug 构建不指定 `signingConfig`，用的是 gradle 自动生成的
+`~/.android/debug.keystore`。这个文件一旦重建（换机器、删缓存、重装 SDK），
+签名就变，旧包无法覆盖新包，只能卸载重装——存档会丢。
+
+可选修法：
+
+- 项目内固定一份 debug keystore（`app/uv-debug.jks`）并在 `buildTypes.debug` 里显式指定
+- 或配置 `RELEASE_STORE_*` 走 release 签名（`signingConfigs.release` 已经写好了，
+  只差 keystore 与四个属性）
+
+debug keystore 是公开已知的，提交进仓库没有安全风险，换机器也能一致。
+
+**四、构建产物命名**
+
+`publish-apk.ps1` 已经按 `rpclient-<versionName>-v<uvVersion>.apk` 命名，
+但依赖的是脚本自己读的版本号，与 gradle 里的不是同一个来源。
+版本号统一到一处之后，脚本直接读 `BuildConfig.UV_VERSION` 更稳。
+
 ### 已知问题
 - 冒险页「继续冒险」只列进行中的局，已结束的收进可折叠分组。
 - 首页筛选栏改为换行排布，窄屏也能一眼看全。
