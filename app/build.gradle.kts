@@ -31,8 +31,16 @@ android {
         applicationId = "me.kafuuneko.rpclient.uv"
         minSdk = 26
         targetSdk = 36
-        versionCode = 20260301
-        versionName = "2026.3.1"
+
+        // Single source of truth: gradle.properties -> versionCode,
+        // versionName and BuildConfig.UV_VERSION all derive from it.
+        // A hard-coded versionCode never increases, so Android treats every
+        // build as the same version and updating in place fails.
+        val uvVersion = providers.gradleProperty("uv.version").getOrElse("0.0")
+        val uvNumeric = uvVersion.filter { it.isDigit() }.toIntOrNull() ?: 0
+        versionCode = 20260301 + uvNumeric
+        versionName = "2026.3.1-uv" + uvVersion
+        buildConfigField("String", "UV_VERSION", "\"" + uvVersion + "\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,6 +60,20 @@ android {
         debug {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
+            // A pinned debug keystore. The auto-generated one lives in
+            // ~/.android and gets rebuilt whenever the toolchain is reset;
+            // a changed signature means the new APK cannot overwrite the old
+            // one, so the only way forward is uninstall - and that wipes saves.
+            // Debug keys are public knowledge, so keeping it in the repo is fine.
+            val uvDebugStore = file("uv-debug.jks")
+            if (uvDebugStore.exists()) {
+                signingConfig = signingConfigs.create("uvDebug") {
+                    storeFile = uvDebugStore
+                    storePassword = "uvdebug"
+                    keyAlias = "uvdebug"
+                    keyPassword = "uvdebug"
+                }
+            }
         }
         release {
             isMinifyEnabled = true
@@ -71,6 +93,9 @@ android {
     }
     buildFeatures {
         compose = true
+        // UV_VERSION reaches Kotlin through BuildConfig so the About page
+        // and the package metadata can never drift apart
+        buildConfig = true
     }
     sourceSets["androidTest"].assets.directories.add("$projectDir/schemas")
 }

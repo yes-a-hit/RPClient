@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.libs
 
+import me.kafuuneko.rpclient.BuildConfig
 import com.chibatching.kotpref.KotprefModel
 import me.kafuuneko.rpclient.libs.defaults.DefaultNames
 import me.kafuuneko.rpclient.libs.defaults.normalizedUserName
@@ -26,8 +27,13 @@ object AppModel : KotprefModel(), PromptPreferences {
     // 定制分支作者署名，展示在关于页。
     const val UV_AUTHOR = "yes a hit"
 
-    /** 定制分支自身的版本标识，与上游 versionName 分开演进。 */
-    const val UV_VERSION = "0.89"
+    /**
+     * 定制分支自身的版本标识，与上游 versionName 分开演进。
+     *
+     * 值的真正来源是 gradle.properties 的 uv.version，经 BuildConfig 传进来；
+     * 这里再写一份的话，关于页显示的版本和包信息迟早会对不上。
+     */
+    val UV_VERSION: String = BuildConfig.UV_VERSION
 
     /** 定制说明文档在 assets 中的文件名。 */
     const val UV_README_ASSET = "README_UV.md"
