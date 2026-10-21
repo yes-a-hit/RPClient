@@ -110,21 +110,36 @@ class ScriptPlayViewModel(
         }
         mPack = pack
         val existing = mPlayStore.load(mPlayId)
+        val startScene = currentScene(pack) ?: resolveStartScene(pack)
         mPlay = existing ?: ScriptPlaythrough(
             id = mPlayId,
             packId = pack.id,
             packName = pack.name,
-            sceneId = resolveStartScene(pack).id,
+            sceneId = startScene.id,
             // 新局按剧本声明的初值铺一遍变量
-            variables = ScriptPlayEngine.initialVariables(pack)
+            variables = ScriptPlayEngine.initialVariables(pack),
+            // 开场场景标了检查点也要记快照：只在 enterScene 里记的话，
+            // 第一场永远没有回滚点，玩家一进来就走错也没法退回去
+            snapshot = if (startScene.checkpoint) {
+                ScriptPlaySnapshot(
+                    sceneId = startScene.id,
+                    roundCount = 0,
+                    messages = emptyList()
+                )
+            } else {
+                null
+            }
         )
         // 进场先把当前场景的背景图解析好，publish 里直接读缓存
         mSceneBackground = runCatching {
             resolveSceneBackground(currentScene(pack) ?: return)
         }.getOrDefault("")
+        // 新局当场落盘：只在发消息后才保存的话，
+        // 玩家进来看一眼就退出，这一局等于没存在过；
+        // 开场场景带的检查点快照也会一起丢掉
+        mPlayStore.save(mPlay)
         publish()
     }
-
 
     /** 选择推荐行动，等价于把该行动当作玩家输入发送。 */
     @UiIntentObserver(ScriptPlayUiIntent.SelectOption::class)

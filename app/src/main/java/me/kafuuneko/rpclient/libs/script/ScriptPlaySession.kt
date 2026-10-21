@@ -183,9 +183,13 @@ class ScriptPlayStore(private val mContext: Context) {
 
     /** 写入存档。 */
     suspend fun save(play: ScriptPlaythrough): Boolean = withContext(Dispatchers.IO) {
+        val target = File(mRoot, play.id + ".json")
         runCatching {
-            File(mRoot, "${play.id}.json").writeText(Gson().toJson(play))
+            target.writeText(Gson().toJson(play))
             true
+        }.onFailure { error ->
+            // 静默失败等于进度悄悄丢光，至少要留个痕迹
+            android.util.Log.e("ScriptPlay", "save failed: " + target.absolutePath, error)
         }.getOrDefault(false)
     }
 }
