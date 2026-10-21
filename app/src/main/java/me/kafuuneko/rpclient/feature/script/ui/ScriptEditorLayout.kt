@@ -498,10 +498,19 @@ private fun SelectorSection(
             ) {
                 visible.forEach { option ->
                     val picked = option in selected
+                    // 选中态用勾加底色双重标识：只靠底色时两种主题色太接近，
+                    // 看起来像全都被选中了，玩家不敢点第二次
                     Text(
-                        text = option,
+                        text = if (picked) "✓ $option" else option,
                         modifier = Modifier
-                            .clickable { onToggle(option) }
+                            .clickable {
+                                android.util.Log.d(
+                                    "ScriptEditor",
+                                    "toggle " + option + " picked=" + picked +
+                                        " selected=" + selected.joinToString(",")
+                                )
+                                onToggle(option)
+                            }
                             .background(
                                 color = if (picked) {
                                     MaterialTheme.colorScheme.primaryContainer
@@ -511,7 +520,12 @@ private fun SelectorSection(
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 10.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (picked) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
             }

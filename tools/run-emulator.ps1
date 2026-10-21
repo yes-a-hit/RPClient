@@ -1,4 +1,4 @@
-<#
+﻿<#
   Launch the RPClient AVD and pin its window inside the visible desktop.
 
   Why this exists: the emulator keeps its last window geometry and sizes the
@@ -127,8 +127,37 @@ $width = [Math]::Min($width, $screenW - (2 * $Margin))
 
 $x = [int](($screenW - $width) / 2)
 $y = [int](($screenH - $height) / 2)
-[EmuWindow]::MoveWindow($handle, $x, $y, $width, $height, $true) | Out-Null
-"window pinned at ($x,$y) ${width}x${height} on ${screenW}x${screenH}"
+
+# 一次定位不够：qemu 启动过程中 MainWindowHandle 会变，
+# 早期那个句柄移完，真正的主窗口随后又按记忆的位置摆回屏幕外（Top 能到负几百）。
+# 所以连着盯几秒，位置不对就再拉一次，直到它不再自己动。
+function Get-EmulatorWindow {
+    Get-Process qemu-system-x86_64 -ErrorAction SilentlyContinue |
+        Where-Object { $_.MainWindowHandle -ne 0 } |
+        Select-Object -First 1
+}
+$stableCount = 0
+for ($i = 0; $i -lt 40; $i++) {
+    $proc = Get-EmulatorWindow
+    if (-not $proc) { break }
+    $h = $proc.MainWindowHandle
+    $probe = New-Object EmuWindow+RECT
+    [EmuWindow]::GetWindowRect($h, [ref]$probe) | Out-Null
+    $offscreen = $probe.Top -lt 0 -or $probe.Left -lt 0 -or
+        $probe.Right -gt $screenW -or $probe.Bottom -gt $screenH
+    if ($offscreen) {
+        [EmuWindow]::MoveWindow($h, $x, $y, $width, $height, $true) | Out-Null
+        $stableCount = 0
+    } else {
+        $stableCount++
+        # 连续 6 次（约 3 秒）都没跑偏才算定住
+        if ($stableCount -ge 6) { break }
+    }
+    Start-Sleep -Milliseconds 500
+}
+$finalRect = New-Object EmuWindow+RECT
+[EmuWindow]::GetWindowRect((Get-EmulatorWindow).MainWindowHandle, [ref]$finalRect) | Out-Null
+"window pinned at ($($finalRect.Left),$($finalRect.Top)) ${width}x${height} on ${screenW}x${screenH}"
 
 # Wait for the guest to finish booting before optionally installing the APK.
 # adb reports "offline" while the guest is still coming up, so ask for the boot
