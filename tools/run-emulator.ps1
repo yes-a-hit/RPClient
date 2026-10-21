@@ -23,12 +23,32 @@ param(
     [bool]$ColdBoot = $true,
     # 客户机显示尺寸：AVD 默认 1080x2400 会让窗口高过宿主屏幕，底部导航栏落到桌面外。
     [string]$Resolution = '900x1600',
-    [int]$Density = 420
+    [int]$Density = 420,
+    # 图形后端。默认走软件渲染：qemu 抢独显时驱动死锁过，
+    # 表现是整机僵住且不报蓝屏，只能长按电源。
+    [string]$Gpu = 'swiftshader_indirect',
+    # 客户机内存上限。给太多没意义，给太少起不来，2 GB 足够跑这个应用。
+    [int]$MemoryMb = 2048,
+    # 低于这个可用内存就不启动，免得和构建、浏览器一起把机器拖死。
+    [int]$MinFreeGb = 6
 )
 
 # adb prints routine state transitions to stderr, so native failures must not
 # abort the script; real problems are reported with explicit throw statements.
 $ErrorActionPreference = 'Continue'
+
+# 起模拟器前先看机器还剩多少：这次死机的教训是没看负载就开。
+$osInfo = Get-CimInstance Win32_OperatingSystem
+$freeGb = [math]::Round($osInfo.FreePhysicalMemory / 1MB, 1)
+if ($freeGb -lt $MinFreeGb) {
+    throw "可用内存只有 ${freeGb} GB，低于阈值 ${MinFreeGb} GB。先关掉占内存的程序，或用 -MinFreeGb 调低阈值。"
+}
+# 构建和模拟器同时跑是死机的典型组合，提醒一句而不是直接拦住。
+$busyJava = Get-Process -Name 'java' -ErrorAction SilentlyContinue
+if ($busyJava) {
+    Write-Warning "检测到 java 进程（可能是 Gradle 构建）。构建与模拟器同时跑容易拖死系统，建议分开。"
+}
+"free memory ${freeGb} GB, launching with -gpu $Gpu -memory $MemoryMb"
 
 # SDK discovery order: explicit argument, env vars, repo local.properties, then the
 # default install location. local.properties is what Gradle uses, so trust it first.
@@ -74,6 +94,10 @@ $qemu = Get-Process qemu-system-x86_64 -ErrorAction SilentlyContinue | Where-Obj
 if (-not $qemu) {
     $emuArgs = @('-avd', $Avd)
     if ($ColdBoot) { $emuArgs += '-no-snapshot-load' }
+    if ($Gpu) { $emuArgs += @('-gpu', $Gpu) }
+    if ($MemoryMb -gt 0) { $emuArgs += @('-memory', "$MemoryMb") }
+    # 音频子系统对调试没用，少一个驱动就少一处死锁可能
+    $emuArgs += '-no-audio'
     Start-Process -FilePath $emulator -ArgumentList $emuArgs -WorkingDirectory (Join-Path $Sdk 'emulator') | Out-Null
     $deadline = (Get-Date).AddSeconds(90)
     while ((Get-Date) -lt $deadline) {
