@@ -1,5 +1,6 @@
 package me.kafuuneko.rpclient.feature.scriptplay.presentation
 
+import me.kafuuneko.rpclient.libs.script.ScriptVariableKind
 import me.kafuuneko.rpclient.libs.script.ScriptPlayMessage
 import me.kafuuneko.rpclient.libs.script.ScriptPlaySceneState
 
@@ -9,7 +10,14 @@ data class ScriptStatusItem(
     val label: String,
     val value: Int,
     /** 数值上限，用于画进度条；0 表示不画。 */
-    val max: Int = 0
+    val max: Int = 0,
+    /** 按种类渲染：数字画条、开关显示两态文案、文本直接显示内容。 */
+    val kind: ScriptVariableKind = ScriptVariableKind.Number,
+    /** 文本变量的当前内容。 */
+    val text: String = "",
+    /** 开关两态文案。 */
+    val onLabel: String = "",
+    val offLabel: String = ""
 )
 
 /** 剧本模式的页面状态。 */
@@ -29,6 +37,8 @@ sealed class ScriptPlayUiState {
          * 摊在界面上就没意思了。
          */
         val statusItems: List<ScriptStatusItem> = emptyList(),
+        /** 剧本是否开启状态面板；关掉时整块不显示。 */
+        val showDashboard: Boolean = true,
         /** 对话历史。 */
         val messages: List<ScriptPlayMessage> = emptyList(),
         /** 输入框内容。 */

@@ -218,4 +218,42 @@ class ScriptPlayEventTest {
         assertEquals(ScriptPlayOutcome.Continue, ScriptPlayEngine.evaluate(scene, 99, ""))
     }
 
+
+    @Test
+    fun `keyword accepts several alternatives`() {
+        // 玩偶机制靠关键词触发，只认一个死词的话玩家换个说法事件就哑了
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Keyword,
+            pattern = "关门|关上|门合"
+        )
+
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "你把门关上了"))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "门合拢"))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "关门"))
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "你盯着走廊"))
+    }
+
+    @Test
+    fun `single keyword still works`() {
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Keyword,
+            pattern = "走廊"
+        )
+
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "你盯着走廊"))
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "你看着厨房"))
+    }
+
+    @Test
+    fun `blank alternatives are ignored`() {
+        // 「关门||关上」这种写法不能因为中间空了一段就把什么都匹配上
+        val condition = ScriptCondition(
+            type = ScriptConditionType.Keyword,
+            pattern = "关门||关上"
+        )
+
+        assertFalse(ScriptPlayEngine.matches(condition, 0, "你盯着走廊"))
+        assertTrue(ScriptPlayEngine.matches(condition, 0, "你关上门"))
+    }
+
 }

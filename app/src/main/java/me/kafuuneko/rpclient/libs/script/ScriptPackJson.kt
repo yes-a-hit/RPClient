@@ -23,6 +23,7 @@ internal object ScriptPackJson {
         startSceneId = root.stringOr("startSceneId"),
         startSceneIds = root.stringListOr("startSceneIds"),
         freeModeAfterClear = root.boolOr("freeModeAfterClear", true),
+        showDashboard = root.boolOr("showDashboard", true),
         enableGm = root.boolOr("enableGm", true),
         enableDice = root.boolOr("enableDice", true),
         openings = root.arrayOr("openings").mapNotNull { toOpening(it) },
@@ -75,6 +76,11 @@ internal object ScriptPackJson {
             conditionalCast = item.arrayOr("conditionalCast")
                 .mapNotNull { toCastRule(it) },
             bannedCast = item.stringListOr("bannedCast"),
+            dashboardItems = item.arrayOr("dashboardItems")
+                .mapNotNull { element ->
+                    element.takeIf { it.isJsonPrimitive }?.asString
+                }
+                .filter { it.isNotBlank() },
             failText = item.stringOr("failText"),
             timeoutSceneId = item.stringOr("timeoutSceneId"),
             maxRounds = item.intOr("maxRounds", 0).coerceAtLeast(0),
@@ -141,7 +147,13 @@ internal object ScriptPackJson {
             min = item.intOr("min", Int.MIN_VALUE),
             max = item.intOr("max", Int.MAX_VALUE),
             label = item.stringOr("label"),
-            visible = item.boolOr("visible", true)
+            visible = item.boolOr("visible", true),
+            kind = runCatching {
+                ScriptVariableKind.valueOf(item.stringOr("kind").ifBlank { "Number" })
+            }.getOrDefault(ScriptVariableKind.Number),
+            text = item.stringOr("text"),
+            onLabel = item.stringOr("onLabel"),
+            offLabel = item.stringOr("offLabel")
         )
     }
 
@@ -155,7 +167,9 @@ internal object ScriptPackJson {
         return ScriptEffect(
             variable = variable,
             delta = item.intOr("delta", 0),
-            setTo = setTo
+            setTo = setTo,
+            setText = item.stringOr("setText"),
+            appendText = item.stringOr("appendText")
         )
     }
 

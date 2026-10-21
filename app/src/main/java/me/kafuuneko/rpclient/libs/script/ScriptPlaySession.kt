@@ -61,7 +61,9 @@ data class ScriptPlaythrough(
      * 玩家行为累积出的状态，条件与事件都读它；
      * 存档带着走，退出再进来不会丢。
      */
-    val variables: Map<String, Int>? = null
+    val variables: Map<String, Int>? = null,
+    /** 文本变量的当前值，例如各玩偶所在位置。 */
+    val textVariables: Map<String, String>? = null
 )
 
 /** 检查点快照：够还原到进入该场景的那一刻。 */
@@ -164,6 +166,11 @@ class ScriptPlayStore(private val mContext: Context) {
                 obj.getAsJsonObject("variables")?.entrySet()?.associate { entry ->
                     entry.key to entry.value.asInt
                 }
+            }.getOrNull(),
+            textVariables = runCatching {
+                obj.getAsJsonObject("textVariables")?.entrySet()?.associate { entry ->
+                    entry.key to entry.value.asString
+                }
             }.getOrNull()
         )
     }
@@ -229,6 +236,8 @@ object ScriptPlayPromptBuilder {
          */
         variables: Map<String, Int> = emptyMap(),
         declaredVariables: List<ScriptVariable> = emptyList(),
+        /** 文本变量的当前值，位置这类状态由它承载。 */
+        textVariables: Map<String, String> = emptyMap(),
         /**
          * 在场角色的档案，名字到设定的映射。
          *
@@ -245,16 +254,71 @@ object ScriptPlayPromptBuilder {
         builder.append("\n【当前场景】").append(scene.name).append('\n')
 
         // 可见变量写进提示词：模型据此叙述，不能自己另编一套数值
-        val shown = declaredVariables.filter { it.visible && it.name.isNotBlank() }
+        val shown = declaredVariables.filter {
+            it.visible && it.name.isNotBlank() && it.kind != ScriptVariableKind.Note
+        }
         if (shown.isNotEmpty()) {
             builder.append("\n【当前状态】")
             builder.append(
                 shown.joinToString("、") { variable ->
                     val label = variable.label.ifBlank { variable.name }
-                    label + " " + (variables[variable.name] ?: variable.initial)
+                    val value = when (variable.kind) {
+                        ScriptVariableKind.Text ->
+                            textVariables[variable.name] ?: variable.text
+
+                        ScriptVariableKind.Switch ->
+                            if ((variables[variable.name] ?: variable.initial) != 0) {
+                                variable.onLabel.ifBlank { "是" }
+                            } else {
+                                variable.offLabel.ifBlank { "否" }
+                            }
+
+                        else -> (variables[variable.name] ?: variable.initial).toString()
+                    }
+                    label + " " + value
                 }
             )
-            builder.append("\n以上数值由系统维护，叙述时以此为准，不要另编数字。\n")
+            builder.append("\n以上状态由系统维护，叙述时以此为准，不要另编数字。\n")
+        }
+
+        // 线索单独列一段：它是玩家已经查到的结论，
+        // 写进旁白会重复，混在状态里又会被淹没
+        val clues = declaredVariables.filter {
+            it.kind == ScriptVariableKind.Note && it.name.isNotBlank()
+        }
+        if (clues.isNotEmpty()) {
+            val recorded = clues.mapNotNull { variable ->
+                val content = textVariables[variable.name] ?: variable.text
+                if (content.isBlank()) null else content
+            }
+            if (recorded.isNotEmpty()) {
+                builder.append("\n【已知线索】\n")
+                recorded.forEach { builder.append(it).append('\n') }
+                builder.append(
+                    "这些是玩家已经掌握的信息，叙述时可直接引用，" +
+                        "不要再当成新发现重复描写；玩家说出新的关键信息时，系统会自行记录。\n"
+                )
+            }
+        }
+
+        // 位置类的文本变量额外点名：它们决定谁站在哪，
+        // 模型据此安排谁出场、从哪条路来，而不是每轮都重新猜
+        val positions = declaredVariables.filter {
+            it.kind == ScriptVariableKind.Text && it.name.isNotBlank()
+        }
+        if (positions.isNotEmpty()) {
+            builder.append("\n【在场去向】\n")
+            positions.forEach { variable ->
+                val label = variable.label.ifBlank { variable.name }
+                builder.append(label).append("：")
+                    .append(textVariables[variable.name] ?: variable.text)
+                    .append('\n')
+            }
+            builder.append(
+                "这些位置由系统给出。玩偶的行动、什么时候移动、往哪走，" +
+                    "由你根据当前位置与局势自行决定；" +
+                    "若某个玩偶有自己的硬规则（例如只在没人盯梢时才动），以场景设定为准。\n"
+            )
         }
 
 

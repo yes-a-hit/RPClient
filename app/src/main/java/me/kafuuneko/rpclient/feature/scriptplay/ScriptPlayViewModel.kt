@@ -360,6 +360,12 @@ class ScriptPlayViewModel(
                 effects = event.effects,
                 declared = pack.variables
             ),
+            // 文本变量走另一条路：位置是覆盖，线索是追加
+            textVariables = ScriptPlayEngine.applyTextEffects(
+                variables = mPlay.textVariables.orEmpty(),
+                effects = event.effects,
+                declared = pack.variables
+            ),
             messages = if (note.isBlank()) {
                 mPlay.messages
             } else {
@@ -494,6 +500,7 @@ class ScriptPlayViewModel(
             ),
             variables = mPlay.variables.orEmpty(),
             declaredVariables = pack.variables,
+            textVariables = mPlay.textVariables.orEmpty(),
             castProfiles = buildCastProfiles(scene, pack)
             )
             val messages = buildList {
@@ -575,14 +582,29 @@ class ScriptPlayViewModel(
             packName = pack.name,
             hasCheckpoint = mPlay.snapshot != null,
             statusItems = pack.variables
-                .filter { it.visible && it.name.isNotBlank() }
+                .filter { variable ->
+                    // 场景点名了就用点名的，没点名才按剧本级可见性
+                    val listed = scene.dashboardItems
+                    if (listed.isEmpty()) {
+                        variable.visible
+                    } else {
+                        variable.name in listed
+                    }
+                }
+                .filter { it.name.isNotBlank() }
                 .map { variable ->
                     ScriptStatusItem(
                         label = variable.label.ifBlank { variable.name },
                         value = mPlay.variables.orEmpty()[variable.name] ?: variable.initial,
-                        max = if (variable.max in 1..9999) variable.max else 0
+                        max = if (variable.max in 1..9999) variable.max else 0,
+                        kind = variable.kind,
+                        text = mPlay.textVariables.orEmpty()[variable.name]
+                            ?: variable.text,
+                        onLabel = variable.onLabel,
+                        offLabel = variable.offLabel
                     )
                 },
+            showDashboard = pack.showDashboard,
             scene = ScriptPlaySceneState(
                 sceneId = scene.id,
                 sceneName = scene.name,

@@ -91,8 +91,14 @@ object ScriptPlayEngine {
         variables: Map<String, Int> = emptyMap()
     ): Boolean =
         when (condition.type) {
+            // 关键词支持用竖线写多个同义说法：玩偶机制靠它触发，
+            // 只认一个死词的话，玩家换个说法事件就哑了
             ScriptConditionType.Keyword ->
-                condition.pattern.isNotBlank() && lastReply.contains(condition.pattern)
+                condition.pattern.isNotBlank() &&
+                    condition.pattern.split('|').any { word ->
+                        val trimmed = word.trim()
+                        trimmed.isNotEmpty() && lastReply.contains(trimmed)
+                    }
 
             ScriptConditionType.Regex ->
                 condition.pattern.isNotBlank() && runCatching {
@@ -269,6 +275,43 @@ object ScriptPlayEngine {
      * 常驻 cast 加条件到场的角色，再去掉禁止名单。
      * 结果为空是合法的：零角色场景只剩旁白。
      */
+
+    /**
+     * 应用文本变量的改动。
+     *
+     * 位置这类状态只当文字处理：写进去什么就是什么，
+     * 不参与数值判定，纯粹给提示词和面板看。
+     */
+    fun applyTextEffects(
+        variables: Map<String, String>,
+        effects: List<ScriptEffect>,
+        declared: List<ScriptVariable> = emptyList()
+    ): Map<String, String> {
+        val textEffects = effects.filter {
+            it.setText.isNotBlank() || it.appendText.isNotBlank()
+        }
+        if (textEffects.isEmpty()) return variables
+        val result = variables.toMutableMap()
+        textEffects.forEach { effect ->
+            if (effect.variable.isBlank()) return@forEach
+            // 位置这类是覆盖，线索是追加；同一格两者不会同时写
+            if (effect.setText.isNotBlank()) {
+                result[effect.variable] = effect.setText
+                return@forEach
+            }
+            val bounds = declared.firstOrNull { it.name == effect.variable }
+            val current = result[effect.variable] ?: bounds?.text.orEmpty()
+            // 同一条线索重复触发时不再记一遍，免得列表里全是废话
+            if (current.contains(effect.appendText)) return@forEach
+            result[effect.variable] = if (current.isBlank()) {
+                effect.appendText
+            } else {
+                current + "\n" + effect.appendText
+            }
+        }
+        return result
+    }
+
     fun effectiveCast(
         scene: ScriptScene,
         variables: Map<String, Int> = emptyMap(),

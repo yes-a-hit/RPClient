@@ -5,14 +5,72 @@
   "description": "你在一个关了灯的披萨店值夜班，撑到六点就能回家看电视。四只玩偶各有各的路子：邦尼爱动、奇卡走通风管、霍斯只在你不看右边时才动、弗莱迪慢但迟早会来。第一晚只应付邦尼，第二晚奇卡也醒了，第三晚霍斯加入。",
   "mode": "Mainline",
   "variables": [
-    { "name": "电量", "label": "电量", "initial": 100, "min": 0, "max": 100 },
-    { "name": "夜数", "label": "第几夜", "initial": 1, "min": 1, "max": 3 },
-    { "name": "邦尼压力", "label": "邦尼", "initial": 0, "min": 0, "max": 5 },
-    { "name": "奇卡压力", "label": "奇卡", "initial": 0, "min": 0, "max": 5 },
-    { "name": "霍斯压力", "label": "霍斯", "initial": 0, "min": 0, "max": 5 },
-    { "name": "弗莱迪压力", "label": "弗莱迪", "initial": 0, "min": 0, "max": 5 },
-    { "name": "右门", "label": "右门", "initial": 100, "min": 0, "max": 100 },
-    { "name": "看电视", "label": "看电视", "initial": 0, "min": 0, "max": 3, "visible": true }
+    {
+      "name": "电量",
+      "label": "电量",
+      "initial": 100,
+      "min": 0,
+      "max": 100,
+      "kind": "Number"
+    },
+    {
+      "name": "夜数",
+      "label": "第几夜",
+      "initial": 1,
+      "min": 1,
+      "max": 3,
+      "kind": "Number"
+    },
+    {
+      "name": "邦尼位置",
+      "label": "邦尼",
+      "initial": 0,
+      "kind": "Text",
+      "text": "舞台"
+    },
+    {
+      "name": "奇卡位置",
+      "label": "奇卡",
+      "initial": 0,
+      "kind": "Text",
+      "text": "舞台"
+    },
+    {
+      "name": "霍斯位置",
+      "label": "霍斯",
+      "initial": 0,
+      "kind": "Text",
+      "text": "幕布后"
+    },
+    {
+      "name": "弗莱迪位置",
+      "label": "弗莱迪",
+      "initial": 0,
+      "kind": "Text",
+      "text": "舞台"
+    },
+    {
+      "name": "右门耐久",
+      "label": "右门耐久",
+      "initial": 100,
+      "min": 0,
+      "max": 100,
+      "kind": "Number"
+    },
+    {
+      "name": "右门损坏",
+      "label": "右门",
+      "initial": 0,
+      "kind": "Switch",
+      "onLabel": "已损坏",
+      "offLabel": "完好"
+    },
+    {
+      "name": "提示",
+      "label": "线索",
+      "kind": "Note",
+      "text": ""
+    }
   ],
   "startSceneId": "night1",
   "startSceneIds": [],
@@ -39,7 +97,9 @@
       "entryPrompt": "监控屏一格格亮着：舞台、左走廊、右走廊、厨房、通风管。电量从 100 开始缓慢下降。这一晚主要是邦尼在动，其他三只还没醒透。撑到六点就下班。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["dawn1"],
+      "nextSceneIds": [
+        "dawn1"
+      ],
       "maxRounds": 12,
       "checkpoint": true,
       "failText": "你的电量见底了，灯一盏盏灭下去",
@@ -52,43 +112,123 @@
       "events": [
         {
           "name": "关左门耗电",
-          "condition": { "type": "Keyword", "pattern": "关门" },
-          "effects": [{ "variable": "电量", "delta": -10 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "关门|关上|关掉右门|关掉左门|关掉左边|关掉右边|门合"
+          },
+          "effects": [
+            {
+              "variable": "电量",
+              "delta": -10
+            }
+          ],
           "narration": "左门闸合拢，电量掉了一格。",
           "once": false
         },
         {
           "name": "邦尼靠近",
-          "condition": { "type": "Keyword", "pattern": "走廊" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "走廊|监控|看一眼"
+          },
           "chance": 70,
-          "effects": [{ "variable": "邦尼压力", "delta": 1 }],
+          "effects": [
+            {
+              "variable": "邦尼压力",
+              "delta": 1
+            },
+            {
+              "variable": "邦尼位置",
+              "setText": "左走廊"
+            }
+          ],
           "narration": "左走廊尽头传来一声轻响，像是谁把脚从地板上抬起来又放下。",
           "once": false
         },
         {
           "name": "声音诱饵生效",
-          "condition": { "type": "Keyword", "pattern": "诱饵" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "诱饵|播放"
+          },
           "effects": [
-            { "variable": "邦尼压力", "delta": -2 },
-            { "variable": "电量", "delta": -5 }
+            {
+              "variable": "邦尼压力",
+              "delta": -2
+            },
+            {
+              "variable": "电量",
+              "delta": -5
+            },
+            {
+              "variable": "邦尼位置",
+              "setText": "厨房"
+            }
           ],
           "narration": "你把诱饵音开到最大，邦尼的脚步转向厨房。",
           "once": false
         },
         {
           "name": "邦尼偷电",
-          "condition": { "type": "Variable", "variable": "邦尼压力", "threshold": 3, "comparison": "AtLeast" },
+          "condition": {
+            "type": "Variable",
+            "variable": "邦尼压力",
+            "threshold": 3,
+            "comparison": "AtLeast"
+          },
           "chance": 40,
-          "effects": [{ "variable": "电量", "delta": -8 }],
+          "effects": [
+            {
+              "variable": "电量",
+              "delta": -8
+            }
+          ],
           "narration": "配电箱那边传来一声轻响，电量表无故少了一截——邦尼摸到电闸了。",
           "once": false
+        },
+        {
+          "name": "记下左门",
+          "condition": {
+            "type": "Keyword",
+            "pattern": "左门|左边"
+          },
+          "effects": [
+            {
+              "variable": "提示",
+              "appendText": "左门的闸很沉，合上会掉一格电"
+            }
+          ],
+          "narration": "你在心里记了一笔。",
+          "once": true
+        },
+        {
+          "name": "记下厨房",
+          "condition": {
+            "type": "Keyword",
+            "pattern": "厨房|camera|摄像头"
+          },
+          "effects": [
+            {
+              "variable": "提示",
+              "appendText": "厨房的摄像头角度不对，台面上少了把刀"
+            }
+          ],
+          "narration": "屏幕上的画面让你多看了一眼。",
+          "once": true
         }
       ],
       "completionCondition": {
         "type": "RoundLimit",
         "threshold": 12,
         "description": "六点到了"
-      }
+      },
+      "dashboardItems": [
+        "电量",
+        "夜数",
+        "邦尼位置",
+        "奇卡位置",
+        "提示"
+      ]
     },
     {
       "id": "dawn1",
@@ -96,15 +236,25 @@
       "entryPrompt": "窗外发白，玩偶回到舞台。你锁上门，回家打开电视。新闻里说披萨店照常营业。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["night2"],
+      "nextSceneIds": [
+        "night2"
+      ],
       "maxRounds": 4,
-      "suggestedActions": ["换台", "关掉电视睡觉", "回店里看看"],
+      "suggestedActions": [
+        "换台",
+        "关掉电视睡觉",
+        "回店里看看"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "睡觉",
+        "pattern": "睡觉|睡|躺下",
         "description": "你睡了过去，明晚还要值班"
-      }
+      },
+      "dashboardItems": [
+        "夜数",
+        "提示"
+      ]
     },
     {
       "id": "night2",
@@ -112,7 +262,9 @@
       "entryPrompt": "今晚奇卡也醒了。她闻得到你身上的味道——用诱饵气味能把她引去厨房，但关左门对她没用，她会从通风管绕进来。邦尼照旧会偷电。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["dawn2"],
+      "nextSceneIds": [
+        "dawn2"
+      ],
       "maxRounds": 12,
       "checkpoint": true,
       "failText": "奇卡从通风管落进了值班室",
@@ -125,46 +277,112 @@
       "events": [
         {
           "name": "奇卡逼近",
-          "condition": { "type": "Keyword", "pattern": "通风" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "通风|管道|格栅"
+          },
           "chance": 75,
-          "effects": [{ "variable": "奇卡压力", "delta": 1 }],
+          "effects": [
+            {
+              "variable": "奇卡压力",
+              "delta": 1
+            },
+            {
+              "variable": "奇卡位置",
+              "setText": "通风管"
+            }
+          ],
           "narration": "通风管里传来金属被压弯的声响。",
           "once": false
         },
         {
           "name": "气味诱饵生效",
-          "condition": { "type": "Keyword", "pattern": "气味" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "气味|香味|闻"
+          },
           "effects": [
-            { "variable": "奇卡压力", "delta": -2 },
-            { "variable": "电量", "delta": -4 }
+            {
+              "variable": "奇卡压力",
+              "delta": -2
+            },
+            {
+              "variable": "电量",
+              "delta": -4
+            },
+            {
+              "variable": "奇卡位置",
+              "setText": "厨房"
+            }
           ],
           "narration": "你按下气味诱饵，奇卡的脚步声转向厨房。",
           "once": false
         },
         {
           "name": "关门对奇卡无效",
-          "condition": { "type": "Keyword", "pattern": "关门" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "关门|关上|关掉右门|关掉左门|关掉左边|关掉右边|门合"
+          },
           "effects": [
-            { "variable": "电量", "delta": -10 },
-            { "variable": "奇卡压力", "delta": 1 }
+            {
+              "variable": "电量",
+              "delta": -10
+            },
+            {
+              "variable": "奇卡压力",
+              "delta": 1
+            }
           ],
           "narration": "左门合上了，但通风管那头的动静更近了——她根本不用走门。",
           "once": false
         },
         {
           "name": "邦尼偷电",
-          "condition": { "type": "Variable", "variable": "邦尼压力", "threshold": 2, "comparison": "AtLeast" },
+          "condition": {
+            "type": "Variable",
+            "variable": "邦尼压力",
+            "threshold": 2,
+            "comparison": "AtLeast"
+          },
           "chance": 45,
-          "effects": [{ "variable": "电量", "delta": -8 }],
+          "effects": [
+            {
+              "variable": "电量",
+              "delta": -8
+            }
+          ],
           "narration": "电闸那边又是一声轻响。",
           "once": false
+        },
+        {
+          "name": "记下通风管",
+          "condition": {
+            "type": "Keyword",
+            "pattern": "通风|管道|格栅"
+          },
+          "effects": [
+            {
+              "variable": "提示",
+              "appendText": "通风管的格栅螺丝松了，能推开"
+            }
+          ],
+          "narration": "格栅的边缘有一点翘起来。",
+          "once": true
         }
       ],
       "completionCondition": {
         "type": "RoundLimit",
         "threshold": 12,
         "description": "六点到了"
-      }
+      },
+      "dashboardItems": [
+        "电量",
+        "夜数",
+        "邦尼位置",
+        "奇卡位置",
+        "提示"
+      ]
     },
     {
       "id": "dawn2",
@@ -172,15 +390,25 @@
       "entryPrompt": "天亮了。你回到家，电视里在放一部老动画。看一会儿就睡。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["night3"],
+      "nextSceneIds": [
+        "night3"
+      ],
       "maxRounds": 4,
-      "suggestedActions": ["看动画", "直接睡", "检查门锁"],
+      "suggestedActions": [
+        "看动画",
+        "直接睡",
+        "检查门锁"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "睡觉",
+        "pattern": "睡觉|睡|躺下",
         "description": "你睡了过去"
-      }
+      },
+      "dashboardItems": [
+        "夜数",
+        "提示"
+      ]
     },
     {
       "id": "night3",
@@ -188,7 +416,9 @@
       "entryPrompt": "霍斯醒了。他只在你长时间不看右边走廊时才动，一旦冲刺撞门，用手电筒能照瘫他——但右门撑不了几次，撞碎之后就再没法防。奇卡与邦尼照旧。",
       "cast": [],
       "bannedCast": [],
-      "nextSceneIds": ["dawn3"],
+      "nextSceneIds": [
+        "dawn3"
+      ],
       "maxRounds": 14,
       "checkpoint": true,
       "failText": "霍斯撞碎了右门，冲了进来",
@@ -201,38 +431,99 @@
       "events": [
         {
           "name": "盯住右侧",
-          "condition": { "type": "Keyword", "pattern": "右边" },
-          "effects": [{ "variable": "霍斯压力", "delta": -2 }],
+          "condition": {
+            "type": "Keyword",
+            "pattern": "右边|右侧|右走廊"
+          },
+          "effects": [
+            {
+              "variable": "霍斯压力",
+              "delta": -2
+            },
+            {
+              "variable": "霍斯位置",
+              "setText": "走廊尽头"
+            }
+          ],
           "narration": "你盯住右走廊，霍斯停在拐角，红色的眼睛一动不动。",
           "once": false
         },
         {
           "name": "霍斯冲刺",
-          "condition": { "type": "Variable", "variable": "霍斯压力", "threshold": 3, "comparison": "AtLeast" },
+          "condition": {
+            "type": "Variable",
+            "variable": "霍斯压力",
+            "threshold": 3,
+            "comparison": "AtLeast"
+          },
           "chance": 65,
           "effects": [
-            { "variable": "右门", "delta": -40 },
-            { "variable": "电量", "delta": -6 }
+            {
+              "variable": "右门",
+              "delta": -40
+            },
+            {
+              "variable": "电量",
+              "delta": -6
+            },
+            {
+              "variable": "霍斯位置",
+              "setText": "右门口"
+            }
           ],
           "narration": "右门被撞得变形，铰链发出刺耳的声响。",
           "once": false
         },
         {
           "name": "手电压制",
-          "condition": { "type": "Keyword", "pattern": "手电" },
+          "condition": {
+            "type": "Keyword",
+            "pattern": "手电|照"
+          },
           "effects": [
-            { "variable": "霍斯压力", "delta": -3 },
-            { "variable": "电量", "delta": -3 }
+            {
+              "variable": "霍斯压力",
+              "delta": -3
+            },
+            {
+              "variable": "电量",
+              "delta": -3
+            }
           ],
           "narration": "手电光扫过去，霍斯僵在走廊里，像被钉住。",
           "once": false
         },
         {
           "name": "右门失效",
-          "condition": { "type": "Variable", "variable": "右门", "threshold": 0, "comparison": "AtMost" },
+          "condition": {
+            "type": "Variable",
+            "variable": "右门",
+            "threshold": 0,
+            "comparison": "AtMost"
+          },
           "chance": 100,
-          "effects": [{ "variable": "霍斯压力", "delta": 2 }],
+          "effects": [
+            {
+              "variable": "霍斯压力",
+              "delta": 2
+            }
+          ],
           "narration": "右门只剩框架，风从走廊直接吹进值班室。",
+          "once": true
+        },
+        {
+          "name": "记下右门",
+          "condition": {
+            "type": "Keyword",
+            "pattern": "右门|右边|右侧"
+          },
+          "effects": [
+            {
+              "variable": "提示",
+              "appendText": "右门的轴承是坏的，撞几下就撑不住"
+            }
+          ],
+          "narration": "门框上有一道旧裂。",
           "once": true
         }
       ],
@@ -240,7 +531,17 @@
         "type": "RoundLimit",
         "threshold": 14,
         "description": "六点到了"
-      }
+      },
+      "dashboardItems": [
+        "电量",
+        "夜数",
+        "邦尼位置",
+        "奇卡位置",
+        "霍斯位置",
+        "右门耐久",
+        "右门损坏",
+        "提示"
+      ]
     },
     {
       "id": "dawn3",
@@ -250,13 +551,21 @@
       "bannedCast": [],
       "nextSceneIds": [],
       "maxRounds": 5,
-      "suggestedActions": ["关掉电视", "回想这三晚", "写下留言给下一个人"],
+      "suggestedActions": [
+        "关掉电视",
+        "回想这三晚",
+        "写下留言给下一个人"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "留言",
+        "pattern": "留言|纸条|写",
         "description": "你留下一张纸条，像上一任那样"
-      }
+      },
+      "dashboardItems": [
+        "夜数",
+        "提示"
+      ]
     },
     {
       "id": "jumpscare_bunny",
@@ -273,13 +582,20 @@
       "nextSceneIds": [],
       "maxRounds": 4,
       "failText": "邦尼把手放在你肩上",
-      "suggestedActions": ["屏住呼吸", "闭上眼睛", "试着往门口挪"],
+      "suggestedActions": [
+        "屏住呼吸",
+        "闭上眼睛",
+        "试着往门口挪"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "天亮",
+        "pattern": "天亮|天亮|离开",
         "description": "它看够了，退回黑暗里"
-      }
+      },
+      "dashboardItems": [
+        "提示"
+      ]
     },
     {
       "id": "jumpscare_chica",
@@ -296,13 +612,20 @@
       "nextSceneIds": [],
       "maxRounds": 4,
       "failText": "你接过了那盘东西",
-      "suggestedActions": ["接过盘子", "别过头去", "问她想要什么"],
+      "suggestedActions": [
+        "接过盘子",
+        "别过头去",
+        "问她想要什么"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "天亮",
+        "pattern": "天亮|天亮|离开",
         "description": "她把盘子收回去，爬回通风管"
-      }
+      },
+      "dashboardItems": [
+        "提示"
+      ]
     },
     {
       "id": "jumpscare_foxy",
@@ -319,13 +642,24 @@
       "nextSceneIds": [],
       "maxRounds": 4,
       "failText": "他的手搭上了你的肩",
-      "suggestedActions": ["举起手电", "不动", "开口跟它说话"],
+      "suggestedActions": [
+        "举起手电",
+        "不动",
+        "开口跟它说话"
+      ],
       "events": [],
       "completionCondition": {
         "type": "Keyword",
-        "pattern": "天亮",
+        "pattern": "天亮|天亮|离开",
         "description": "他退回走廊，门框在他身后塌下来"
-      }
+      },
+      "dashboardItems": [
+        "右门耐久",
+        "右门损坏",
+        "霍斯位置",
+        "提示"
+      ]
     }
-  ]
+  ],
+  "showDashboard": true
 }

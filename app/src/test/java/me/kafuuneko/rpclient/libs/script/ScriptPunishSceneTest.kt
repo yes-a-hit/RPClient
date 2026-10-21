@@ -237,11 +237,65 @@ class ScriptPunishSceneTest {
                 pack.scenes.any { it.id == night.timeoutSceneId })
         }
 
-        // 三个压力变量对应三只主动攻击的玩偶
-        val vars = pack.variables.map { it.name }.toSet()
-        listOf("邦尼压力", "奇卡压力", "霍斯压力", "弗莱迪压力").forEach {
+        // 位置改成文本变量：0/1 表达不了「舞台 / 左走廊 / 通风管」这种多值状态
+        val vars = pack.variables.associateBy { it.name }
+        listOf("邦尼位置", "奇卡位置", "霍斯位置", "弗莱迪位置").forEach {
             assertTrue("缺少变量 $it", it in vars)
+            assertEquals(ScriptVariableKind.Text, vars[it]?.kind)
         }
+        // 右门被撞坏是二态，用开关；耐久另用数字
+        assertEquals(ScriptVariableKind.Switch, vars["右门损坏"]?.kind)
+        assertEquals(ScriptVariableKind.Number, vars["右门耐久"]?.kind)
+    }
+
+
+    @Test
+    fun `text effects overwrite positions but append clues`() {
+        // 位置是覆盖，线索是追加：写混了会把查到的线索冲掉
+        val declared = listOf(
+            ScriptVariable(name = "邦尼位置", kind = ScriptVariableKind.Text, text = "舞台"),
+            ScriptVariable(name = "线索", kind = ScriptVariableKind.Note)
+        )
+        val start = mapOf("邦尼位置" to "舞台", "线索" to "")
+
+        val moved = ScriptPlayEngine.applyTextEffects(
+            variables = start,
+            effects = listOf(ScriptEffect("邦尼位置", setText = "左走廊")),
+            declared = declared
+        )
+        assertEquals("左走廊", moved["邦尼位置"])
+
+        val first = ScriptPlayEngine.applyTextEffects(
+            variables = moved,
+            effects = listOf(ScriptEffect("线索", appendText = "厨房的刀不见了")),
+            declared = declared
+        )
+        val second = ScriptPlayEngine.applyTextEffects(
+            variables = first,
+            effects = listOf(ScriptEffect("线索", appendText = "冰柜门缝有血")),
+            declared = declared
+        )
+
+        assertTrue(second["线索"]!!.contains("厨房的刀不见了"))
+        assertTrue(second["线索"]!!.contains("冰柜门缝有血"))
+        assertEquals("左走廊", second["邦尼位置"])
+    }
+
+    @Test
+    fun `same clue is not recorded twice`() {
+        val declared = listOf(ScriptVariable(name = "线索", kind = ScriptVariableKind.Note))
+        val once = ScriptPlayEngine.applyTextEffects(
+            variables = mapOf("线索" to ""),
+            effects = listOf(ScriptEffect("线索", appendText = "左门的锁是坏的")),
+            declared = declared
+        )
+        val twice = ScriptPlayEngine.applyTextEffects(
+            variables = once,
+            effects = listOf(ScriptEffect("线索", appendText = "左门的锁是坏的")),
+            declared = declared
+        )
+
+        assertEquals(once["线索"], twice["线索"])
     }
 
 }

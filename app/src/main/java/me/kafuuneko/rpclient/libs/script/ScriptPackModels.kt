@@ -27,6 +27,13 @@ data class ScriptPack(
     val startSceneId: String = "",
     /** 多入口场景 ID 列表，用于多主角各自开线的剧本。 */
     val startSceneIds: List<String> = emptyList(),
+    /**
+     * 是否在游玩页显示状态面板。
+     *
+     * 和变量自己的 visible 是两级：这里关掉整块都不出现，
+     * 开着的时候每栏再按 visible 决定露不露。
+     */
+    val showDashboard: Boolean = true,
     /** 通关后是否进入自由模式。 */
     val freeModeAfterClear: Boolean = true,
     /** 是否启用 GM（游戏主持人）叙述层。 */
@@ -112,6 +119,13 @@ data class ScriptScene(
     val conditionalCast: List<ScriptCastRule> = emptyList(),
     /** 禁止出场的角色名称，优先级高于 [cast]。 */
     val bannedCast: List<String> = emptyList(),
+    /**
+     * 本场景状态面板要显示哪些变量；留空表示按剧本级可见性走。
+     *
+     * 值班室看电量和四只玩偶的位置，惩罚场景只需要一条线索——
+     * 一份剧本里不同场景关心的东西本来就不一样。
+     */
+    val dashboardItems: List<String> = emptyList(),
     /** 轮次用尽时的提示；留空用默认文案。 */
     val failText: String = "",
     /** 轮次用尽后转到的场景；留空表示直接收官。 */
@@ -259,7 +273,7 @@ data class ScriptEvent(
 data class ScriptVariable(
     /** 变量名，条件与副作用里按它引用。 */
     val name: String = "",
-    /** 初始值。 */
+    /** 初始值；[ScriptVariableKind.Switch] 用 0/1 表示。 */
     val initial: Int = 0,
     /** 下限；运行时钳制。 */
     val min: Int = Int.MIN_VALUE,
@@ -268,8 +282,35 @@ data class ScriptVariable(
     /** 界面展示名，留空则直接用 [name]。 */
     val label: String = "",
     /** 是否在界面上露给玩家；好感度这类可以藏起来。 */
-    val visible: Boolean = true
+    val visible: Boolean = true,
+    /** 展示与控制方式。 */
+    val kind: ScriptVariableKind = ScriptVariableKind.Number,
+    /** [ScriptVariableKind.Text] 的初始内容，例如某个玩偶的初始位置。 */
+    val text: String = "",
+    /** [ScriptVariableKind.Switch] 的两态文案，留空用「是 / 否」。 */
+    val onLabel: String = "",
+    val offLabel: String = ""
 )
+
+/**
+ * 变量种类。
+ *
+ * 不是所有状态都该用数字表示：右门是不是坏的、奇卡在通风管还是厨房，
+ * 摊成 0/1 或 -1/1 既难读也难配。按种类渲染，面板才说人话。
+ */
+enum class ScriptVariableKind {
+    /** 整数，可带上下限，面板上画进度条。 */
+    Number,
+
+    /** 开关，0/1 两态，面板上显示成两段文案。 */
+    Switch,
+
+    /** 文本状态，例如「邦尼 · 左走廊」；只进提示词与面板，不参与数值判定。 */
+    Text,
+
+    /** 纯说明，面板上只显示这段文字，不参与任何判定。 */
+    Note
+}
 
 /**
  * 对变量的改动。
@@ -282,7 +323,16 @@ data class ScriptEffect(
     /** 增量，可为负。 */
     val delta: Int = 0,
     /** 直接赋值；为 null 时用 [delta]。 */
-    val setTo: Int? = null
+    val setTo: Int? = null,
+    /** 文本变量的新内容；填了它就不再按数值处理。 */
+    val setText: String = "",
+    /**
+     * 追加到文本变量末尾的一条内容，用于线索。
+     *
+     * 线索是攒出来的：玩家提一句、旁白记一笔，
+     * 用覆盖式赋值的话新线索会把上一条冲掉。
+     */
+    val appendText: String = ""
 )
 
 /**
