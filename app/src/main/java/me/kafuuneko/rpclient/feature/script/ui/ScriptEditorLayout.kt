@@ -121,6 +121,10 @@ fun ScriptEditorLayout(
         }
     }
 
+    if (state.eventEditorSceneId.isNotBlank()) {
+        EventEditorDialog(state, emit)
+    }
+
     val editingRow = state.editingRow
     val editingField = state.editingField
     if (editingRow != null && editingField != null) {
@@ -349,6 +353,31 @@ private fun ChapterCard(
                         selected = nextScenes.toNameSet(),
                         onToggle = { pick -> nextScenes = nextScenes.toggleName(pick) }
                     )
+                    // 事件：规则驱动的核心，加一个玩偶机制就得改一条
+                    Text(
+                        text = stringResource(R.string.script_events),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    row.events.forEach { event ->
+                        TextButton(
+                            onClick = {
+                                ScriptEditorUiIntent.OpenEventEditor(row.id, event.id).emit()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = event.summary(),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = { ScriptEditorUiIntent.AddEvent(row.id).emit() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.script_event_add))
+                    }
                     SwitchRow(stringResource(R.string.script_row_checkpoint), checkpoint) {
                         checkpoint = it
                     }
@@ -1033,5 +1062,201 @@ private fun VariableRow(
             Text(stringResource(R.string.script_scene_save))
         }
     }
+}
+
+/** 事件摘要一行，够认出是哪条就行。 */
+private fun me.kafuuneko.rpclient.libs.script.ScriptEvent.summary(): String {
+    val parts = mutableListOf<String>()
+    if (name.isNotBlank()) parts += name
+    if (atRound > 0) parts += "第${atRound}轮"
+    condition?.pattern?.takeIf { it.isNotBlank() }?.let { parts += "「$it」" }
+    if (chance < 100) parts += "${chance}%"
+    if (effects.isNotEmpty()) {
+        parts += effects.joinToString("、") {
+            val sign = if (it.delta >= 0) "+" else ""
+            it.variable + sign + it.delta
+        }
+    }
+    if (gotoSceneId.isNotBlank()) parts += "→$gotoSceneId"
+    return if (parts.isEmpty()) "未命名事件" else parts.joinToString(" ")
+}
+
+/**
+ * 事件编辑框。
+ *
+ * 字段多，塞不进卡片，用对话框单独改。副作用按「电量 +2」每行一条，
+ * 比一行行加控件省事，也不用为每条效果单独做增删交互。
+ */
+@Composable
+private fun EventEditorDialog(
+    state: ScriptEditorUiState.Ready,
+    emit: ScriptEditorUiIntent.() -> Unit
+) {
+    val scene = state.rows.firstOrNull { it.id == state.eventEditorSceneId } ?: return
+    val existing = scene.events.firstOrNull { it.id == state.eventEditorEventId }
+    var name by remember(state.eventEditorEventId) { mutableStateOf(existing?.name.orEmpty()) }
+    var atRound by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.atRound?.takeIf { it > 0 }?.toString().orEmpty())
+    }
+    var keyword by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.condition?.pattern.orEmpty())
+    }
+    var chance by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.chance?.toString() ?: "100")
+    }
+    var addCast by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.addCast?.joinToString("、").orEmpty())
+    }
+    var removeCast by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.removeCast?.joinToString("、").orEmpty())
+    }
+    var gotoSceneId by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.gotoSceneId.orEmpty())
+    }
+    var narration by remember(state.eventEditorEventId) {
+        mutableStateOf(existing?.narration.orEmpty())
+    }
+    var once by remember(state.eventEditorEventId) { mutableStateOf(existing?.once ?: true) }
+    var effects by remember(state.eventEditorEventId) {
+        mutableStateOf(
+            existing?.effects?.joinToString("\n") { e ->
+                val sign = if (e.delta >= 0) "+" else ""
+                e.variable + " " + sign + e.delta
+            }.orEmpty()
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = { ScriptEditorUiIntent.CloseEventEditor.emit() },
+        title = { Text(stringResource(R.string.script_events)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.script_event_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = atRound,
+                    onValueChange = { atRound = it.filter(Char::isDigit).take(3) },
+                    label = { Text(stringResource(R.string.script_event_round)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = keyword,
+                    onValueChange = { keyword = it },
+                    label = { Text(stringResource(R.string.script_event_keyword)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = chance,
+                    onValueChange = { chance = it.filter(Char::isDigit).take(3) },
+                    label = { Text(stringResource(R.string.script_event_chance)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = effects,
+                    onValueChange = { effects = it },
+                    label = { Text(stringResource(R.string.script_event_effects)) },
+                    placeholder = { Text(stringResource(R.string.script_event_effects_hint)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    maxLines = 4
+                )
+                OutlinedTextField(
+                    value = addCast,
+                    onValueChange = { addCast = it },
+                    label = { Text(stringResource(R.string.script_event_add_cast)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = removeCast,
+                    onValueChange = { removeCast = it },
+                    label = { Text(stringResource(R.string.script_event_remove_cast)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = gotoSceneId,
+                    onValueChange = { gotoSceneId = it },
+                    label = { Text(stringResource(R.string.script_event_goto)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                )
+                OutlinedTextField(
+                    value = narration,
+                    onValueChange = { narration = it },
+                    label = { Text(stringResource(R.string.script_event_narration)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    maxLines = 3
+                )
+                SwitchRow(stringResource(R.string.script_event_once), once) { once = it }
+                if (existing != null) {
+                    TextButton(
+                        onClick = {
+                            ScriptEditorUiIntent.DeleteEvent(
+                                state.eventEditorSceneId,
+                                existing.id
+                            ).emit()
+                        }
+                    ) {
+                        Text(stringResource(R.string.script_event_delete))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    ScriptEditorUiIntent.SaveEvent(
+                        sceneId = state.eventEditorSceneId,
+                        eventId = state.eventEditorEventId,
+                        name = name,
+                        atRound = atRound,
+                        keyword = keyword,
+                        chance = chance,
+                        addCast = addCast,
+                        removeCast = removeCast,
+                        gotoSceneId = gotoSceneId,
+                        narration = narration,
+                        once = once,
+                        effectsText = effects
+                    ).emit()
+                }
+            ) {
+                Text(stringResource(R.string.script_scene_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { ScriptEditorUiIntent.CloseEventEditor.emit() }) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 

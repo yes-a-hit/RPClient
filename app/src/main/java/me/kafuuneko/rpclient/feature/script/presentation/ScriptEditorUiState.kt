@@ -43,6 +43,9 @@ data class ScriptSceneRow(
     val completionKeyword: String = "",
     /** 后继场景 ID，逗号分隔的展示串。 */
     val nextSceneIds: String = "",
+    /** 本场景的事件列表，供事件编辑器展示。 */
+    val events: List<me.kafuuneko.rpclient.libs.script.ScriptEvent> = emptyList(),
+
     /** 是否继承剧本级背景。 */
     val inheritBackground: Boolean = true,
     /** 建议行动，每行一条；留空表示交给 AI 临场决定。 */
@@ -70,6 +73,10 @@ sealed class ScriptEditorUiState {
         /** 剧本级背景图关键词或名称。 */
         val packBackground: String = "",
 
+        /** 事件编辑框：正在改哪个场景的事件。 */
+        val eventEditorSceneId: String = "",
+        /** 事件编辑框：正在改哪条事件；空表示新建。 */
+        val eventEditorEventId: String = "",
         /** 剧本变量定义，供变量面板编辑。 */
         val variables: List<me.kafuuneko.rpclient.libs.script.ScriptVariable> = emptyList(),
 

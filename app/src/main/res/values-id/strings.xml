@@ -1461,4 +1461,18 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_variable_min">Min</string>
     <string name="script_variable_max">Maks</string>
     <string name="script_variable_visible">Terlihat</string>
+    <string name="script_events">Peristiwa</string>
+    <string name="script_event_add">Tambah peristiwa</string>
+    <string name="script_event_name">Nama</string>
+    <string name="script_event_round">Ronde</string>
+    <string name="script_event_keyword">Kata kunci</string>
+    <string name="script_event_chance">Peluang</string>
+    <string name="script_event_effects">Efek</string>
+    <string name="script_event_effects_hint">Satu per baris</string>
+    <string name="script_event_add_cast">Tambah pemeran</string>
+    <string name="script_event_remove_cast">Hapus pemeran</string>
+    <string name="script_event_goto">Ke adegan</string>
+    <string name="script_event_narration">Narasi</string>
+    <string name="script_event_once">Sekali</string>
+    <string name="script_event_delete">Hapus</string>
 </resources>

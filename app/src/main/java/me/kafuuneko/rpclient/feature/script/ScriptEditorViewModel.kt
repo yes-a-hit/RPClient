@@ -15,6 +15,8 @@ import me.kafuuneko.rpclient.libs.script.ScriptOpening
 import me.kafuuneko.rpclient.libs.room.entity.toConfig
 import me.kafuuneko.rpclient.libs.script.ScriptVariable
 import me.kafuuneko.rpclient.libs.script.renameVariable
+import me.kafuuneko.rpclient.libs.script.ScriptEffect
+import me.kafuuneko.rpclient.libs.script.ScriptEvent
 import me.kafuuneko.rpclient.libs.script.ScriptPack
 import me.kafuuneko.rpclient.libs.script.ScriptPackCodec
 import me.kafuuneko.rpclient.libs.script.ScriptScene
@@ -232,6 +234,116 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
 
     /** 更新剧本级信息；开场白从多行文本拆回列表。 */
 
+
+
+    @UiIntentObserver(ScriptEditorUiIntent.AddEvent::class)
+    private fun onAddEvent(intent: ScriptEditorUiIntent.AddEvent) {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        state.copy(
+            eventEditorSceneId = intent.sceneId,
+            eventEditorEventId = ""
+        ).setup()
+    }
+
+    @UiIntentObserver(ScriptEditorUiIntent.OpenEventEditor::class)
+    private fun onOpenEventEditor(intent: ScriptEditorUiIntent.OpenEventEditor) {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        state.copy(
+            eventEditorSceneId = intent.sceneId,
+            eventEditorEventId = intent.eventId
+        ).setup()
+    }
+
+    @UiIntentObserver(ScriptEditorUiIntent.CloseEventEditor::class)
+    private fun onCloseEventEditor() {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        state.copy(eventEditorSceneId = "", eventEditorEventId = "").setup()
+    }
+
+    /**
+     * 保存一条事件。
+     *
+     * [ScriptEditorUiIntent.SaveEvent] 里带的是界面原样的字符串，
+     * 这里统一清洗：轮次与概率取整并夹到合理范围，
+     * 副作用按「变量名 +2」的行格式解析。
+     */
+    @UiIntentObserver(ScriptEditorUiIntent.SaveEvent::class)
+    private suspend fun onSaveEvent(intent: ScriptEditorUiIntent.SaveEvent) {
+        val scene = mPack.scenes.firstOrNull { it.id == intent.sceneId } ?: return
+        val keyword = intent.keyword.trim()
+        val event = ScriptEvent(
+            id = intent.eventId.ifBlank { "evt_" + System.currentTimeMillis() },
+            name = intent.name.trim(),
+            condition = if (keyword.isBlank()) {
+                null
+            } else {
+                ScriptCondition(ScriptConditionType.Keyword, pattern = keyword)
+            },
+            atRound = intent.atRound.toIntOrNull()?.coerceAtLeast(0) ?: 0,
+            chance = (intent.chance.toIntOrNull() ?: 100).coerceIn(0, 100),
+            addCast = splitNames(intent.addCast),
+            removeCast = splitNames(intent.removeCast),
+            gotoSceneId = intent.gotoSceneId.trim(),
+            narration = intent.narration.trim(),
+            once = intent.once,
+            effects = parseEffects(intent.effectsText)
+        )
+        val updated = if (intent.eventId.isBlank()) {
+            scene.events + event
+        } else {
+            scene.events.map { existing ->
+                if (existing.id == intent.eventId) event else existing
+            }
+        }
+        mPack = mPack.copy(
+            scenes = mPack.scenes.map { item ->
+                if (item.id == scene.id) item.copy(events = updated) else item
+            }
+        )
+        mStore.save(mPack)
+        getOrNull<ScriptEditorUiState.Ready>()
+            ?.copy(eventEditorSceneId = "", eventEditorEventId = "")
+            ?.setup()
+        publish(null, null)
+    }
+
+    @UiIntentObserver(ScriptEditorUiIntent.DeleteEvent::class)
+    private suspend fun onDeleteEvent(intent: ScriptEditorUiIntent.DeleteEvent) {
+        mPack = mPack.copy(
+            scenes = mPack.scenes.map { scene ->
+                if (scene.id != intent.sceneId) {
+                    scene
+                } else {
+                    scene.copy(events = scene.events.filterNot { it.id == intent.eventId })
+                }
+            }
+        )
+        mStore.save(mPack)
+        getOrNull<ScriptEditorUiState.Ready>()
+            ?.copy(eventEditorSceneId = "", eventEditorEventId = "")
+            ?.setup()
+        publish(null, null)
+    }
+
+    /**
+     * 解析副作用文本，每行一条。
+     *
+     * 支持「电量 +2」「好感 -1」这种写法，
+     * 也接受纯变量名（按 +1 处理），写错的直接跳过。
+     */
+    private fun parseEffects(raw: String): List<ScriptEffect> = raw
+        .lines()
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .mapNotNull { line ->
+            val match = Regex("""(\S+)\s*([+-]?\s*\d+)?""").find(line) ?: return@mapNotNull null
+            val variable = match.groupValues[1]
+            val delta = match.groupValues.getOrNull(2)
+                ?.replace(" ", "")
+                ?.toIntOrNull()
+                ?: 1
+            if (variable.isBlank()) null else ScriptEffect(variable, delta)
+        }
 
     /** 新增变量，名字按序号避开重名。 */
     @UiIntentObserver(ScriptEditorUiIntent.AddVariable::class)
@@ -670,6 +782,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         editingField: ScriptLinkField?,
         settingsSceneId: String? = null
     ) {
+        val previous = getOrNull<ScriptEditorUiState.Ready>()
         val entryIds = buildSet {
             addAll(mPack.startSceneIds)
             if (mPack.startSceneId.isNotBlank()) add(mPack.startSceneId)
@@ -680,6 +793,9 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
             description = mPack.description,
             packBackground = mPack.backgroundKey,
             variables = mPack.variables,
+            // 事件编辑框状态由意图单独维护，这里原样带过去
+            eventEditorSceneId = previous?.eventEditorSceneId.orEmpty(),
+            eventEditorEventId = previous?.eventEditorEventId.orEmpty(),
             openingsText = mPack.openings.joinToString("\n") { opening ->
                 if (opening.speaker.isBlank()) opening.content
                 else opening.speaker + "|" + opening.content
@@ -715,6 +831,7 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
                         .orEmpty(),
                     nextSceneIds = scene.nextSceneIds.joinToString("、"),
                     suggestedActions = scene.suggestedActions.joinToString("\n"),
+                    events = scene.events,
                     inheritBackground = scene.inheritBackground
                 )
             },

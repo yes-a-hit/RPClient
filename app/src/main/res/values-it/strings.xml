@@ -1439,4 +1439,18 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_variable_min">Min</string>
     <string name="script_variable_max">Max</string>
     <string name="script_variable_visible">Visibile</string>
+    <string name="script_events">Eventi</string>
+    <string name="script_event_add">Aggiungi evento</string>
+    <string name="script_event_name">Nome</string>
+    <string name="script_event_round">Turno</string>
+    <string name="script_event_keyword">Parola chiave</string>
+    <string name="script_event_chance">Probabilità</string>
+    <string name="script_event_effects">Effetti</string>
+    <string name="script_event_effects_hint">Uno per riga</string>
+    <string name="script_event_add_cast">Aggiungi cast</string>
+    <string name="script_event_remove_cast">Rimuovi cast</string>
+    <string name="script_event_goto">Vai alla scena</string>
+    <string name="script_event_narration">Narrazione</string>
+    <string name="script_event_once">Una volta</string>
+    <string name="script_event_delete">Elimina</string>
 </resources>

@@ -1457,4 +1457,18 @@
     <string name="script_variable_min">下限</string>
     <string name="script_variable_max">上限</string>
     <string name="script_variable_visible">对玩家可见</string>
+    <string name="script_events">场景事件</string>
+    <string name="script_event_add">添加事件</string>
+    <string name="script_event_name">事件名称</string>
+    <string name="script_event_round">触发轮次</string>
+    <string name="script_event_keyword">触发关键词</string>
+    <string name="script_event_chance">触发概率</string>
+    <string name="script_event_effects">变量副作用</string>
+    <string name="script_event_effects_hint">每行一条，如「电量 -10」</string>
+    <string name="script_event_add_cast">追加角色</string>
+    <string name="script_event_remove_cast">移除角色</string>
+    <string name="script_event_goto">转到的场景</string>
+    <string name="script_event_narration">插入旁白</string>
+    <string name="script_event_once">只触发一次</string>
+    <string name="script_event_delete">删除事件</string>
 </resources>

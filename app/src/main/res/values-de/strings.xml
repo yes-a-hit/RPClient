@@ -1460,4 +1460,18 @@
     <string name="script_variable_min">Min</string>
     <string name="script_variable_max">Max</string>
     <string name="script_variable_visible">Sichtbar</string>
+    <string name="script_events">Ereignisse</string>
+    <string name="script_event_add">Ereignis hinzufügen</string>
+    <string name="script_event_name">Name</string>
+    <string name="script_event_round">Runde</string>
+    <string name="script_event_keyword">Schlüsselwort</string>
+    <string name="script_event_chance">Chance</string>
+    <string name="script_event_effects">Effekte</string>
+    <string name="script_event_effects_hint">Eine pro Zeile</string>
+    <string name="script_event_add_cast">Besetzung hinzufügen</string>
+    <string name="script_event_remove_cast">Entfernen</string>
+    <string name="script_event_goto">Zielszene</string>
+    <string name="script_event_narration">Erzählung</string>
+    <string name="script_event_once">Einmalig</string>
+    <string name="script_event_delete">Löschen</string>
 </resources>

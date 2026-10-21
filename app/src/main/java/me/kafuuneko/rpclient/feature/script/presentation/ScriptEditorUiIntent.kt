@@ -115,6 +115,40 @@ sealed class ScriptEditorUiIntent {
      * [sceneId] 为空表示剧本级全局背景，否则是那一章。
      */
     /** 新增一个剧本变量，默认名按序号生成。 */
+    /** 给指定场景加一条事件。 */
+    data class AddEvent(val sceneId: String) : ScriptEditorUiIntent()
+
+    /** 打开某条事件的编辑框；[eventId] 为空表示新建。 */
+    data class OpenEventEditor(val sceneId: String, val eventId: String) : ScriptEditorUiIntent()
+
+    /** 关闭事件编辑框。 */
+    data object CloseEventEditor : ScriptEditorUiIntent()
+
+    /**
+     * 保存事件。
+     *
+     * 数值从界面传进来时都还是字符串，由 ViewModel 统一转换，
+     * 免得到处写 toIntOrNull。
+     */
+    data class SaveEvent(
+        val sceneId: String,
+        val eventId: String,
+        val name: String,
+        val atRound: String,
+        val keyword: String,
+        val chance: String,
+        val addCast: String,
+        val removeCast: String,
+        val gotoSceneId: String,
+        val narration: String,
+        val once: Boolean,
+        /** 变量副作用，每行一条，格式「变量名 +2」或「变量名 -1」。 */
+        val effectsText: String
+    ) : ScriptEditorUiIntent()
+
+    /** 删除一条事件。 */
+    data class DeleteEvent(val sceneId: String, val eventId: String) : ScriptEditorUiIntent()
+
     data object AddVariable : ScriptEditorUiIntent()
 
     /** 修改某个变量的定义。 */

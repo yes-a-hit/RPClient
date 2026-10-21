@@ -1464,4 +1464,18 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_variable_min">Mín</string>
     <string name="script_variable_max">Máx</string>
     <string name="script_variable_visible">Visível</string>
+    <string name="script_events">Eventos</string>
+    <string name="script_event_add">Adicionar evento</string>
+    <string name="script_event_name">Nome</string>
+    <string name="script_event_round">Rodada</string>
+    <string name="script_event_keyword">Palavra-chave</string>
+    <string name="script_event_chance">Chance</string>
+    <string name="script_event_effects">Efeitos</string>
+    <string name="script_event_effects_hint">Um por linha</string>
+    <string name="script_event_add_cast">Adicionar elenco</string>
+    <string name="script_event_remove_cast">Remover elenco</string>
+    <string name="script_event_goto">Ir para cena</string>
+    <string name="script_event_narration">Narração</string>
+    <string name="script_event_once">Uma vez</string>
+    <string name="script_event_delete">Excluir</string>
 </resources>

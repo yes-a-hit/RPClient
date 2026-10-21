@@ -1465,4 +1465,18 @@
     <string name="script_variable_min">Мин</string>
     <string name="script_variable_max">Макс</string>
     <string name="script_variable_visible">Видно</string>
+    <string name="script_events">События</string>
+    <string name="script_event_add">Добавить событие</string>
+    <string name="script_event_name">Название</string>
+    <string name="script_event_round">Ход</string>
+    <string name="script_event_keyword">Ключевое слово</string>
+    <string name="script_event_chance">Шанс</string>
+    <string name="script_event_effects">Эффекты</string>
+    <string name="script_event_effects_hint">По одному в строке</string>
+    <string name="script_event_add_cast">Добавить в состав</string>
+    <string name="script_event_remove_cast">Убрать из состава</string>
+    <string name="script_event_goto">Перейти к сцене</string>
+    <string name="script_event_narration">Вставка</string>
+    <string name="script_event_once">Однократно</string>
+    <string name="script_event_delete">Удалить</string>
 </resources>

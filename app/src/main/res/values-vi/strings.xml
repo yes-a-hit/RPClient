@@ -1461,4 +1461,18 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_variable_min">Min</string>
     <string name="script_variable_max">Max</string>
     <string name="script_variable_visible">Hiển thị</string>
+    <string name="script_events">Sự kiện</string>
+    <string name="script_event_add">Thêm sự kiện</string>
+    <string name="script_event_name">Tên</string>
+    <string name="script_event_round">Lượt</string>
+    <string name="script_event_keyword">Từ khoá</string>
+    <string name="script_event_chance">Tỉ lệ</string>
+    <string name="script_event_effects">Hiệu ứng</string>
+    <string name="script_event_effects_hint">Mỗi dòng một</string>
+    <string name="script_event_add_cast">Thêm vai</string>
+    <string name="script_event_remove_cast">Bỏ vai</string>
+    <string name="script_event_goto">Chuyển cảnh</string>
+    <string name="script_event_narration">Chèn dẫn chuyện</string>
+    <string name="script_event_once">Một lần</string>
+    <string name="script_event_delete">Xoá</string>
 </resources>

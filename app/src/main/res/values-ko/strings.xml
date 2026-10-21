@@ -1455,4 +1455,18 @@
     <string name="script_variable_min">최소</string>
     <string name="script_variable_max">최대</string>
     <string name="script_variable_visible">공개</string>
+    <string name="script_events">장면 이벤트</string>
+    <string name="script_event_add">이벤트 추가</string>
+    <string name="script_event_name">이벤트 이름</string>
+    <string name="script_event_round">발동 턴</string>
+    <string name="script_event_keyword">발동 키워드</string>
+    <string name="script_event_chance">발동 확률</string>
+    <string name="script_event_effects">변수 효과</string>
+    <string name="script_event_effects_hint">줄당 하나, 예: 전력 -10</string>
+    <string name="script_event_add_cast">추가 인물</string>
+    <string name="script_event_remove_cast">제외 인물</string>
+    <string name="script_event_goto">이동할 장면</string>
+    <string name="script_event_narration">삽입 내레이션</string>
+    <string name="script_event_once">한 번만</string>
+    <string name="script_event_delete">이벤트 삭제</string>
 </resources>

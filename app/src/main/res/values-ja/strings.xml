@@ -1456,4 +1456,18 @@
     <string name="script_variable_min">下限</string>
     <string name="script_variable_max">上限</string>
     <string name="script_variable_visible">公開</string>
+    <string name="script_events">場面イベント</string>
+    <string name="script_event_add">イベント追加</string>
+    <string name="script_event_name">イベント名</string>
+    <string name="script_event_round">発生ターン</string>
+    <string name="script_event_keyword">トリガー語</string>
+    <string name="script_event_chance">発生確率</string>
+    <string name="script_event_effects">変数効果</string>
+    <string name="script_event_effects_hint">1行1件、例「電気 -10」</string>
+    <string name="script_event_add_cast">追加キャスト</string>
+    <string name="script_event_remove_cast">除外キャスト</string>
+    <string name="script_event_goto">移動先場面</string>
+    <string name="script_event_narration">挿入ナレーション</string>
+    <string name="script_event_once">1回のみ</string>
+    <string name="script_event_delete">イベント削除</string>
 </resources>
