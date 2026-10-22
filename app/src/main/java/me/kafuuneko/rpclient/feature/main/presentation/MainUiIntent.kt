@@ -216,6 +216,8 @@ sealed class MainUiIntent {
 
     data object OpenTokenUsage : MainUiIntent()
 
+    data object OpenBackupRestore : MainUiIntent()
+
     data object OpenAbout : MainUiIntent()
 
     data class EnterMultiSelect(val item: MainHomeItemSelection) : MainUiIntent()

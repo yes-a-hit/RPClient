@@ -7,6 +7,8 @@ import com.google.gson.Gson
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import me.kafuuneko.rpclient.libs.backup.BackupArchiveRepository
+import me.kafuuneko.rpclient.libs.backup.PortableBackupRepository
 import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.character.CharacterCardRepository
 import me.kafuuneko.rpclient.libs.assistant.AssistantSessionStore
@@ -200,6 +202,8 @@ internal val appModules = module {
     singleOf(::StoryOutputSanitizer)
     singleOf(::StoryArchiveCodec)
     singleOf(::StoryArchiveRepository)
+    singleOf(::BackupArchiveRepository)
+    singleOf(::PortableBackupRepository)
     singleOf(::RegexScriptCodec)
     // 角色扩展档案编解码器：Prompt 构建器与角色编辑页共用同一实例
     single { CharacterProfileCodec(get()) }

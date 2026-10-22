@@ -21,7 +21,7 @@ data class GroupChatMessageItem(
     val time: String,
     /** 当前消息或请求是否处于流式生成状态。 */
     val imageUuids: List<String> = emptyList(),
-    /** 已解码的发言角色头像；为空时界面回退为名称首字头像。 */
-    val avatarImage: ImageBitmap? = null,
-    val isStreaming: Boolean = false
+    val isStreaming: Boolean = false,
+    /** 发言者头像；为空时界面退回首字占位。 */
+    val avatarImage: ImageBitmap? = null
 )

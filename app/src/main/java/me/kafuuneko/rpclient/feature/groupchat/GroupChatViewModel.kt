@@ -2,8 +2,6 @@ package me.kafuuneko.rpclient.feature.groupchat
 
 import android.content.Context
 import android.os.Bundle
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.viewModelScope
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -17,6 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import me.kafuuneko.rpclient.feature.main.model.Route
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.ModelSettingsGuideContent
@@ -66,9 +66,6 @@ import me.kafuuneko.rpclient.libs.llm.LLMProviderSelectionResolver
 import me.kafuuneko.rpclient.libs.llm.classifyGenerationFailure
 import me.kafuuneko.rpclient.libs.llm.model.isOutputTokenLimitReached
 import me.kafuuneko.rpclient.libs.llm.model.ImageInputSetting
-import me.kafuuneko.rpclient.libs.llm.model.LLMMessage
-import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
-import me.kafuuneko.rpclient.libs.groupchat.model.GroupChatMessageSource
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMStreamEvent
 import me.kafuuneko.rpclient.libs.room.model.MessageImageInput
@@ -102,9 +99,7 @@ import me.kafuuneko.rpclient.libs.room.repository.GroupChatSpeakerSelectionData
 import me.kafuuneko.rpclient.libs.room.repository.GroupChatSummaryGenerationData
 import me.kafuuneko.rpclient.libs.room.repository.LLMRepository
 import me.kafuuneko.rpclient.libs.room.repository.LorebookRepository
-import me.kafuuneko.rpclient.libs.skill.SkillRepository
 import me.kafuuneko.rpclient.model.toMessageContentParts
-import me.kafuuneko.rpclient.ui.widgets.ChatBackgroundUiState
 import me.kafuuneko.rpclient.utils.filterLorebookGroups
 import me.kafuuneko.rpclient.utils.formatTimestamp
 import me.kafuuneko.rpclient.utils.toMessageCopyText
@@ -134,82 +129,6 @@ class GroupChatViewModel :
     ), KoinComponent {
     // 数据仓库与服务依赖注入
     private val mFileRepository by inject<FileRepository>()
-
-    /**
-     * 群成员头像解码缓存，键为头像文件 UUID。
-     *
-     * 群聊状态在发送、编辑、切换成员时会频繁重建，头像位图若每次重建都重新解码会明显拖慢页面刷新；
-     * 键使用文件 UUID，角色更换头像后 UUID 变化即可自动失效，无需额外清理。
-     * 值为 null 表示该文件已确认无法解码，用于避免对损坏文件反复读取。
-     */
-    private val mAvatarImageCache = HashMap<String, ImageBitmap?>()
-
-    /**
-     * 聊天背景解码缓存，保存上次解析的图片 UUID 与位图。
-     *
-     * 背景图与单聊共用同一份全局配置；群聊状态在每次发送与轮询发言时都会重建，
-     * 缓存可避免重复解码大图。UUID 变化即代表用户更换了背景，缓存自动失效。
-     */
-    private var mBackgroundImageCache: Pair<String, ImageBitmap?>? = null
-
-    /**
-     * 解析群聊页背景配置，返回可直接渲染的背景状态。
-     *
-     * - 未配置背景图时返回仅含遮罩强度的空状态，页面继续使用主题纯色背景。
-     * - 图片 UUID 与缓存一致时复用已解码位图，避免重复解码大图。
-     *
-     * @return 群聊页面背景展示状态
-     */
-    private suspend fun resolveBackgroundState(): ChatBackgroundUiState {
-        val backgroundUuid = AppModel.chatBackgroundImage
-        val dimPercent = AppModel.chatBackgroundDim
-        if (backgroundUuid.isBlank()) return ChatBackgroundUiState(dimPercent = dimPercent)
-        // 命中缓存时直接复用位图，仅刷新遮罩强度
-        mBackgroundImageCache?.let { (cachedUuid, cachedImage) ->
-            if (cachedUuid == backgroundUuid) {
-                return ChatBackgroundUiState(image = cachedImage, dimPercent = dimPercent)
-            }
-        }
-        // 未命中缓存时按屏幕量级采样解码，避免原图占满内存
-        val image = withContext(Dispatchers.IO) {
-            mFileRepository.loadSampledBitmap(
-                uuid = backgroundUuid,
-                requestedWidthPx = BACKGROUND_SAMPLE_WIDTH,
-                requestedHeightPx = BACKGROUND_SAMPLE_HEIGHT
-            )?.asImageBitmap()
-        }
-        mBackgroundImageCache = backgroundUuid to image
-        return ChatBackgroundUiState(image = image, dimPercent = dimPercent)
-    }
-
-    /**
-     * 读取并缓存角色头像位图。
-     *
-     * - 空白 UUID 直接返回 null，界面回退为名称首字头像。
-     * - 命中缓存时不再访问文件层，包含「已确认无法解码」的 null 结果。
-     * - 未命中时在 IO 线程按头像缩略图尺寸采样解码，避免大图占用内存。
-     *
-     * @param avatarUuid 角色头像文件 UUID
-     * @return 可直接渲染的头像位图，无法解码时为 null
-     */
-    private suspend fun loadAvatarImage(avatarUuid: String): ImageBitmap? {
-        if (avatarUuid.isBlank()) return null
-        // 同步读取缓存，避免同一 UUID 被并发解码多次
-        synchronized(mAvatarImageCache) {
-            if (mAvatarImageCache.containsKey(avatarUuid)) {
-                return mAvatarImageCache[avatarUuid]
-            }
-        }
-        // 缓存未命中时在 IO 线程解码头像缩略图
-        val image = withContext(Dispatchers.IO) {
-            mFileRepository.loadAvatarBitmap(avatarUuid)?.asImageBitmap()
-        }
-        synchronized(mAvatarImageCache) {
-            mAvatarImageCache[avatarUuid] = image
-        }
-        return image
-    }
-
     /** 只保存失败批次尚未完成的角色，模式与触发消息作为同一快照更新。 */
     private data class ReplyRetryContext(
         val sessionId: Long,
@@ -296,6 +215,11 @@ class GroupChatViewModel :
     }
 
     private val mGroupChatRepository by inject<GroupChatRepository>()
+
+    /** 头像缓存：同一角色在一轮渲染里只解码一次。 */
+    private val mAvatarImageCache = HashMap<String, androidx.compose.ui.graphics.ImageBitmap?>()
+
+    /** 头像缓存：同一角色在一轮渲染里只解码一次。 */
     private val mCharacterRepository by inject<CharacterRepository>()
     private val mLLMRepository by inject<LLMRepository>()
     private val mProviderSelectionResolver by inject<LLMProviderSelectionResolver>()
@@ -305,7 +229,6 @@ class GroupChatViewModel :
     private val mOutputSanitizer by inject<GroupChatOutputSanitizer>()
     private val mLorebookRepository by inject<LorebookRepository>()
     private val mRegexRepository by inject<RegexScriptRepository>()
-    private val mSkillRepository by inject<SkillRepository>()
     private val mRegexProcessor by inject<RegexMessageProcessor>()
     private val mContext by inject<Context>()
 
@@ -615,64 +538,6 @@ class GroupChatViewModel :
      *
      * @param intent 包含草稿文本的意图
      */
-
-    /**
-     * 以玩家身份代写一句发言，结果填入输入框。
-     *
-     * 与单人会话的 Impersonate 同用途：不想自己想说什么时点一下，
-     * 由模型根据群聊局势写一句，玩家改完再发。
-     */
-    @UiIntentObserver(GroupChatUiIntent.ImpersonateUser::class)
-    private suspend fun onImpersonateUser() {
-        val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
-        val sessionId = mSessionId ?: return
-        val provider = runCatching {
-            mProviderSelectionResolver.requireDefaultProvider()
-        }.getOrNull() ?: return
-        // 界面里已有最近消息与成员名单，直接取用，不必再查库
-        val history = uiState.conversationState.messages.takeLast(IMPERSONATE_HISTORY)
-        val system = buildString {
-            append("你在为玩家代笔。当前是群聊场景，在场角色：")
-            append(uiState.members.joinToString("、") { it.name })
-            append("。\n根据最近几轮对话，写一句玩家此刻最自然的发言，20 字以内，")
-            append("只输出这句话本身，不要角色名、不要引号、不要解释。")
-        }
-        val messages = buildList {
-            add(LLMMessage(LLMMessageRole.System, system))
-            history.forEach { message ->
-                add(
-                    LLMMessage(
-                        role = if (message.source == GroupChatMessageSource.User) {
-                            LLMMessageRole.User
-                        } else {
-                            LLMMessageRole.Assistant
-                        },
-                        content = message.content
-                    )
-                )
-            }
-        }
-        val builder = StringBuilder()
-        val failed = runCatching {
-            mLLMRepository.streamGenerateWithProvider(
-                provider = provider,
-                request = LLMGenerationRequest(messages = messages, model = provider.model),
-                routingSessionKey = "group-chat-impersonate:$sessionId"
-            ).collect { event ->
-                if (event is LLMStreamEvent.Delta) builder.append(event.content)
-            }
-        }.exceptionOrNull()
-        if (failed != null) {
-            AppViewEvent.PopupToastMessage(failed.message.orEmpty()).tryEmit()
-            return
-        }
-        val draft = builder.toString().trim()
-        if (draft.isBlank()) return
-        val current = getOrNull<GroupChatUiState.Normal>() ?: return
-        current.copy(
-            conversationState = current.conversationState.copy(inputDraft = draft)
-        ).setup()
-    }
     @UiIntentObserver(GroupChatUiIntent.ChangeInputDraft::class)
     private fun onChangeInputDraft(intent: GroupChatUiIntent.ChangeInputDraft) {
         val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
@@ -1830,12 +1695,6 @@ class GroupChatViewModel :
                     generationMode = generationMode,
                     regexScripts = mRegexRepository.activeScripts(
                         data.members.map { it.character }
-                    ),
-                    // 群聊与单聊共用同一批 Skill，按最近消息命中触发词激活
-                    activeSkills = mSkillRepository.resolveActive(
-                        recentText = data.messages
-                            .takeLast(SKILL_SCAN_MESSAGE_COUNT)
-                            .joinToString("\n") { it.content }
                     )
                 )
             )
@@ -2307,10 +2166,6 @@ class GroupChatViewModel :
         val data = pageData.data
         mMessageDisplayContext = data.copy(messages = emptyList())
         mOldestLoadedMessageCursor = data.messages.firstOrNull()?.toGroupChatMessageCursor()
-        // 预加载全部群成员头像，成员列表与消息气泡共用同一批位图，避免同一角色重复解码
-        val memberAvatarImages = data.members.associate {
-            it.character.id to loadAvatarImage(it.character.avatar)
-        }
         val members = data.members.map {
             GroupChatMemberItem(
                 id = it.character.id,
@@ -2320,13 +2175,8 @@ class GroupChatViewModel :
                     characterName = it.character.name,
                     userName = data.session.userName
                 ),
-                muted = it.relation.muted,
-                avatarImage = memberAvatarImages[it.character.id]
+                muted = it.relation.muted
             )
-        }
-        // 消息只保存发言者名称快照，按名称建立头像索引以便历史消息继续显示头像
-        val avatarImageByName = data.members.associate {
-            it.character.name to memberAvatarImages[it.character.id]
         }
         // 计算当前激活策略下的有效选中发言人
         val validSelectedSpeakerId = selectedSpeakerId
@@ -2389,10 +2239,7 @@ class GroupChatViewModel :
                 .toGroupChatActivationStrategy(),
             page = page,
             conversationState = GroupChatConversationState(
-                messages = data.toMessageItems(
-                    messageImages = pageData.messageImages,
-                    avatarImageByName = avatarImageByName
-                ),
+                messages = data.toMessageItems(messageImages = pageData.messageImages),
                 hasCharacterMessage = pageData.hasCharacterMessage,
                 canLoadOlderMessages = pageData.canLoadOlderMessages,
                 selectedSpeakerId = effectiveSpeakerId,
@@ -2428,8 +2275,7 @@ class GroupChatViewModel :
             ),
             hasPromptInspection = mLastPromptInspection != null,
             hasAvailableProvider = hasAvailableProvider,
-            dialogState = dialogState,
-            backgroundState = resolveBackgroundState()
+            dialogState = dialogState
         )
     }
 
@@ -2464,19 +2310,20 @@ class GroupChatViewModel :
      * 将数据库群聊消息转换为 UI 渲染模型，并执行 Display 阶段正则。
      *
      * @receiver 群聊聚合数据快照
-     * @param messageImages 当前消息窗口对应的图片附件
-     * @param avatarImageByName 发言者名称到已解码头像的索引，用于消息气泡展示真实头像
      * @param newerMessageCount 当前片段之后已经加载的消息数量
      * @return 转换并正则渲染后的 [GroupChatMessageItem] 列表
      */
     private suspend fun GroupChatData.toMessageItems(
         messageImages: List<MessageWithImages>,
-        avatarImageByName: Map<String, ImageBitmap?> = emptyMap(),
         newerMessageCount: Int = 0
     ): List<GroupChatMessageItem> {
         val scripts = mRegexRepository.activeScripts(members.map { it.character })
         val imageMap = messageImages.associate { snapshot ->
             snapshot.key.messageId to snapshot.images.map { it.image.imageUuid }
+        }
+        // 成员头像按 UUID 解码一次，后续消息直接用
+        val avatarByName = members.associate { member ->
+            member.character.name to loadAvatarImage(member.character.avatar)
         }
         // 遍历消息并执行针对该消息发言角色的 Display 阶段正则
         return messages.mapIndexed { index, message ->
@@ -2512,8 +2359,8 @@ class GroupChatViewModel :
                 parts = displayContent.toMessageContentParts(message.id.toString()),
                 time = message.createTime.formatTimestamp("HH:mm"),
                 imageUuids = imageMap[message.id].orEmpty(),
-                avatarImage = avatarImageByName[message.speakerNameSnapshot],
-                isStreaming = message.id == mStreamingMessageId
+                isStreaming = message.id == mStreamingMessageId,
+                avatarImage = avatarByName[message.speakerNameSnapshot]
             )
         }
     }
@@ -2691,20 +2538,35 @@ class GroupChatViewModel :
         val inputSnapshot: SummaryInputSnapshot
     )
 
-    private companion object {
-        /** 代写时参考的历史条数。 */
-        const val IMPERSONATE_HISTORY = 8
+    /**
+     * 按文件 UUID 解码头像，带缓存。
+     *
+     * 群聊一屏可能有十几条消息，每条都去解码会明显卡顿，
+     * 所以按 UUID 缓存，同一个角色只算一次。
+     */
+    private suspend fun loadAvatarImage(avatarUuid: String): ImageBitmap? {
+        if (avatarUuid.isBlank()) return null
+        synchronized(mAvatarImageCache) {
+            if (mAvatarImageCache.containsKey(avatarUuid)) {
+                return mAvatarImageCache[avatarUuid]
+            }
+        }
+        val image = runCatching {
+            withContext(Dispatchers.IO) {
+                mFileRepository.loadSampledBitmap(avatarUuid, 128, 128)?.asImageBitmap()
+            }
+        }.getOrNull()
+        synchronized(mAvatarImageCache) { mAvatarImageCache[avatarUuid] = image }
+        return image
+    }
 
+    private companion object {
         /** 自动群聊模式下，两轮生成之间的短暂缓冲延时（毫秒）。 */
         const val AUTO_MODE_DELAY_MS = 500L
-        /** 群聊页面首次和后续向前加载的单页消息数量。 */
+    
+
+    /** 群聊页面首次和后续向前加载的单页消息数量。 */
         const val MESSAGE_PAGE_SIZE = 50
-        /** 背景图解码目标宽度，与主流手机竖屏逻辑宽度相当。 */
-        const val BACKGROUND_SAMPLE_WIDTH = 1080
-        /** 背景图解码目标高度，按长屏比例预留以保证铺满时不模糊。 */
-        const val BACKGROUND_SAMPLE_HEIGHT = 2400
-        /** Skill 触发词扫描覆盖的最近消息条数，与单聊保持一致。 */
-        const val SKILL_SCAN_MESSAGE_COUNT = 6
     }
 }
 
