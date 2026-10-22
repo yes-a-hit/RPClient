@@ -100,6 +100,9 @@ sealed class ChatLoadState {
 
 /** 单聊页面互斥显示的业务对话框。 */
 sealed class ChatDialogState {
+    /** 清空上下文的确认框。 */
+    data object ConfirmClearContext : ChatDialogState()
+
     /** 摘要被输出额度截断，等待用户前往全局设置调整。 */
     data object SummaryTokenLimit : ChatDialogState()
 

@@ -2040,6 +2040,15 @@ private fun DialogSwitch(
             onConfirm = { emitIntent(GroupChatUiIntent.ConfirmDeleteMessage) }
         )
 
+        GroupChatDialogState.ConfirmClearContext -> AppDangerDialog(
+            onDismissRequest = { emitIntent(GroupChatUiIntent.DismissDialog) },
+            title = stringResource(R.string.clear_context_title),
+            message = stringResource(R.string.clear_context_message),
+            confirmText = stringResource(R.string.clear_context_confirm),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = { emitIntent(GroupChatUiIntent.ConfirmClearConversationContext) }
+        )
+
         is GroupChatDialogState.DeleteSessionConfirm -> AppDangerDialog(
             onDismissRequest = { emitIntent(GroupChatUiIntent.DismissDialog) },
             title = stringResource(R.string.group_chat_delete_title),

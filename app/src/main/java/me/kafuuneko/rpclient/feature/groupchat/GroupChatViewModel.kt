@@ -1572,6 +1572,35 @@ class GroupChatViewModel :
     /**
      * 确认删除当前群聊会话，从数据库删除并关闭退出当前页面。
      */
+
+    @UiIntentObserver(GroupChatUiIntent.ClearConversationContextClick::class)
+    private fun onClearConversationContextClick() {
+        val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
+        uiState.copy(dialogState = GroupChatDialogState.ConfirmClearContext).setup()
+    }
+
+    /**
+     * 清空上下文重来。
+     *
+     * 消息与摘要一起清——只删消息的话模型还会从摘要里带着上一轮的结论。
+     * 群聊条目、成员与所有会话级设置保留。
+     */
+    @UiIntentObserver(GroupChatUiIntent.ConfirmClearConversationContext::class)
+    private suspend fun onConfirmClearContext() {
+        val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
+        val sessionId = mSessionId ?: return
+        if (mGenerationJob?.isCompleted == false) {
+            AppViewEvent.PopupToastMessageByResId(R.string.stop_generation_before_deleting).tryEmit()
+            uiState.copy(dialogState = GroupChatDialogState.None).setup()
+            return
+        }
+        uiState.copy(dialogState = GroupChatDialogState.None).setup()
+        withContext(Dispatchers.IO) {
+            mGroupChatRepository.clearMessages(sessionId)
+        }
+        refreshState()
+    }
+
     @UiIntentObserver(GroupChatUiIntent.ConfirmDeleteSession::class)
     private suspend fun onConfirmDeleteSession() {
         val uiState = getOrNull<GroupChatUiState.Normal>() ?: return

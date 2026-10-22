@@ -1469,4 +1469,8 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_play_restart_all">Ricomincia</string>
     <string name="assistant_expand_stream">Mostra tutto</string>
     <string name="assistant_collapse_stream">Riduci</string>
+    <string name="clear_context_title">Cancella contesto</string>
+    <string name="clear_context_message">Tutti i messaggi saranno eliminati. La sessione resta. Non annullabile.</string>
+    <string name="clear_context_confirm">Cancella</string>
+    <string name="clear_context_action">Cancella contesto</string>
 </resources>

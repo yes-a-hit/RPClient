@@ -1491,4 +1491,8 @@
     <string name="script_play_restart_all">Tout recommencer</string>
     <string name="assistant_expand_stream">Tout afficher</string>
     <string name="assistant_collapse_stream">Réduire</string>
+    <string name="clear_context_title">Effacer le contexte</string>
+    <string name="clear_context_message">Tous les messages seront supprimés. La session est conservée. Irréversible.</string>
+    <string name="clear_context_confirm">Effacer</string>
+    <string name="clear_context_action">Effacer le contexte</string>
 </resources>

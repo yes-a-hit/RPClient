@@ -1485,4 +1485,8 @@
     <string name="script_play_restart_all">清空重來</string>
     <string name="assistant_expand_stream">展開全部</string>
     <string name="assistant_collapse_stream">收起</string>
+    <string name="clear_context_title">清空上下文</string>
+    <string name="clear_context_message">訊息會全部刪除，工作階段與角色綁定保留。此操作無法復原。</string>
+    <string name="clear_context_confirm">清空</string>
+    <string name="clear_context_action">清空上下文</string>
 </resources>

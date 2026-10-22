@@ -1491,4 +1491,8 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_play_restart_all">Mulai ulang</string>
     <string name="assistant_expand_stream">Tampilkan semua</string>
     <string name="assistant_collapse_stream">Ringkas</string>
+    <string name="clear_context_title">Hapus konteks</string>
+    <string name="clear_context_message">Semua pesan akan dihapus. Sesi tetap ada. Tidak bisa dibatalkan.</string>
+    <string name="clear_context_confirm">Hapus</string>
+    <string name="clear_context_action">Hapus konteks</string>
 </resources>

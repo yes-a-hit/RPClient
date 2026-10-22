@@ -55,6 +55,8 @@ import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
 import me.kafuuneko.rpclient.libs.defaults.normalizedUserName
 import me.kafuuneko.rpclient.libs.llm.GenerationFailure
+import me.kafuuneko.rpclient.libs.llm.replaceContentKeepingThink
+import me.kafuuneko.rpclient.libs.llm.stripThinkBlock
 import me.kafuuneko.rpclient.libs.llm.ImageInputCapabilityResolver
 import me.kafuuneko.rpclient.libs.llm.LLMProviderSelectionResolver
 import me.kafuuneko.rpclient.libs.llm.classifyGenerationFailure
@@ -996,6 +998,35 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
      *
      * 从数据库物理删除该会话及其全部消息、总结等关联数据，并关闭页面。
      */
+
+    @UiIntentObserver(ChatUiIntent.ClearConversationContextClick::class)
+    private fun onClearConversationContextClick() {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        uiState.copy(dialogState = ChatDialogState.ConfirmClearContext).setup()
+    }
+
+    /**
+     * 清空上下文重来。
+     *
+     * 只删消息，会话条目、角色绑定、世界书选择这些设置全部保留——
+     * 用户要的是「这段对话重新开始」，不是「删掉这个会话」。
+     */
+    @UiIntentObserver(ChatUiIntent.ConfirmClearConversationContext::class)
+    private suspend fun onConfirmClearContext() {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val sessionId = mSessionId ?: return
+        if (mGenerationJob?.isCompleted == false) {
+            AppViewEvent.PopupToastMessageByResId(R.string.stop_generation_before_deleting).tryEmit()
+            uiState.copy(dialogState = ChatDialogState.None).setup()
+            return
+        }
+        uiState.copy(dialogState = ChatDialogState.None).setup()
+        withContext(Dispatchers.IO) {
+            mChatRepository.deleteMessagesBySessionId(sessionId)
+        }
+        refreshUiState(sessionId)
+    }
+
     @UiIntentObserver(ChatUiIntent.ConfirmDeleteSession::class)
     private suspend fun onConfirmDeleteSession() {
         val uiState = getOrNull<ChatUiState.Normal>() ?: return
@@ -1342,6 +1373,9 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                 ?.takeIf { it.sessionId == sessionId }
                 ?.content
         } ?: return
+        // 编辑框里只放正文：思维链是这条回复当时怎么想出来的记录，
+        // 不是给用户改的东西。整段塞进去既没法改，还容易被误删。
+        val editableContent = stripThinkBlock(rawContent)
         mImageCoordinator.startEditing(message.imageUuids)
         // 将 UI 切换至消息编辑状态并填入原始草稿
         uiState.copy(
@@ -1398,6 +1432,9 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                         ChatMessage.Source.System,
                         ChatMessage.Source.Summary -> uiState.conversationState.editingMessageDraft
                     }
+                    // 正则动的是正文，思维链按原文接回去：
+                    // 编辑框里本来就没放它，不接回来就等于顺手删了
+                    .let { edited -> replaceContentKeepingThink(message.content, edited) }
                 }
                 if (message.source != ChatMessage.Source.Summary) {
                     mChatRepository.editMessageWithImages(sessionId, messageId, content, finalInputs)

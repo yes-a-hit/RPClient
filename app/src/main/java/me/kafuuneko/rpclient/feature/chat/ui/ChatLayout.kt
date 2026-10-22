@@ -1701,6 +1701,17 @@ private fun DialogSwitch(
             onConfirm = { ChatUiIntent.ConfirmDeleteSession.emit() }
         )
 
+        // 清空上下文只删消息，会话本身留着，
+        // 所以文案要和「删除会话」明确区分开
+        ChatDialogState.ConfirmClearContext -> AppDangerDialog(
+            onDismissRequest = { ChatUiIntent.DismissDialog.emit() },
+            title = stringResource(R.string.clear_context_title),
+            message = stringResource(R.string.clear_context_message),
+            confirmText = stringResource(R.string.clear_context_confirm),
+            dismissText = stringResource(R.string.cancel),
+            onConfirm = { ChatUiIntent.ConfirmClearConversationContext.emit() }
+        )
+
         is ChatDialogState.DeleteMessageConfirm -> AppDangerDialog(
             onDismissRequest = { ChatUiIntent.DismissDialog.emit() },
             title = stringResource(R.string.delete_message_title),

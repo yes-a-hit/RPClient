@@ -755,6 +755,17 @@ class GroupChatRepository(
         }
     }
 
+    /**
+     * 清空上下文：消息与摘要一并删掉，群聊条目、成员与会话级设置保留。
+     *
+     * 摘要必须一起清——只删消息的话模型还会从摘要里带着上一轮的结论，
+     * 等于没重置干净。
+     */
+    suspend fun clearMessages(sessionId: Long) {
+        mAppDatabase.getGroupChatMessageDao().deleteAllBySessionId(sessionId)
+        mAppDatabase.getGroupChatSummaryDao().deleteBySessionId(sessionId)
+    }
+
     suspend fun deleteSession(id: Long) {
         mImages.mutate {
             mImages.deleteInTransaction(this, MessageType.Group,

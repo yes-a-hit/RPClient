@@ -70,4 +70,8 @@ interface GroupChatSummaryDao : MutableDao<GroupChatSummary> {
         """
     )
     suspend fun deleteCovering(sessionId: Long, messageId: Long)
+
+    /** 清空上下文时一并清掉摘要，否则模型还带着上一轮的结论。 */
+    @Query("DELETE FROM group_chat_summaries WHERE sessionId = :sessionId")
+    suspend fun deleteBySessionId(sessionId: Long)
 }

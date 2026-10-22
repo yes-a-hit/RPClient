@@ -1492,4 +1492,8 @@
     <string name="script_play_restart_all">Empezar de cero</string>
     <string name="assistant_expand_stream">Expandir todo</string>
     <string name="assistant_collapse_stream">Contraer</string>
+    <string name="clear_context_title">Borrar contexto</string>
+    <string name="clear_context_message">Se borrarán todos los mensajes. La sesión se mantiene. No se puede deshacer.</string>
+    <string name="clear_context_confirm">Borrar</string>
+    <string name="clear_context_action">Borrar contexto</string>
 </resources>

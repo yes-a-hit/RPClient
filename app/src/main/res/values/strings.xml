@@ -1541,4 +1541,8 @@
     <string name="script_play_restart_all">清空重来</string>
     <string name="assistant_expand_stream">展开全部</string>
     <string name="assistant_collapse_stream">收起</string>
+    <string name="clear_context_title">清空上下文</string>
+    <string name="clear_context_message">消息会全部删除，会话与角色绑定保留。此操作无法撤销。</string>
+    <string name="clear_context_confirm">清空</string>
+    <string name="clear_context_action">清空上下文</string>
 </resources>

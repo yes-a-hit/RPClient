@@ -1495,4 +1495,8 @@
     <string name="script_play_restart_all">Заново</string>
     <string name="assistant_expand_stream">Показать всё</string>
     <string name="assistant_collapse_stream">Свернуть</string>
+    <string name="clear_context_title">Очистить контекст</string>
+    <string name="clear_context_message">Все сообщения будут удалены. Сессия сохранится. Действие необратимо.</string>
+    <string name="clear_context_confirm">Очистить</string>
+    <string name="clear_context_action">Очистить контекст</string>
 </resources>

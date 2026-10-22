@@ -76,6 +76,13 @@ sealed class GroupChatUiIntent {
     data object ConfirmDeleteMessage : GroupChatUiIntent()
     data class RegenerateMessage(val messageId: Long) : GroupChatUiIntent()
     data object ContinueLast : GroupChatUiIntent()
+
+    /** 清空上下文重来：消息与摘要全清，群聊条目与成员保留。 */
+    data object ClearConversationContextClick : GroupChatUiIntent()
+
+    /** 确认清空上下文。 */
+    data object ConfirmClearConversationContext : GroupChatUiIntent()
+
     data object DeleteSessionClick : GroupChatUiIntent()
     data object ConfirmDeleteSession : GroupChatUiIntent()
     data object OpenProviderSettings : GroupChatUiIntent()

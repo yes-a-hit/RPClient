@@ -143,6 +143,9 @@ sealed class GroupChatLoadState {
 
 /** 群聊页面互斥显示的业务对话框。 */
 sealed class GroupChatDialogState {
+    /** 清空上下文的确认框。 */
+    data object ConfirmClearContext : GroupChatDialogState()
+
     /** 摘要被输出额度截断，等待用户前往全局设置调整。 */
     data object SummaryTokenLimit : GroupChatDialogState()
 

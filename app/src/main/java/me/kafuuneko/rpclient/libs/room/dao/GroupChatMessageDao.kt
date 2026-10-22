@@ -227,6 +227,10 @@ interface GroupChatMessageDao : MutableDao<GroupChatMessage> {
     suspend fun deleteById(id: Long)
 
     /** 从指定消息起截断会话历史，用于重新生成。 */
+    /** 清空上下文：把这一局的所有消息删掉，群聊条目本身保留。 */
+    @Query("DELETE FROM group_chat_messages WHERE sessionId = :sessionId")
+    suspend fun deleteAllBySessionId(sessionId: Long)
+
     @Query("DELETE FROM group_chat_messages WHERE sessionId = :sessionId AND id >= :messageId")
     suspend fun deleteFrom(sessionId: Long, messageId: Long)
 }

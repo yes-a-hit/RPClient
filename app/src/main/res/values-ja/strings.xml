@@ -1486,4 +1486,8 @@
     <string name="script_play_restart_all">最初から</string>
     <string name="assistant_expand_stream">すべて表示</string>
     <string name="assistant_collapse_stream">折りたたむ</string>
+    <string name="clear_context_title">文脈を消去</string>
+    <string name="clear_context_message">メッセージはすべて削除されます。セッションは残ります。元に戻せません。</string>
+    <string name="clear_context_confirm">消去</string>
+    <string name="clear_context_action">文脈を消去</string>
 </resources>

@@ -1485,4 +1485,8 @@
     <string name="script_play_restart_all">처음부터</string>
     <string name="assistant_expand_stream">모두 펼치기</string>
     <string name="assistant_collapse_stream">접기</string>
+    <string name="clear_context_title">맥락 비우기</string>
+    <string name="clear_context_message">모든 메시지가 삭제됩니다. 세션은 유지됩니다. 되돌릴 수 없습니다.</string>
+    <string name="clear_context_confirm">비우기</string>
+    <string name="clear_context_action">맥락 비우기</string>
 </resources>

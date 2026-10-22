@@ -88,6 +88,13 @@ sealed class ChatUiIntent {
 
     data object CancelSummary : ChatUiIntent()
 
+
+    /** 清空上下文重来：消息全清，会话与设置保留。 */
+    data object ClearConversationContextClick : ChatUiIntent()
+
+    /** 确认清空上下文。 */
+    data object ConfirmClearConversationContext : ChatUiIntent()
+
     data object DeleteSessionClick : ChatUiIntent()
 
     data object ConfirmDeleteSession : ChatUiIntent()

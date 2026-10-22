@@ -1491,4 +1491,8 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_play_restart_all">Làm lại</string>
     <string name="assistant_expand_stream">Mở rộng tất cả</string>
     <string name="assistant_collapse_stream">Thu gọn</string>
+    <string name="clear_context_title">Xoá ngữ cảnh</string>
+    <string name="clear_context_message">Tất cả tin nhắn sẽ bị xoá. Phiên vẫn giữ. Không thể hoàn tác.</string>
+    <string name="clear_context_confirm">Xoá</string>
+    <string name="clear_context_action">Xoá ngữ cảnh</string>
 </resources>

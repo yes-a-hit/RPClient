@@ -1494,4 +1494,8 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_play_restart_all">Recomeçar</string>
     <string name="assistant_expand_stream">Expandir tudo</string>
     <string name="assistant_collapse_stream">Recolher</string>
+    <string name="clear_context_title">Limpar contexto</string>
+    <string name="clear_context_message">Todas as mensagens serão apagadas. A sessão é mantida. Não pode ser desfeito.</string>
+    <string name="clear_context_confirm">Limpar</string>
+    <string name="clear_context_action">Limpar contexto</string>
 </resources>
