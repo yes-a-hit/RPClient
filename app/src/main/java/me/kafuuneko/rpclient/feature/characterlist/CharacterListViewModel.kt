@@ -97,7 +97,8 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
         uiState.copy(
             searchText = intent.value,
             characters = visible,
-            tagGroups = groupCharactersByTag(visible)
+            // 分组暂时停用：接进列表页后角色卡库进不去，先回到无分类的状态
+            tagGroups = emptyList()
         ).setup()
     }
 
@@ -521,7 +522,7 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
             loadState = CharacterListLoadState.None,
             selectedCharacterId = characters.firstOrNull { it.id == selectedCharacterId }?.id,
             characters = visibleItems,
-            tagGroups = groupCharactersByTag(visibleItems)
+            tagGroups = emptyList()
         ).setup()
         scheduleVisibleAvatarLoads()
     }
@@ -608,7 +609,8 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
         val visible = renderCharacters(current.searchText)
         current.copy(
             characters = visible,
-            tagGroups = groupCharactersByTag(visible)
+            // 分组暂时停用：接进列表页后角色卡库进不去，先回到无分类的状态
+            tagGroups = emptyList()
         ).setup()
     }
 
