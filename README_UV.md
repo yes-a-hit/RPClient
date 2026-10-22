@@ -340,6 +340,36 @@ debug keystore 是公开已知的，提交进仓库没有安全风险，换机�
 - 若之后需要对某个域名做更强保证，可在同一处叠加 `CertificatePinner`
   公钥固定；那会比按名字拦更彻底，代价是对方换证书就得发版。
 
+### 上游策略：暂停合并 develop
+
+2026-10-22 试过一次整体合并 `upstream/develop`（23 个提交），没成，结论是**等上游发布**。
+
+不是冲突数量的问题，是**上游把三大块整个重构了**：
+
+| 模块 | 上游动作 |
+| --- | --- |
+| `feature/main/` | 拆成 `MainHomePage` / `MainSettingsPage` 加一堆 Panel |
+| `feature/groupchat/` | 意图表重做，新增 `LoadNewerMessages`、`ReachLatestMessage` |
+| `feature/characteredit/` | 意图表重做，wizard 系列全部改名 |
+
+这三个模块恰好是本分支改动最密集的地方（冒险入口、群聊扮演自己、角色表单）。冲突从 41 个压到 3 个时会冒出新的——因为**成套文件必须同进同出**：取上游 Intent 就丢自己的意图，留自己的 UI 又找不到新意图，每一块都得手工重接。
+
+`git merge --abort` 在那种状态下还会失败（改过的文件让 index 不一致），只能 `git reset --hard`，而它会带走未跟踪文件。
+
+**当前决定**：等上游把 develop 合回 master 再动。那时 master 上已有稳定版重构，冲突面小得多。
+
+如果确实急需某个功能，只挑**不碰这三块**的：
+
+- `9a3794b` 全文搜索 —— 新增 `feature/contentsearch` 与 `libs/search`，几乎不动老代码
+- `9a87bee` OpenAI Responses 协议 —— 新增适配器，独立
+
+顺带记录两个上游自身的小问题，合并时可以直接修：
+
+- 13 个语言文件的 `appearance_transparency_hint` 有多个 `%` 却没写位置参数（`%1$d` 这种），AAPT 会警告
+- 构建产物能出，但那些警告会被视为错误的风险一直存在
+
+另外开发期间用过 `git worktree` 隔离验证上游，清理时 Windows 会报 `Filename too long`，得用 `cmd /c rmdir /s /q` 强删。
+
 ### 已知问题
 - 冒险页「继续冒险」只列进行中的局，已结束的收进可折叠分组。
 - **编辑器里可出场 / 不可出场名单可能只能增不能减**，且会显示全部角色。
