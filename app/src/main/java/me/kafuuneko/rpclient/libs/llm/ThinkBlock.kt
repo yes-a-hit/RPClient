@@ -31,6 +31,10 @@ fun extractThinkBlock(content: String): String {
  * 剥掉思维链，只留正文。
  *
  * 编辑框里应该只出现这个结果——推理过程不是给用户改的东西。
+ *
+ * 被打断的思考（有开标记没闭标记）同样要剥：那种情况下标记之后
+ * 全是没写完的推理，正文还没开始。第一版对未闭合标记「放行」，
+ * 结果是半截推理永远赖在消息里，既删不掉也没法编辑。
  */
 fun stripThinkBlock(content: String): String {
     var result = content
@@ -38,7 +42,11 @@ fun stripThinkBlock(content: String): String {
         val start = result.indexOf(OPEN_TAG)
         if (start < 0) break
         val close = result.indexOf(CLOSE_TAG, start)
-        if (close < 0) break
+        if (close < 0) {
+            // 没闭合：从标记到末尾都是没写完的思考
+            result = result.substring(0, start)
+            break
+        }
         result = result.removeRange(start, close + CLOSE_TAG.length)
     }
     return result.trim()

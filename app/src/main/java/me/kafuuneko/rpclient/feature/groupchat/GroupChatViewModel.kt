@@ -1332,7 +1332,7 @@ class GroupChatViewModel :
             conversationState = uiState.conversationState.copy(
                 editingMessageId = message.id,
                 // 编辑框只放正文，思维链不进来
-                editingMessageDraft = editableContent
+                editingMessageDraft = stripThinkBlock(rawContent)
             )
         ).setup()
     }

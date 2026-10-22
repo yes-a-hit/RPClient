@@ -65,10 +65,18 @@ class ThinkBlockTest {
     }
 
     @Test
-    fun `unclosed think tag is left alone`() {
-        // 半截的标记不该被当成需要剥离的块，否则会把正文一起吃掉
-        val broken = "<think>没闭合的推理\n正文"
+    fun `unclosed think tag is stripped entirely`() {
+        // 被打断的思考：开标记之后全是没写完的推理，正文还没开始。
+        // 第一版对这种「放行」，结果是半截推理永远赖在消息里，删不掉也改不了
+        val broken = "<think>没闭合的推理"
         assertFalse(hasThinkBlock(broken))
-        assertEquals(broken.trim(), stripThinkBlock(broken))
+        assertEquals("", stripThinkBlock(broken))
+    }
+
+    @Test
+    fun `unclosed block after real content keeps the content`() {
+        // 正文在前、思考被打断在后：正文要留住
+        val mixed = "他说完了。\n<think>又想起一件事"
+        assertEquals("他说完了。", stripThinkBlock(mixed))
     }
 }
