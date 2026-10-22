@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.NoteAdd
@@ -231,12 +233,39 @@ private fun AssistantMessageList(
         items(items) { item -> AssistantMessageBubble(item) }
         if (streaming.isNotBlank() || isGenerating) {
             item {
-                AssistantMessageBubble(
-                    AssistantMessageItem(
-                        role = AssistantRole.Assistant,
-                        content = streaming.ifBlank { stringResource(R.string.assistant_thinking) }
+                // 生成中只露最后几行：整段铺开会把屏幕刷满，
+                // 用户想看的其实是「在动」和「大概在写什么」
+                var showStreamingAll by remember(streaming.length) { mutableStateOf(false) }
+                val isLong = streaming.length > 280
+                val shown = if (isLong && !showStreamingAll) {
+                    streaming.takeLast(280)
+                } else {
+                    streaming
+                }
+                Column {
+                    AssistantMessageBubble(
+                        AssistantMessageItem(
+                            role = AssistantRole.Assistant,
+                            content = shown.ifBlank {
+                                stringResource(R.string.assistant_thinking)
+                            }
+                        )
                     )
-                )
+                    if (isLong) {
+                        TextButton(onClick = { showStreamingAll = !showStreamingAll }) {
+                            Text(
+                                stringResource(
+                                    if (showStreamingAll) {
+                                        R.string.assistant_collapse_stream
+                                    } else {
+                                        R.string.assistant_expand_stream
+                                    }
+                                ),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -262,8 +291,21 @@ private fun AssistantMessageBubble(item: AssistantMessageItem) {
             modifier = Modifier.fillMaxWidth(if (isUser) 0.86f else 0.94f)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
+                // 工具结果默认收成一行：一次对话可能连着调七八个工具，
+                // 全展开就是把整段代码和 JSON 摊在屏幕上，后面的正文要翻半天
                 if (isTool) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    var expanded by remember(item.content) { mutableStateOf(false) }
+                    val preview = item.content
+                        .lineSequence()
+                        .firstOrNull { it.isNotBlank() }
+                        .orEmpty()
+                        .take(48)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = !expanded }
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Build,
                             contentDescription = null,
@@ -276,7 +318,30 @@ private fun AssistantMessageBubble(item: AssistantMessageItem) {
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (!expanded && preview.isNotBlank()) {
+                            Text(
+                                text = "  " + preview,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            Box(modifier = Modifier.weight(1f))
+                        }
+                        Icon(
+                            imageVector = if (expanded) {
+                                Icons.Rounded.ExpandLess
+                            } else {
+                                Icons.Rounded.ExpandMore
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                    if (!expanded) return@Column
                 }
                 // 模型发图时留的是 <image uuid="..." /> 标记，剥掉标记后单独渲染
                 val imageUuids = IMAGE_MARKER.findAll(item.content)

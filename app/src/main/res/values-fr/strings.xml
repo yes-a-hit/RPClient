@@ -1489,4 +1489,6 @@
     <string name="script_event_clue">Indice</string>
     <string name="script_event_clue_hint">Un par ligne : variable contenu</string>
     <string name="script_play_restart_all">Tout recommencer</string>
+    <string name="assistant_expand_stream">Tout afficher</string>
+    <string name="assistant_collapse_stream">Réduire</string>
 </resources>

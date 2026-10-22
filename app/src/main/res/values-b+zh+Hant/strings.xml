@@ -1483,4 +1483,6 @@
     <string name="script_event_clue">追加線索</string>
     <string name="script_event_clue_hint">每行「變數名 內容」，如：提示 廚房少了把刀</string>
     <string name="script_play_restart_all">清空重來</string>
+    <string name="assistant_expand_stream">展開全部</string>
+    <string name="assistant_collapse_stream">收起</string>
 </resources>

@@ -1483,4 +1483,6 @@
     <string name="script_event_clue">단서 추가</string>
     <string name="script_event_clue_hint">줄마다 변수명 내용</string>
     <string name="script_play_restart_all">처음부터</string>
+    <string name="assistant_expand_stream">모두 펼치기</string>
+    <string name="assistant_collapse_stream">접기</string>
 </resources>

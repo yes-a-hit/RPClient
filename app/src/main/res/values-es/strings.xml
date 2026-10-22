@@ -1490,4 +1490,6 @@
     <string name="script_event_clue">Pista</string>
     <string name="script_event_clue_hint">Uno por linea: variable contenido</string>
     <string name="script_play_restart_all">Empezar de cero</string>
+    <string name="assistant_expand_stream">Expandir todo</string>
+    <string name="assistant_collapse_stream">Contraer</string>
 </resources>

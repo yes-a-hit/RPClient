@@ -1484,4 +1484,6 @@
     <string name="script_event_clue">手がかり追加</string>
     <string name="script_event_clue_hint">1行「変数名 内容」</string>
     <string name="script_play_restart_all">最初から</string>
+    <string name="assistant_expand_stream">すべて表示</string>
+    <string name="assistant_collapse_stream">折りたたむ</string>
 </resources>
