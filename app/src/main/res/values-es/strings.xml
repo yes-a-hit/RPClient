@@ -1489,4 +1489,5 @@
     <string name="script_scene_dashboard">Mostrar en esta escena</string>
     <string name="script_event_clue">Pista</string>
     <string name="script_event_clue_hint">Uno por linea: variable contenido</string>
+    <string name="script_play_restart_all">Empezar de cero</string>
 </resources>

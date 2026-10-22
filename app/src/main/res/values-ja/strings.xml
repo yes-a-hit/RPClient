@@ -1483,4 +1483,5 @@
     <string name="script_scene_dashboard">この場面で表示</string>
     <string name="script_event_clue">手がかり追加</string>
     <string name="script_event_clue_hint">1行「変数名 内容」</string>
+    <string name="script_play_restart_all">最初から</string>
 </resources>

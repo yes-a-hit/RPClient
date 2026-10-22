@@ -331,6 +331,18 @@ object ScriptPlayEngine {
     }
 
     /** 按剧本声明的初值建一份变量表。 */
+    /**
+     * 文本变量的初始值。
+     *
+     * 和数值一起在开局铺一遍：位置、线索这类不铺的话，
+     * 第一次读到的永远是空串，重启后也回不到剧本声明的初值。
+     */
+    fun initialTextVariables(pack: ScriptPack): Map<String, String> =
+        pack.variables
+            .filter { it.name.isNotBlank() && it.kind != ScriptVariableKind.Number }
+            .filter { it.kind != ScriptVariableKind.Switch }
+            .associate { it.name to it.text }
+
     fun initialVariables(pack: ScriptPack): Map<String, Int> =
         pack.variables
             .filter { it.name.isNotBlank() }

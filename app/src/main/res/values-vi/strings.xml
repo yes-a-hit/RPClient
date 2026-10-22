@@ -1488,4 +1488,5 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_scene_dashboard">Hiện ở cảnh này</string>
     <string name="script_event_clue">Gợi ý</string>
     <string name="script_event_clue_hint">Mỗi dòng: biến nội dung</string>
+    <string name="script_play_restart_all">Làm lại</string>
 </resources>

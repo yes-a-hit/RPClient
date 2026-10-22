@@ -1492,4 +1492,5 @@
     <string name="script_scene_dashboard">Показывать в сцене</string>
     <string name="script_event_clue">Подсказка</string>
     <string name="script_event_clue_hint">По одному: переменная текст</string>
+    <string name="script_play_restart_all">Заново</string>
 </resources>

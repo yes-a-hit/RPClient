@@ -101,6 +101,14 @@ sealed class ScriptPlayUiIntent {
     /** 重开当前场景，轮次归零。 */
     data object RestartScene : ScriptPlayUiIntent()
 
+    /**
+     * 清空上下文整局重来。
+     *
+     * 保留这一局的存档条目，但对话全清、变量复位、回到起始场景——
+     * 和重开本场不同，那些走过的事件、攒下的线索也一起作废。
+     */
+    data object RestartPlaythrough : ScriptPlayUiIntent()
+
     /** 回到最近一次检查点。 */
     data object RestoreCheckpoint : ScriptPlayUiIntent()
 

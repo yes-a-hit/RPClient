@@ -1482,4 +1482,5 @@
     <string name="script_scene_dashboard">이 장면에서 표시</string>
     <string name="script_event_clue">단서 추가</string>
     <string name="script_event_clue_hint">줄마다 변수명 내용</string>
+    <string name="script_play_restart_all">처음부터</string>
 </resources>

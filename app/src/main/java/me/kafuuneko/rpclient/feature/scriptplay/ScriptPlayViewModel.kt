@@ -427,6 +427,44 @@ class ScriptPlayViewModel(
         publish()
     }
 
+
+    /**
+     * 清空上下文整局重来。
+     *
+     * 保留存档 id，其余全部复位：消息清空、变量回到剧本声明的初值、
+     * 事件与角色改动作废、回到起始场景。
+     */
+    @UiIntentObserver(ScriptPlayUiIntent.RestartPlaythrough::class)
+    private suspend fun onRestartPlaythrough() {
+        val pack = mPack ?: return
+        val start = resolveStartScene(pack)
+        mFreeMode = false
+        mOptions = emptyList()
+        mCurrentForcedSpeaker = null
+        mAutoRounds = 0
+        mActiveCharacters = emptyList()
+        mPlay = ScriptPlaythrough(
+            id = mPlay.id,
+            packId = pack.id,
+            packName = pack.name,
+            sceneId = start.id,
+            variables = ScriptPlayEngine.initialVariables(pack),
+            textVariables = ScriptPlayEngine.initialTextVariables(pack),
+            snapshot = if (start.checkpoint) {
+                ScriptPlaySnapshot(
+                    sceneId = start.id,
+                    roundCount = 0,
+                    messages = emptyList()
+                )
+            } else {
+                null
+            }
+        )
+        mSceneBackground = runCatching { resolveSceneBackground(start) }.getOrDefault("")
+        mPlayStore.save(mPlay)
+        publish()
+    }
+
     @UiIntentObserver(ScriptPlayUiIntent.RestartScene::class)
     private suspend fun onRestartScene() {
         mPlay = mPlay.copy(roundCount = 0, finished = false, endReason = "")

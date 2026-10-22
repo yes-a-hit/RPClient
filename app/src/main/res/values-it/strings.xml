@@ -1466,4 +1466,5 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_scene_dashboard">Mostra in questa scena</string>
     <string name="script_event_clue">Indizio</string>
     <string name="script_event_clue_hint">Uno per riga: variabile contenuto</string>
+    <string name="script_play_restart_all">Ricomincia</string>
 </resources>

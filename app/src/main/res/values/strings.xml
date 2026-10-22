@@ -1538,4 +1538,5 @@
 <string name="script_scene_dashboard">本场景显示哪些</string>
 <string name="script_event_clue">追加线索</string>
 <string name="script_event_clue_hint">每行「变量名 内容」，如：提示 厨房少了把刀</string>
+    <string name="script_play_restart_all">清空重来</string>
 </resources>

@@ -1482,4 +1482,5 @@
     <string name="script_variable_group_hint">如：全局 / 本场</string>
     <string name="script_dashboard_enabled">显示状态面板</string>
     <string name="script_scene_dashboard">本场景显示哪些</string>
+    <string name="script_play_restart_all">清空重来</string>
 </resources>

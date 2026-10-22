@@ -1491,4 +1491,5 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_scene_dashboard">Mostrar nesta cena</string>
     <string name="script_event_clue">Pista</string>
     <string name="script_event_clue_hint">Um por linha: variavel conteudo</string>
+    <string name="script_play_restart_all">Recomeçar</string>
 </resources>

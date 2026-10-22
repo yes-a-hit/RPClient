@@ -115,10 +115,11 @@ fun ScriptPlayLayout(
                             contentDescription = stringResource(R.string.script_play_gm)
                         )
                     }
-                    IconButton(onClick = { ScriptPlayUiIntent.RestartScene.emit() }) {
+                    // 整局重来：对话、事件、线索全部作废，回到第一场
+                    IconButton(onClick = { ScriptPlayUiIntent.RestartPlaythrough.emit() }) {
                         Icon(
                             Icons.Rounded.Refresh,
-                            contentDescription = stringResource(R.string.script_play_restart)
+                            contentDescription = stringResource(R.string.script_play_restart_all)
                         )
                     }
                     // 只有走过检查点场景才有得退，没到过就不占位置

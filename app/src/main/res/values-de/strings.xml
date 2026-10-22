@@ -1487,4 +1487,5 @@
     <string name="script_scene_dashboard">In dieser Szene</string>
     <string name="script_event_clue">Hinweis</string>
     <string name="script_event_clue_hint">Eine pro Zeile: Variable Inhalt</string>
+    <string name="script_play_restart_all">Neu starten</string>
 </resources>

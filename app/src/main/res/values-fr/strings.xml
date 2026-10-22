@@ -1488,4 +1488,5 @@
     <string name="script_scene_dashboard">Afficher dans cette scène</string>
     <string name="script_event_clue">Indice</string>
     <string name="script_event_clue_hint">Un par ligne : variable contenu</string>
+    <string name="script_play_restart_all">Tout recommencer</string>
 </resources>
