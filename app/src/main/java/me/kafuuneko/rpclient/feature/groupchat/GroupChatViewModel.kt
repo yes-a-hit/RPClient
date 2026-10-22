@@ -21,6 +21,8 @@ import me.kafuuneko.rpclient.feature.main.model.Route
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.ModelSettingsGuideContent
 import me.kafuuneko.rpclient.libs.media.MessageImageAction
+import me.kafuuneko.rpclient.libs.llm.replaceContentKeepingThink
+import me.kafuuneko.rpclient.libs.llm.stripThinkBlock
 import me.kafuuneko.rpclient.libs.user.pickUserDescription
 import me.kafuuneko.rpclient.libs.user.pickUserName
 import me.kafuuneko.rpclient.libs.media.MessageImageCoordinator
@@ -1329,7 +1331,8 @@ class GroupChatViewModel :
             imageState = mImageCoordinator.state,
             conversationState = uiState.conversationState.copy(
                 editingMessageId = message.id,
-                editingMessageDraft = rawContent
+                // 编辑框只放正文，思维链不进来
+                editingMessageDraft = editableContent
             )
         ).setup()
     }
@@ -1419,6 +1422,10 @@ class GroupChatViewModel :
                             message.speakerNameSnapshot, isEdit = true
                         )
                         GroupChatMessage.Source.System -> uiState.conversationState.editingMessageDraft.trim()
+                    }
+                    // 正则动的只是正文，思维链按原文接回去
+                    .let { edited ->
+                        replaceContentKeepingThink(message.content, edited)
                     }
                 }
                 mGroupChatRepository.editMessageWithImages(uiState.sessionId, messageId, content, finalInputs)

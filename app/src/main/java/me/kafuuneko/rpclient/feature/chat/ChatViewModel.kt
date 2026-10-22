@@ -1382,7 +1382,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             imageState = mImageCoordinator.state,
             conversationState = uiState.conversationState.copy(
                 editingMessageId = message.id,
-                editingMessageDraft = rawContent
+                // 编辑框只放正文，思维链不进来
+                editingMessageDraft = editableContent
             )
         ).setup()
     }
