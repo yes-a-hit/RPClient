@@ -1,6 +1,5 @@
 package me.kafuuneko.rpclient.libs.user
 
-import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.defaults.DefaultNames
 
 /**
@@ -8,19 +7,19 @@ import me.kafuuneko.rpclient.libs.defaults.DefaultNames
  *
  * 之前是「创建会话时把全局快照进来」，之后就脱钩了——
  * 改了全局人设，老会话不会跟着变；反过来想恢复继承也没办法。
- * 现在改成读的时候回落：本处有值用本处，空着取全局，全局也空就不注入。
  *
- * 放在这里而不是散在各 ViewModel，是因为取值点有十来个，
- * 规则一改就得全找一遍，很容易漏。
+ * 这里只做选择，不读全局：全局值由调用方传进来。
+ * 直接读 AppModel 会拖进 Kotpref，单元测试里跑不起来——
+ * 这条规则本身是有边界要覆盖的，不能因为依赖全局就没法测。
  */
 
-/** 本会话的显示名；本处空着就用全局。 */
-fun effectiveUserName(local: String): String =
-    local.ifBlank { AppModel.resolvedUserName }.ifBlank { DefaultNames.USER }
+/** 选出生效的显示名：本处优先，其次全局，都空就退回默认称呼。 */
+fun pickUserName(local: String, global: String): String =
+    local.ifBlank { global }.ifBlank { DefaultNames.USER }
 
-/** 本会话的人设描述；本处空着就用全局。 */
-fun effectiveUserDescription(local: String): String =
-    local.ifBlank { AppModel.userDescription }.trim()
+/** 选出生效的人设描述：本处优先，其次全局。 */
+fun pickUserDescription(local: String, global: String): String =
+    local.ifBlank { global }.trim()
 
 /** 本处是否在覆盖全局人设。 */
 fun hasLocalPersona(name: String, description: String): Boolean =

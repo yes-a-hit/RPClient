@@ -21,6 +21,8 @@ import me.kafuuneko.rpclient.feature.main.model.Route
 import me.kafuuneko.rpclient.R
 import me.kafuuneko.rpclient.feature.ModelSettingsGuideContent
 import me.kafuuneko.rpclient.libs.media.MessageImageAction
+import me.kafuuneko.rpclient.libs.user.pickUserDescription
+import me.kafuuneko.rpclient.libs.user.pickUserName
 import me.kafuuneko.rpclient.libs.media.MessageImageCoordinator
 import me.kafuuneko.rpclient.feature.groupchat.model.GroupChatAvailableCharacterItem
 import me.kafuuneko.rpclient.feature.groupchat.model.GroupChatGenerationState
@@ -683,7 +685,18 @@ class GroupChatViewModel :
                 val buildResult = withContext(Dispatchers.Default) {
                     mPromptBuilder.buildWithMetadata(
                         GroupChatPromptContext(
-                            session = data.session,
+                            // 人设回落在这里做完：builder 只读 context，
+                    // 它不该知道全局设置的存在，否则测试跑不起来
+                    session = data.session.copy(
+                        userName = pickUserName(
+                            data.session.userName,
+                            AppModel.resolvedUserName
+                        ),
+                        userDescription = pickUserDescription(
+                            data.session.userDescription,
+                            AppModel.userDescription
+                        )
+                    ),
                             members = data.members,
                             speaker = anchor.character,
                             messages = data.messages,
