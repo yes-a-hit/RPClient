@@ -26,6 +26,12 @@ data class Story(
     // 是否在故事 Prompt 中包含用户 Persona。
     @ColumnInfo(defaultValue = "0")
     val includeUserPersona: Boolean = false,
+    // 本故事里的 user 显示名；空着继承全局。
+    @ColumnInfo(defaultValue = "")
+    val userName: String = "",
+    // 本故事里的 user 人设；空着继承全局。
+    @ColumnInfo(defaultValue = "")
+    val userDescription: String = "",
     // 世界书时序状态当前推进到的生成步数。
     val worldInfoGenerationStep: Int = 0,
     // 故事结构、设置和全局生成状态共享的乐观锁版本号。

@@ -1,6 +1,9 @@
 package me.kafuuneko.rpclient.feature.storyeditor
 
 import me.kafuuneko.rpclient.libs.story.ChapterIndexParser
+import me.kafuuneko.rpclient.libs.user.describeUser
+import me.kafuuneko.rpclient.libs.user.pickUserDescription
+import me.kafuuneko.rpclient.libs.user.pickUserName
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
@@ -2395,8 +2398,13 @@ class StoryEditorViewModel : CoreViewModelWithEvent<StoryEditorUiIntent, StoryEd
             recursiveScanningLorebookIds = candidateLorebooks.values
                 .filter { it.recursiveScanning }
                 .mapTo(mutableSetOf()) { it.id },
-            userName = AppModel.resolvedUserName,
-            userDescription = AppModel.userDescription,
+            // 本故事的人设优先，空着继承全局
+            userName = pickUserName(story.userName, AppModel.resolvedUserName),
+            userDescription = describeUser(
+                pickUserDescription(story.userDescription, AppModel.userDescription),
+                AppModel.userGender,
+                AppModel.userImageMeaning
+            ),
             continuationGuidance = continuationGuidance
         )
     }

@@ -74,11 +74,12 @@ import me.kafuuneko.rpclient.libs.room.migration.AppDatabaseAutoMigration3To4Spe
         LLMTokenUsageRecord::class,
         MessageImageEntity::class
     ],
-    version = 4,
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = AppDatabaseAutoMigration1To2Spec::class),
         AutoMigration(from = 2, to = 3, spec = AppDatabaseAutoMigration2To3Spec::class),
-        AutoMigration(from = 3, to = 4, spec = AppDatabaseAutoMigration3To4Spec::class)
+        AutoMigration(from = 3, to = 4, spec = AppDatabaseAutoMigration3To4Spec::class),
+        AutoMigration(from = 4, to = 5)
     ],
     exportSchema = true
 )
