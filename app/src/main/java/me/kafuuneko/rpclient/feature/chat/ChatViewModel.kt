@@ -47,6 +47,7 @@ import me.kafuuneko.rpclient.feature.toGenerationFailurePresentation
 import me.kafuuneko.rpclient.feature.worldbooklist.WorldBookListActivity
 import me.kafuuneko.rpclient.libs.AppModel
 import me.kafuuneko.rpclient.libs.user.pickUserDescription
+import me.kafuuneko.rpclient.libs.user.describeUser
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
@@ -2192,7 +2193,10 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             val built = withContext(Dispatchers.Default) {
                 mSummaryPromptBuilder.buildWithSelection(
                     userName = data.session.userName,
-                    userDescription = pickUserDescription(data.session.userDescription, AppModel.userDescription),
+                    userDescription = describeUser(
+                    pickUserDescription(data.session.userDescription, AppModel.userDescription),
+                    AppModel.userGender
+                ),
                     character = data.character,
                     session = data.session,
                     existingSummary = context.existingSummary,
@@ -2280,7 +2284,10 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             mChatPromptBuilder.buildWithMetadata(
                 PromptBuildContext(
                     userName = session.userName,
-                    userDescription = pickUserDescription(session.userDescription, AppModel.userDescription),
+                    userDescription = describeUser(
+            pickUserDescription(session.userDescription, AppModel.userDescription),
+            AppModel.userGender
+        ),
                     character = character,
                     session = session.copy(creatorNotes = creatorNotes),
                     summary = generationHistory.summary,

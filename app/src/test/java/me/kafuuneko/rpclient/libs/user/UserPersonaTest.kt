@@ -54,4 +54,29 @@ class UserPersonaTest {
         assertTrue(hasLocalPersona("小明", ""))
         assertTrue(hasLocalPersona("", "描述"))
     }
+
+    @Test
+    fun `gender is appended to description`() {
+        // 单独一段更好读，用户写描述时也不用记着提性别
+        assertEquals("喜欢猫\n性别：女", describeUser("喜欢猫", "女"))
+    }
+
+    @Test
+    fun `gender alone forms a persona`() {
+        // 只填性别也是一条人设，不能因为描述空就整段丢掉
+        assertEquals("性别：女", describeUser("", "女"))
+    }
+
+    @Test
+    fun `both blank yields empty`() {
+        // 都空就不注入任何 user 段落
+        assertEquals("", describeUser("", ""))
+        assertEquals("", describeUser("   ", "  "))
+    }
+
+    @Test
+    fun `description alone stays as is`() {
+        assertEquals("喜欢猫", describeUser(" 喜欢猫 ", ""))
+    }
+
 }

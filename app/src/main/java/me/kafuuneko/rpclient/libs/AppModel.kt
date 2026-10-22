@@ -348,6 +348,22 @@ Treat it as an instruction, not as manuscript text. Do not quote, repeat, explai
     // 用户人格描述，对应 {{persona}} 或 persona description。
     var userDescription by stringPref(default = "")
 
+    /**
+     * user 的性别或性别认同，留空不注入。
+     *
+     * 影响称呼与代词，也是模型判断怎么描写这个人时的依据之一。
+     */
+    var userGender by stringPref(default = "")
+
+    /**
+     * user 发来的图片代表什么。
+     *
+     * 默认空着时模型会当成「用户发来一张图片」——像在聊天软件里转发。
+     * 填了之后按这个理解：这张图是眼下发生的事、是用户看到的画面，
+     * 而不是一条待处理的消息。
+     */
+    var userImageMeaning by stringPref(default = "")
+
     // 摘要目标字数限制，对应摘要提示词中的 {{words}}。
     var summaryWordsLimit by intPref(default = 500)
 

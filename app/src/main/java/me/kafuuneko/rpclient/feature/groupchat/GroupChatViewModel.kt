@@ -24,6 +24,7 @@ import me.kafuuneko.rpclient.libs.media.MessageImageAction
 import me.kafuuneko.rpclient.libs.llm.replaceContentKeepingThink
 import me.kafuuneko.rpclient.libs.llm.stripThinkBlock
 import me.kafuuneko.rpclient.libs.user.pickUserDescription
+import me.kafuuneko.rpclient.libs.user.describeUser
 import me.kafuuneko.rpclient.libs.user.pickUserName
 import me.kafuuneko.rpclient.libs.media.MessageImageCoordinator
 import me.kafuuneko.rpclient.feature.groupchat.model.GroupChatAvailableCharacterItem
@@ -694,9 +695,12 @@ class GroupChatViewModel :
                             data.session.userName,
                             AppModel.resolvedUserName
                         ),
-                        userDescription = pickUserDescription(
-                            data.session.userDescription,
-                            AppModel.userDescription
+                        userDescription = describeUser(
+                            pickUserDescription(
+                                data.session.userDescription,
+                                AppModel.userDescription
+                            ),
+                            AppModel.userGender
                         )
                     ),
                             members = data.members,

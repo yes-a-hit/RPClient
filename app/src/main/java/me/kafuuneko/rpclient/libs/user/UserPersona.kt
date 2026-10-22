@@ -24,3 +24,20 @@ fun pickUserDescription(local: String, global: String): String =
 /** 本处是否在覆盖全局人设。 */
 fun hasLocalPersona(name: String, description: String): Boolean =
     name.isNotBlank() || description.isNotBlank()
+
+/**
+ * 把性别拼进人设描述。
+ *
+ * 单独一段更好读，也避免用户自己写描述时还要记得提性别。
+ * 都空就返回空串，prompt 那边据此整段跳过。
+ */
+fun describeUser(description: String, gender: String): String {
+    val body = description.trim()
+    val genderText = gender.trim()
+    return when {
+        body.isBlank() && genderText.isBlank() -> ""
+        genderText.isBlank() -> body
+        body.isBlank() -> "性别：" + genderText
+        else -> body + "\n性别：" + genderText
+    }
+}
