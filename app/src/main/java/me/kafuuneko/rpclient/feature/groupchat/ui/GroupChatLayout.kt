@@ -352,6 +352,24 @@ private fun GroupChatSettingsView(
                         minLines = 3,
                         maxLines = 8
                     )
+                    // 本群聊的人设，空着继承全局
+                    RpScrollableOutlinedTextField(
+                        value = state.userNameDraft,
+                        onValueChange = { emitIntent(GroupChatUiIntent.ChangeUserName(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.user_display_name)) },
+                        singleLine = true
+                    )
+                    RpScrollableOutlinedTextField(
+                        value = state.userDescriptionDraft,
+                        onValueChange = {
+                            emitIntent(GroupChatUiIntent.ChangeUserDescription(it))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.user_persona_description)) },
+                        minLines = 3,
+                        maxLines = 8
+                    )
                     RpScrollableOutlinedTextField(
                         value = state.userNoteDraft,
                         onValueChange = { emitIntent(GroupChatUiIntent.ChangeUserNote(it)) },

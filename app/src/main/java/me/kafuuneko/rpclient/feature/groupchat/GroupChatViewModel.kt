@@ -917,6 +917,20 @@ class GroupChatViewModel :
      *
      * @param intent 包含用户备注文本的意图
      */
+    /** 改本群聊的 user 显示名；清空即继承全局。 */
+    @UiIntentObserver(GroupChatUiIntent.ChangeUserName::class)
+    private fun onChangeUserName(intent: GroupChatUiIntent.ChangeUserName) {
+        if (!isStateOf<GroupChatUiState.Normal>()) return
+        updateSettingsState { copy(userNameDraft = intent.value) }
+    }
+
+    /** 改本群聊的 user 人设；清空即继承全局。 */
+    @UiIntentObserver(GroupChatUiIntent.ChangeUserDescription::class)
+    private fun onChangeUserDescription(intent: GroupChatUiIntent.ChangeUserDescription) {
+        if (!isStateOf<GroupChatUiState.Normal>()) return
+        updateSettingsState { copy(userDescriptionDraft = intent.value) }
+    }
+
     @UiIntentObserver(GroupChatUiIntent.ChangeUserNote::class)
     private fun onChangeUserNote(intent: GroupChatUiIntent.ChangeUserNote) {
         if (!isStateOf<GroupChatUiState.Normal>()) return
@@ -1096,6 +1110,8 @@ class GroupChatViewModel :
                     title = uiState.settingsState.titleDraft.trim().ifBlank { session.title },
                     scenario = uiState.settingsState.scenarioDraft.trim(),
                     userNote = uiState.settingsState.userNoteDraft.trim(),
+                    userName = uiState.settingsState.userNameDraft.trim(),
+                    userDescription = uiState.settingsState.userDescriptionDraft.trim(),
                     activationStrategy = uiState.settingsState.activationStrategy.toEntity(),
                     allowSelfResponses = uiState.settingsState.allowSelfResponses,
                     characterCardMode = uiState.settingsState.characterCardMode.toEntity(),

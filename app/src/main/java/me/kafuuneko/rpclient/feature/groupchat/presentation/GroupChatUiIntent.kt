@@ -39,6 +39,12 @@ sealed class GroupChatUiIntent {
     data class ChangeTitle(val value: String) : GroupChatUiIntent()
     data class ChangeScenario(val value: String) : GroupChatUiIntent()
     data class ChangeUserNote(val value: String) : GroupChatUiIntent()
+
+    /** 改本群聊里的 user 显示名；清空即继承全局。 */
+    data class ChangeUserName(val value: String) : GroupChatUiIntent()
+
+    /** 改本群聊里的 user 人设；清空即继承全局。 */
+    data class ChangeUserDescription(val value: String) : GroupChatUiIntent()
     data class ChangeSummary(val value: String) : GroupChatUiIntent()
     data class ToggleAutoSummaryPaused(val paused: Boolean) : GroupChatUiIntent()
     data class ChangeSystemPrompt(val value: String) : GroupChatUiIntent()
