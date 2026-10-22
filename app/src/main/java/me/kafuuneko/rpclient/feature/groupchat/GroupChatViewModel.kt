@@ -642,6 +642,92 @@ class GroupChatViewModel :
      * - 若有非空用户输入，持久化用户消息；
      * - 启动 [launchGeneration] 执行多角色发言循环。
      */
+
+    /**
+     * 扮演自己：让模型顺着用户人设写一句玩家发言，填进输入框。
+     *
+     * 只填草稿不落库——用户可能想改，也可能直接弃用。
+     * 走非流式：一句话的长度不值得为它铺一套流式状态。
+     *
+     * 关键在 generationMode = Impersonate：builder 会据此换成
+     * impersonationPrompt，并用群聊自身的 userDescription 作为人设，
+     * 而不是拿某个成员的卡去写角色台词。
+     */
+    @UiIntentObserver(GroupChatUiIntent.ImpersonateUser::class)
+    private suspend fun onImpersonateUser() {
+        val sessionId = mSessionId ?: return
+        if (!isStateOf<GroupChatUiState.Normal>()) return
+        if (mGenerationJob?.isCompleted == false) {
+            AppViewEvent.PopupToastMessageByResId(R.string.generation_already_running).tryEmit()
+            return
+        }
+        mGenerationJob = viewModelScope.launch {
+            runCatching {
+                val promptData = withContext(Dispatchers.IO) {
+                    mGroupChatRepository.getGroupChatPromptData(
+                        sessionId = sessionId,
+                        maxHistoryMessages = AppModel.maxPromptHistoryMessages.coerceAtLeast(0)
+                    )
+                } ?: error(mContext.getString(R.string.group_chat_not_found))
+                val data = promptData.data
+                // 冒名发言不针对某个成员，用第一个成员承载 provider 选择
+                val anchor = data.members.firstOrNull()
+                    ?: error(mContext.getString(R.string.group_chat_not_found))
+                val provider = withContext(Dispatchers.IO) {
+                    mProviderSelectionResolver.requireCharacterProvider(anchor.character)
+                }
+                val lorebookContext = withContext(Dispatchers.IO) {
+                    loadLorebookContext(data, anchor)
+                }
+                val imageReferences = mImageRuntime.prepareCandidates(promptData.messageImages)
+                val buildResult = withContext(Dispatchers.Default) {
+                    mPromptBuilder.buildWithMetadata(
+                        GroupChatPromptContext(
+                            session = data.session,
+                            members = data.members,
+                            speaker = anchor.character,
+                            messages = data.messages,
+                            messageImages = imageReferences.references,
+                            unavailableImages = imageReferences.unavailable,
+                            protectedUserMessageId = null,
+                            totalMessageCount = promptData.totalMessageCount,
+                            summary = data.summary?.content.orEmpty(),
+                            candidateLorebookEntries = lorebookContext.entries,
+                            candidateLorebooks = lorebookContext.lorebooks,
+                            recursiveScanningLorebookIds = lorebookContext.recursiveLorebookIds,
+                            provider = provider,
+                            generationMode = GroupChatGenerationMode.Impersonate,
+                            regexScripts = mRegexRepository.activeScripts(
+                                data.members.map { it.character }
+                            )
+                        )
+                    )
+                }
+                recordPromptInspection(buildResult.inspection)
+                val response = withContext(Dispatchers.IO) {
+                    mLLMRepository.generateWithProvider(
+                        provider = provider,
+                        request = buildResult.request,
+                        routingSessionKey = "group-chat-impersonate:$sessionId"
+                    )
+                }
+                val draft = response.content.trim()
+                refreshState(
+                    inputDraft = if (draft.isBlank()) {
+                        getOrNull<GroupChatUiState.Normal>()?.conversationState?.inputDraft.orEmpty()
+                    } else {
+                        draft
+                    },
+                    generationState = GroupChatGenerationState.Idle
+                )
+            }.onFailure { throwable ->
+                AppViewEvent.PopupToastMessage(
+                    throwable.message ?: mContext.getString(R.string.impersonation_failed)
+                ).tryEmit()
+            }
+        }
+    }
+
     @UiIntentObserver(GroupChatUiIntent.SendMessage::class)
     private suspend fun onSendMessage() {
         try {

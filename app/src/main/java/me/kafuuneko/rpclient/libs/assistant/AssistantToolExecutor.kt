@@ -209,6 +209,27 @@ class AssistantToolExecutor(
             examplesOfDialogue = arguments.stringOrNull("exampleDialogue")?.trim().orEmpty(),
             postHistoryInstructions = arguments.stringOrNull("postHistoryInstructions")?.trim().orEmpty()
         )
+        // 同名卡已存在就更新，不再新建一张。
+        // 模型经常对同一个角色重发 create_character，每次都新建的话
+        // 列表里会堆出好几张一模一样的卡，用户只能手动一张张删。
+        val existing = runCatching {
+            mCharacterRepository.getAllCharacters().firstOrNull { it.name == name }
+        }.getOrNull()
+        if (existing != null) {
+            val merged = existing.copy(
+                description = character.description.ifBlank { existing.description },
+                personality = character.personality.ifBlank { existing.personality },
+                scenario = character.scenario.ifBlank { existing.scenario },
+                firstMessages = character.firstMessages.ifBlank { existing.firstMessages },
+                examplesOfDialogue = character.examplesOfDialogue
+                    .ifBlank { existing.examplesOfDialogue },
+                postHistoryInstructions = character.postHistoryInstructions
+                    .ifBlank { existing.postHistoryInstructions }
+            )
+            mCharacterRepository.saveCharacter(merged)
+            return "同名角色卡已存在，已更新 id=" + existing.id +
+                "，名称：" + name + "（没有重复创建）"
+        }
         val id = mCharacterRepository.saveCharacter(character)
         return "已创建角色卡 id=$id，名称：$name"
     }
