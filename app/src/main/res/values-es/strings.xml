@@ -1221,4 +1221,7 @@
     <string name="chat_import_reading_images">Leyendo imágenes…</string>
     <string name="chat_import_image_directory_failed">No se pudo leer la carpeta de imágenes</string>
     <string name="chat_archive_images_skipped">Completado. Se omitieron %1$d imágenes no disponibles.</string>
+    <string name="user_gender">Genero</string>
+    <string name="user_image_meaning">Imagen enviada</string>
+    <string name="not_set">Sin definir</string>
 </resources>

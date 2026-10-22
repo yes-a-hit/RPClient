@@ -11,13 +11,22 @@ fun renderUserPersonaTemplate(
     template: String,
     userName: String,
     userDescription: String,
-    characterName: String?
+    characterName: String?,
+    /** 性别或性别认同，留空不影响原有行为。 */
+    userGender: String = "",
+    /** 用户发来的图片代表什么；空着按模型默认理解。 */
+    userImageMeaning: String = ""
 ): String {
-    // 校验人设描述非空
-    if (userDescription.isBlank()) return ""
+    // 三者都空才跳过，只填了其中一个也算人设
+    val merged = me.kafuuneko.rpclient.libs.user.describeUser(
+        userDescription,
+        userGender,
+        userImageMeaning
+    )
+    if (merged.isBlank()) return ""
     // 先行替换人设描述中的 {{char}} / {{user}} 宏
     val resolvedDescription = resolveCharacterUserMacros(
-        template = userDescription,
+        template = merged,
         characterName = characterName,
         userName = userName
     )

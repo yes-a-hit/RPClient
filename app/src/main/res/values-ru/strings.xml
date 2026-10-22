@@ -1224,4 +1224,7 @@
     <string name="chat_import_reading_images">Чтение изображений…</string>
     <string name="chat_import_image_directory_failed">Не удалось прочитать папку изображений</string>
     <string name="chat_archive_images_skipped">Готово. Пропущено недоступных изображений: %1$d.</string>
+    <string name="user_gender">Пол</string>
+    <string name="user_image_meaning">Смысл изображения</string>
+    <string name="not_set">Не задано</string>
 </resources>

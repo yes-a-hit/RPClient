@@ -1220,4 +1220,7 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="chat_import_reading_images">Đang đọc ảnh…</string>
     <string name="chat_import_image_directory_failed">Không thể đọc thư mục ảnh</string>
     <string name="chat_archive_images_skipped">Đã hoàn tất. Đã bỏ qua %1$d ảnh không đọc được.</string>
+    <string name="user_gender">Giới tính</string>
+    <string name="user_image_meaning">Ý nghĩa ảnh</string>
+    <string name="not_set">Chưa đặt</string>
 </resources>

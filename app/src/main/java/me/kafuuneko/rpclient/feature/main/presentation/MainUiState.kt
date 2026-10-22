@@ -76,6 +76,12 @@ sealed class MainDialogState {
         val draftValue: String
     ) : MainDialogState()
 
+    /** 编辑性别；留空表示不注入。 */
+    data class EditUserGender(val draftText: String) : MainDialogState()
+
+    /** 编辑「用户发来的图片代表什么」。 */
+    data class EditUserImageMeaning(val draftText: String) : MainDialogState()
+
     data class EditUserDescription(
         /** 当前编辑器中尚未提交的文本草稿。 */
         val draftText: String

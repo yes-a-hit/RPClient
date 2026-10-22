@@ -954,6 +954,8 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
             settingsState = uiState.settingsState.copy(
                 identityState = identityState.copy(
                     userName = value,
+                userGender = AppModel.userGender,
+                userImageMeaning = AppModel.userImageMeaning,
                     userDescriptionPreview = resolveCharacterUserMacros(
                         template = identityState.userDescription,
                         characterName = null,
@@ -984,6 +986,65 @@ class MainViewModel : CoreViewModelWithEvent<MainUiIntent, MainUiState>(
     }
 
     /** 在全屏 Prompt 编辑器中打开用户人设描述。 */
+
+    @UiIntentObserver(MainUiIntent.ShowUserGenderEditor::class)
+    private fun onShowUserGenderEditor() {
+        val state = getOrNull<MainUiState.Normal>() ?: return
+        state.copy(dialogState = MainDialogState.EditUserGender(AppModel.userGender)).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ChangeUserGenderDraft::class)
+    private fun onChangeUserGenderDraft(intent: MainUiIntent.ChangeUserGenderDraft) {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.EditUserGender ?: return
+        uiState.copy(dialogState = dialog.copy(draftText = intent.value)).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ConfirmUserGender::class)
+    private fun onConfirmUserGender() {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.EditUserGender ?: return
+        val value = dialog.draftText.trim()
+        AppModel.userGender = value
+        uiState.copy(
+            dialogState = MainDialogState.None,
+            settingsState = uiState.settingsState.copy(
+                identityState = uiState.settingsState.identityState.copy(userGender = value)
+            )
+        ).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ShowUserImageMeaningEditor::class)
+    private fun onShowUserImageMeaningEditor() {
+        val state = getOrNull<MainUiState.Normal>() ?: return
+        state.copy(
+            dialogState = MainDialogState.EditUserImageMeaning(AppModel.userImageMeaning)
+        ).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ChangeUserImageMeaningDraft::class)
+    private fun onChangeUserImageMeaningDraft(
+        intent: MainUiIntent.ChangeUserImageMeaningDraft
+    ) {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.EditUserImageMeaning ?: return
+        uiState.copy(dialogState = dialog.copy(draftText = intent.value)).setup()
+    }
+
+    @UiIntentObserver(MainUiIntent.ConfirmUserImageMeaning::class)
+    private fun onConfirmUserImageMeaning() {
+        val uiState = getOrNull<MainUiState.Normal>() ?: return
+        val dialog = uiState.dialogState as? MainDialogState.EditUserImageMeaning ?: return
+        val value = dialog.draftText.trim()
+        AppModel.userImageMeaning = value
+        uiState.copy(
+            dialogState = MainDialogState.None,
+            settingsState = uiState.settingsState.copy(
+                identityState = uiState.settingsState.identityState.copy(userImageMeaning = value)
+            )
+        ).setup()
+    }
+
     @UiIntentObserver(MainUiIntent.ShowUserDescriptionEditor::class)
     private fun onShowUserDescriptionEditor() {
         val uiState = getOrNull<MainUiState.Normal>() ?: return

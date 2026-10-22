@@ -387,6 +387,22 @@ private fun DialogSwitch(
             onConfirm = { MainUiIntent.ConfirmUserDescriptionEditor.emit() }
         )
 
+        is MainDialogState.EditUserGender -> AppPromptEditorDialog(
+            onDismissRequest = { MainUiIntent.DismissDialog.emit() },
+            title = stringResource(R.string.user_gender),
+            value = dialogState.draftText,
+            onValueChange = { MainUiIntent.ChangeUserGenderDraft(it).emit() },
+            onConfirm = { MainUiIntent.ConfirmUserGender.emit() }
+        )
+
+        is MainDialogState.EditUserImageMeaning -> AppPromptEditorDialog(
+            onDismissRequest = { MainUiIntent.DismissDialog.emit() },
+            title = stringResource(R.string.user_image_meaning),
+            value = dialogState.draftText,
+            onValueChange = { MainUiIntent.ChangeUserImageMeaningDraft(it).emit() },
+            onConfirm = { MainUiIntent.ConfirmUserImageMeaning.emit() }
+        )
+
         is MainDialogState.ImportChatCharacterSelection -> ImportChatCharacterDialog(
             state = dialogState,
             emit = emit
@@ -1698,6 +1714,17 @@ private fun UserIdentityPanel(
                         MainUiIntent.ShowUserDescriptionEditor.emit()
                     }
                 )
+                // 性别与发图语义都是可选补充：留空不注入，填了才生效
+                UserPersonaSingleLineField(
+                    label = stringResource(R.string.user_gender),
+                    value = state.userGender,
+                    onClick = { MainUiIntent.ShowUserGenderEditor.emit() }
+                )
+                UserPersonaSingleLineField(
+                    label = stringResource(R.string.user_image_meaning),
+                    value = state.userImageMeaning,
+                    onClick = { MainUiIntent.ShowUserImageMeaningEditor.emit() }
+                )
                 if (state.avatarState is MainUserAvatarState.Configured) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2843,6 +2870,39 @@ private fun MainSettingsLayoutPreview() {
                 )
             ),
             emit = {}
+        )
+    }
+}
+
+
+/** 人设里的一行可编辑项，点开弹输入框。 */
+@Composable
+private fun UserPersonaSingleLineField(
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value.ifBlank { stringResource(R.string.not_set) },
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (value.isBlank()) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
         )
     }
 }

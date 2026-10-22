@@ -1214,4 +1214,7 @@
     <string name="chat_import_reading_images">正在讀取圖片…</string>
     <string name="chat_import_image_directory_failed">無法讀取圖片目錄</string>
     <string name="chat_archive_images_skipped">已完成，略過了 %1$d 張無法讀取的圖片。</string>
+    <string name="user_gender">性別</string>
+    <string name="user_image_meaning">發圖代表什麼</string>
+    <string name="not_set">未設定</string>
 </resources>

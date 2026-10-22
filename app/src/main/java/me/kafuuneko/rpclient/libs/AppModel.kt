@@ -253,6 +253,12 @@ Treat it as an instruction, not as manuscript text. Do not quote, repeat, explai
     // 用户人格描述，对应 {{persona}} 或 persona description。
     var userDescription by stringPref(default = "")
 
+    /** 性别或性别认同，留空不注入。 */
+    var userGender by stringPref(default = "")
+
+    /** 用户发来的图片代表什么；留空按模型默认理解。 */
+    var userImageMeaning by stringPref(default = "")
+
     // 摘要目标字数限制，对应摘要提示词中的 {{words}}。
     var summaryWordsLimit by intPref(default = 500)
 
