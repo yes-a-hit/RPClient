@@ -107,6 +107,10 @@ data class GroupChatSettingsState(
     val scenarioDraft: String = "",
     /** 群聊用户备注的未保存草稿。 */
     val userNoteDraft: String = "",
+    /** 本群聊里的 user 显示名；空着继承全局。 */
+    val userNameDraft: String = "",
+    /** 本群聊里的 user 人设；空着继承全局。 */
+    val userDescriptionDraft: String = "",
     /** 群聊摘要的未保存草稿。 */
     val summaryDraft: String = "",
     /** 当前会话的自动摘要是否暂停。 */
