@@ -46,6 +46,7 @@ import me.kafuuneko.rpclient.feature.noProviderModelSettingsGuide
 import me.kafuuneko.rpclient.feature.toGenerationFailurePresentation
 import me.kafuuneko.rpclient.feature.worldbooklist.WorldBookListActivity
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.user.effectiveUserDescription
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenSettings
 import me.kafuuneko.rpclient.libs.chat.ChatArchiveRepository
@@ -2142,7 +2143,7 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             val built = withContext(Dispatchers.Default) {
                 mSummaryPromptBuilder.buildWithSelection(
                     userName = data.session.userName,
-                    userDescription = data.session.userDescription,
+                    userDescription = effectiveUserDescription(data.session.userDescription),
                     character = data.character,
                     session = data.session,
                     existingSummary = context.existingSummary,
@@ -2230,7 +2231,7 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             mChatPromptBuilder.buildWithMetadata(
                 PromptBuildContext(
                     userName = session.userName,
-                    userDescription = session.userDescription,
+                    userDescription = effectiveUserDescription(session.userDescription),
                     character = character,
                     session = session.copy(creatorNotes = creatorNotes),
                     summary = generationHistory.summary,
@@ -2448,7 +2449,7 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
         val regexMacros = RegexScriptRuntime.macros(
             userName = context.session.userName,
             characterName = context.character.name,
-            userDescription = context.session.userDescription,
+            userDescription = effectiveUserDescription(context.session.userDescription),
             scenario = context.character.scenario
         )
         // 每一页只处理自身消息，深度偏移仍覆盖已经加载的较新窗口

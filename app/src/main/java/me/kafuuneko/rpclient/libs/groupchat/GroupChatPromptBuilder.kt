@@ -2,6 +2,8 @@ package me.kafuuneko.rpclient.libs.groupchat
 
 import com.google.gson.Gson
 import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
+import me.kafuuneko.rpclient.libs.user.effectiveUserName
+import me.kafuuneko.rpclient.libs.user.effectiveUserDescription
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationOptions
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMImageReference
@@ -179,9 +181,9 @@ class GroupChatPromptBuilder(
         val regexErrors = mutableListOf<RegexExecutionError>()
         // 构造供 Regex 运行环境使用的宏变量映射字典（包含 {{group}} 等）
         val regexMacros = RegexScriptRuntime.macros(
-            userName = context.session.userName,
+            userName = effectiveUserName(context.session.userName),
             characterName = context.speaker.name,
-            userDescription = context.session.userDescription,
+            userDescription = effectiveUserDescription(context.session.userDescription),
             scenario = context.session.scenario,
             groupNames = context.memberNames()
         )
@@ -248,7 +250,7 @@ class GroupChatPromptBuilder(
             val protectsUserImages = hasImages && message.source == GroupChatMessage.Source.User &&
                 message.id == context.protectedUserMessageId
             message.toPromptDraft(
-                userName = context.session.userName,
+                userName = effectiveUserName(context.session.userName),
                 retentionPriority = PromptRetentionPolicy.HISTORY,
                 canDrop = index != history.lastIndex && !protectsUserImages
             ).copy(
@@ -302,7 +304,7 @@ class GroupChatPromptBuilder(
             postProcessingMode = readPostProcessingMode(context.provider),
             strictPromptPlaceholder = DEFAULT_STRICT_PROMPT_PLACEHOLDER,
             postProcessingNames = PromptPostProcessingNames(
-                userName = context.session.userName,
+                userName = effectiveUserName(context.session.userName),
                 characterName = context.speaker.name,
                 groupNames = context.members.map { it.character.name }
             ),
@@ -356,7 +358,7 @@ class GroupChatPromptBuilder(
                 characterDescription = cardMembers.joinToString("\n") {
                     "${it.character.name}: ${it.character.description}"
                 },
-                userDescription = context.session.userDescription,
+                userDescription = effectiveUserDescription(context.session.userDescription),
                 characterPersonality = cardMembers.joinToString("\n") {
                     "${it.character.name}: ${it.character.personality}"
                 },
@@ -419,8 +421,8 @@ class GroupChatPromptBuilder(
         before += requiredSystem(
             renderUserPersonaTemplate(
                 template = mPreferences.userPersonaFormat,
-                userName = context.session.userName,
-                userDescription = context.session.userDescription,
+                userName = effectiveUserName(context.session.userName),
+                userDescription = effectiveUserDescription(context.session.userDescription),
                 characterName = context.speaker.name
             ),
             PromptSourceKind.UserPersona
@@ -595,7 +597,7 @@ class GroupChatPromptBuilder(
                         }
                         val parsed = parseExampleMessages(
                             block = block,
-                            userName = context.session.userName,
+                            userName = effectiveUserName(context.session.userName),
                             characterName = member.character.name
                         )
                         if (parsed.isEmpty()) {
