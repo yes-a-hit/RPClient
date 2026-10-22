@@ -1489,4 +1489,8 @@
     <string name="clear_context_message">訊息會全部刪除，工作階段與角色綁定保留。此操作無法復原。</string>
     <string name="clear_context_confirm">清空</string>
     <string name="clear_context_action">清空上下文</string>
+    <string name="user_gender">性別</string>
+    <string name="user_image_meaning">發圖代表什麼</string>
+    <string name="user_image_meaning_hint">留空時按預設理解：使用者送來一張圖片。填了就按這裡的說法理解。</string>
+    <string name="not_set">未設定</string>
 </resources>

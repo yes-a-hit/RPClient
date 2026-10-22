@@ -1487,4 +1487,8 @@
     <string name="clear_context_message">消息会全部删除，会话与角色绑定保留。此操作无法撤销。</string>
     <string name="clear_context_confirm">清空</string>
     <string name="clear_context_action">清空上下文</string>
+    <string name="user_gender">性别</string>
+    <string name="user_image_meaning">发图代表什么</string>
+    <string name="user_image_meaning_hint">留空时按默认理解：用户发来一张图片。填了就按这里的说法理解，例如「这张图是他眼下看到的东西」。</string>
+    <string name="not_set">未设置</string>
 </resources>

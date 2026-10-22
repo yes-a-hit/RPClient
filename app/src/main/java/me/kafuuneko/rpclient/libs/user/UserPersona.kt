@@ -31,13 +31,23 @@ fun hasLocalPersona(name: String, description: String): Boolean =
  * 单独一段更好读，也避免用户自己写描述时还要记得提性别。
  * 都空就返回空串，prompt 那边据此整段跳过。
  */
-fun describeUser(description: String, gender: String): String {
+fun describeUser(
+    description: String,
+    gender: String,
+    /**
+     * 用户发来的图片代表什么。
+     *
+     * 空着时模型会按默认理解当成「用户转发来一张图」；
+     * 填了之后按这里的说法理解，比如「这张图就是他眼下看到的东西」。
+     */
+    imageMeaning: String = ""
+): String {
+    val parts = mutableListOf<String>()
     val body = description.trim()
+    if (body.isNotBlank()) parts += body
     val genderText = gender.trim()
-    return when {
-        body.isBlank() && genderText.isBlank() -> ""
-        genderText.isBlank() -> body
-        body.isBlank() -> "性别：" + genderText
-        else -> body + "\n性别：" + genderText
-    }
+    if (genderText.isNotBlank()) parts += "性别：" + genderText
+    val imageText = imageMeaning.trim()
+    if (imageText.isNotBlank()) parts += "用户发来的图片表示：" + imageText
+    return parts.joinToString("\n")
 }

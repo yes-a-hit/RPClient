@@ -154,6 +154,24 @@ sealed class MainUiIntent {
 
     data object ShowUserDescriptionEditor : MainUiIntent()
 
+    /** 打开性别编辑框。 */
+    data object ShowUserGenderEditor : MainUiIntent()
+
+    /** 性别编辑框的草稿变更。 */
+    data class ChangeUserGenderDraft(val value: String) : MainUiIntent()
+
+    /** 保存性别。 */
+    data object ConfirmUserGender : MainUiIntent()
+
+    /** 打开「发图代表什么」编辑框。 */
+    data object ShowUserImageMeaningEditor : MainUiIntent()
+
+    /** 「发图代表什么」编辑框的草稿变更。 */
+    data class ChangeUserImageMeaningDraft(val value: String) : MainUiIntent()
+
+    /** 保存发图语义。 */
+    data object ConfirmUserImageMeaning : MainUiIntent()
+
     data class ChangeUserDescriptionEditorDraft(val value: String) : MainUiIntent()
 
     data object ConfirmUserDescriptionEditor : MainUiIntent()

@@ -1496,4 +1496,8 @@
     <string name="clear_context_message">Se borrarán todos los mensajes. La sesión se mantiene. No se puede deshacer.</string>
     <string name="clear_context_confirm">Borrar</string>
     <string name="clear_context_action">Borrar contexto</string>
+    <string name="user_gender">Genero</string>
+    <string name="user_image_meaning">Imagen enviada</string>
+    <string name="user_image_meaning_hint">Vacio: se entiende como una imagen enviada por el usuario.</string>
+    <string name="not_set">Sin definir</string>
 </resources>

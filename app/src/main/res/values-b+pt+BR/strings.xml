@@ -1498,4 +1498,8 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="clear_context_message">Todas as mensagens serão apagadas. A sessão é mantida. Não pode ser desfeito.</string>
     <string name="clear_context_confirm">Limpar</string>
     <string name="clear_context_action">Limpar contexto</string>
+    <string name="user_gender">Genero</string>
+    <string name="user_image_meaning">Imagem enviada</string>
+    <string name="user_image_meaning_hint">Em branco: entende como uma imagem enviada pelo usuario.</string>
+    <string name="not_set">Nao definido</string>
 </resources>

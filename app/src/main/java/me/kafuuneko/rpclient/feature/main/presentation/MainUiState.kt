@@ -53,6 +53,12 @@ internal fun MainUiState.Normal.canOpenDialog(): Boolean {
 sealed class MainDialogState {
     data object None : MainDialogState()
 
+    /** 编辑性别；留空表示不注入。 */
+    data class EditUserGender(val draftText: String) : MainDialogState()
+
+    /** 编辑「用户发来的图片代表什么」。 */
+    data class EditUserImageMeaning(val draftText: String) : MainDialogState()
+
     data class DeleteSelectedItems(
         /** 当前对象或操作涉及的数量。 */
         val count: Int,

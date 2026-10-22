@@ -2195,7 +2195,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                     userName = data.session.userName,
                     userDescription = describeUser(
                     pickUserDescription(data.session.userDescription, AppModel.userDescription),
-                    AppModel.userGender
+                    AppModel.userGender,
+                    AppModel.userImageMeaning
                 ),
                     character = data.character,
                     session = data.session,
@@ -2286,7 +2287,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                     userName = session.userName,
                     userDescription = describeUser(
             pickUserDescription(session.userDescription, AppModel.userDescription),
-            AppModel.userGender
+            AppModel.userGender,
+            AppModel.userImageMeaning
         ),
                     character = character,
                     session = session.copy(creatorNotes = creatorNotes),

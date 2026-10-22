@@ -1494,4 +1494,8 @@
     <string name="clear_context_message">Alle Nachrichten werden gelöscht, die Sitzung bleibt. Nicht rückgängig zu machen.</string>
     <string name="clear_context_confirm">Leeren</string>
     <string name="clear_context_action">Kontext leeren</string>
+    <string name="user_gender">Geschlecht</string>
+    <string name="user_image_meaning">Bildbedeutung</string>
+    <string name="user_image_meaning_hint">Leer: gilt als vom Nutzer gesendetes Bild.</string>
+    <string name="not_set">Nicht gesetzt</string>
 </resources>

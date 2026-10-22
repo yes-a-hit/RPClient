@@ -138,6 +138,10 @@ data class MainUserIdentityState(
     val userDescription: String,
     /** 设置页展示的用户设定摘要。 */
     val userDescriptionPreview: String,
+    /** 性别或性别认同，留空不注入。 */
+    val userGender: String = "",
+    /** 用户发来的图片代表什么，留空按模型默认理解。 */
+    val userImageMeaning: String = "",
     /** 全局用户头像的加载与编辑状态。 */
     val avatarState: MainUserAvatarState
 )

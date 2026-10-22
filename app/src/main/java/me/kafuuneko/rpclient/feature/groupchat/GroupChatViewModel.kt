@@ -700,7 +700,8 @@ class GroupChatViewModel :
                                 data.session.userDescription,
                                 AppModel.userDescription
                             ),
-                            AppModel.userGender
+                            AppModel.userGender,
+                            AppModel.userImageMeaning
                         )
                     ),
                             members = data.members,

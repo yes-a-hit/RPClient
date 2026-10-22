@@ -1490,4 +1490,8 @@
     <string name="clear_context_message">メッセージはすべて削除されます。セッションは残ります。元に戻せません。</string>
     <string name="clear_context_confirm">消去</string>
     <string name="clear_context_action">文脈を消去</string>
+    <string name="user_gender">性別</string>
+    <string name="user_image_meaning">画像の意味</string>
+    <string name="user_image_meaning_hint">空欄ならユーザーが送った画像として扱います。</string>
+    <string name="not_set">未設定</string>
 </resources>

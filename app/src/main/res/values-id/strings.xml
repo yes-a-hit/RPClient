@@ -1495,4 +1495,8 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="clear_context_message">Semua pesan akan dihapus. Sesi tetap ada. Tidak bisa dibatalkan.</string>
     <string name="clear_context_confirm">Hapus</string>
     <string name="clear_context_action">Hapus konteks</string>
+    <string name="user_gender">Jenis kelamin</string>
+    <string name="user_image_meaning">Arti gambar</string>
+    <string name="user_image_meaning_hint">Kosong: dianggap gambar kiriman pengguna.</string>
+    <string name="not_set">Belum diatur</string>
 </resources>

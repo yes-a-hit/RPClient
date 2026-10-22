@@ -1499,4 +1499,8 @@
     <string name="clear_context_message">Все сообщения будут удалены. Сессия сохранится. Действие необратимо.</string>
     <string name="clear_context_confirm">Очистить</string>
     <string name="clear_context_action">Очистить контекст</string>
+    <string name="user_gender">Пол</string>
+    <string name="user_image_meaning">Смысл изображения</string>
+    <string name="user_image_meaning_hint">Пусто: считается изображением от пользователя.</string>
+    <string name="not_set">Не задано</string>
 </resources>

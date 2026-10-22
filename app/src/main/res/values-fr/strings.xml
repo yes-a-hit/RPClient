@@ -1495,4 +1495,8 @@
     <string name="clear_context_message">Tous les messages seront supprimés. La session est conservée. Irréversible.</string>
     <string name="clear_context_confirm">Effacer</string>
     <string name="clear_context_action">Effacer le contexte</string>
+    <string name="user_gender">Genre</string>
+    <string name="user_image_meaning">Sens de l image</string>
+    <string name="user_image_meaning_hint">Vide : comprend comme une image envoyee par l utilisateur.</string>
+    <string name="not_set">Non defini</string>
 </resources>
