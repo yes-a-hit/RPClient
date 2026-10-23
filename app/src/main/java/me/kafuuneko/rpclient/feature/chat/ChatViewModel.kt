@@ -1303,13 +1303,6 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                 } else mChatRepository.updateMessageContent(messageId, content)
             }
             // 刷新 UI 状态并重置编辑态草稿
-            // 用户发言改了，后面那些回复是针对旧内容生成的，必须作废
-            val editedUserMessage = message.source == ChatMessage.Source.User
-            if (editedUserMessage) {
-                withContext(Dispatchers.IO) {
-                    mChatRepository.deleteMessagesAfter(sessionId, messageId)
-                }
-            }
             refreshUiState(
                 sessionId = sessionId,
                 inputDraft = uiState.conversationState.inputDraft,
@@ -1318,10 +1311,6 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                 editingMessageId = null,
                 editingMessageDraft = ""
             )
-            // 改完直接接着生成回复：改一句话还要再点一次生成，太别扭
-            if (editedUserMessage) {
-                continueLastAssistantMessage(sessionId)
-            }
         } catch (error: Exception) {
             currentCoroutineContext().ensureActive()
             val failure = error.toGenerationFailurePresentation(mContext, R.string.image_error_invalid)
