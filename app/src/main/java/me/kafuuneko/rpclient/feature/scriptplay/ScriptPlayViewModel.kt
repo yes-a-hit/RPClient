@@ -117,7 +117,8 @@ class ScriptPlayViewModel(
             packName = pack.name,
             sceneId = startScene.id,
             // 新局按剧本声明的初值铺一遍变量
-            variables = ScriptPlayEngine.initialVariables(pack),
+            // 带上旧值：标了不重置的变量会沿用上一轮
+            variables = ScriptPlayEngine.initialVariables(pack, mPlay.variables),
             // 开场场景标了检查点也要记快照：只在 enterScene 里记的话，
             // 第一场永远没有回滚点，玩家一进来就走错也没法退回去
             snapshot = if (startScene.checkpoint) {

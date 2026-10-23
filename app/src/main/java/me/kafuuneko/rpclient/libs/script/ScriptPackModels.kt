@@ -297,7 +297,16 @@ data class ScriptVariable(
     val group: String = "",
     /** [ScriptVariableKind.Switch] 的两态文案，留空用「是 / 否」。 */
     val onLabel: String = "",
-    val offLabel: String = ""
+    val offLabel: String = "",
+    /**
+     * 重开时是否回到初始值。
+     *
+     * 默认重置。少数变量要跨周目保留——比如「已解锁的结局」、
+     * 「累计通关次数」，重开一次就清零反而没意义。
+     *
+     * 和 [group] 无关：分组管的是什么时候可以改，这里管的是重来时清不清。
+     */
+    val resetOnRestart: Boolean = true
 )
 
 /**

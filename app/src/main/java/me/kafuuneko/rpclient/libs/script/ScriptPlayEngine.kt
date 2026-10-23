@@ -343,8 +343,20 @@ object ScriptPlayEngine {
             .filter { it.kind != ScriptVariableKind.Switch }
             .associate { it.name to it.text }
 
-    fun initialVariables(pack: ScriptPack): Map<String, Int> =
-        pack.variables
-            .filter { it.name.isNotBlank() }
-            .associate { it.name to it.initial.coerceIn(it.min, it.max) }
+    /**
+     * 算出开局的变量值。
+     *
+     * 标了 [ScriptVariable.resetOnRestart] = false 的变量会沿用 [previous]
+     * 里的值——那是留给跨周目保留的东西，比如已解锁的结局。
+     * 其余一律回到 initial。
+     */
+    fun initialVariables(
+        pack: ScriptPack,
+        previous: Map<String, Int>? = null
+    ): Map<String, Int> = pack.variables
+        .filter { it.name.isNotBlank() }
+        .associate { variable ->
+            val kept = if (!variable.resetOnRestart) previous?.get(variable.name) else null
+            variable.name to (kept ?: variable.initial).coerceIn(variable.min, variable.max)
+        }
 }
