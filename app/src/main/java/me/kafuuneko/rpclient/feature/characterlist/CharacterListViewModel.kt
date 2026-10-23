@@ -69,6 +69,14 @@ class CharacterListViewModel : CoreViewModelWithEvent<CharacterListUiIntent, Cha
 
     /** 初始化角色列表，进入加载中状态并拉取数据库数据。 */
 
+    /** 初始化角色列表，进入加载中状态并拉取数据库数据。 */
+    @UiIntentObserver(CharacterListUiIntent.Init::class)
+    private suspend fun onInit() {
+        if (!isStateOf<CharacterListUiState.None>()) return
+        CharacterListUiState.Normal(loadState = CharacterListLoadState.Loading).setup()
+        refreshCharacters(selectedCharacterId = null)
+    }
+
     /** 页面恢复可见时刷新角色列表数据（导入或导出传输任务进行中时不打断）。 */
     @UiIntentObserver(CharacterListUiIntent.Resume::class)
     private suspend fun onResume() {
