@@ -685,6 +685,8 @@ class StoryRepository(private val mAppDatabase: AppDatabase) {
         summary: String,
         authorNote: String,
         includeUserPersona: Boolean = false,
+        userName: String = "",
+        userDescription: String = "",
         lorebookSelections: List<StoryLorebookEntrySelection>,
         characterSelections: List<StoryCharacterSelection>,
         latestTime: Long = System.currentTimeMillis()
@@ -703,6 +705,8 @@ class StoryRepository(private val mAppDatabase: AppDatabase) {
                 summary = summary,
                 authorNote = authorNote,
                 includeUserPersona = includeUserPersona,
+                userName = userName,
+                userDescription = userDescription,
                 latestTime = latestTime
             ) == 1
         ) { "Story settings update failed" }

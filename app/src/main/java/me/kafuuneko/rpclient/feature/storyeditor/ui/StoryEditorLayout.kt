@@ -3803,13 +3803,62 @@ private fun UserPersonaSetting(
     enabled: Boolean,
     emit: StoryEditorUiIntent.() -> Unit
 ) {
-    StoryUserPersonaCard(
-        checked = state.includeUserPersona,
-        onCheckedChange = {
-            StoryEditorUiIntent.SetIncludeUserPersona(it).emit()
-        },
-        enabled = enabled
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        StoryUserPersonaCard(
+            checked = state.includeUserPersona,
+            onCheckedChange = {
+                StoryEditorUiIntent.SetIncludeUserPersona(it).emit()
+            },
+            enabled = enabled
+        )
+        // 关着就继承全局：输入框藏起来，值也留空，
+        // 免得「开着但没填」和「关着」两种状态看起来一样
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.override_persona),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = stringResource(R.string.override_persona_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = state.overridePersona,
+                enabled = enabled,
+                onCheckedChange = {
+                    StoryEditorUiIntent.ToggleOverridePersona(it).emit()
+                }
+            )
+        }
+        if (state.overridePersona) {
+            RpScrollableOutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = state.userName,
+                onValueChange = { StoryEditorUiIntent.ChangeStoryUserName(it).emit() },
+                enabled = enabled,
+                label = { Text(stringResource(R.string.user_display_name)) },
+                minLines = 1,
+                maxLines = 1
+            )
+            RpScrollableOutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = state.userDescription,
+                onValueChange = {
+                    StoryEditorUiIntent.ChangeStoryUserDescription(it).emit()
+                },
+                enabled = enabled,
+                label = { Text(stringResource(R.string.user_persona_description)) },
+                minLines = 3,
+                maxLines = 8
+            )
+        }
+    }
 }
 
 @Composable

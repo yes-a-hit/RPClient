@@ -957,6 +957,34 @@ class StoryEditorViewModel : CoreViewModelWithEvent<StoryEditorUiIntent, StoryEd
     }
 
     /** 修改当前 Story 是否注入全局用户人设的设置草稿。 */
+    @UiIntentObserver(StoryEditorUiIntent.ToggleOverridePersona::class)
+    private fun onToggleOverridePersona(intent: StoryEditorUiIntent.ToggleOverridePersona) {
+        updateSettings {
+            if (intent.enabled) {
+                // 打开时预填全局值，省得从空白开始重写
+                copy(
+                    overridePersona = true,
+                    userName = AppModel.resolvedUserName,
+                    userDescription = AppModel.userDescription
+                )
+            } else {
+                copy(overridePersona = false, userName = "", userDescription = "")
+            }
+        }
+    }
+
+    @UiIntentObserver(StoryEditorUiIntent.ChangeStoryUserName::class)
+    private fun onChangeStoryUserName(intent: StoryEditorUiIntent.ChangeStoryUserName) {
+        updateSettings { copy(userName = intent.value) }
+    }
+
+    @UiIntentObserver(StoryEditorUiIntent.ChangeStoryUserDescription::class)
+    private fun onChangeStoryUserDescription(
+        intent: StoryEditorUiIntent.ChangeStoryUserDescription
+    ) {
+        updateSettings { copy(userDescription = intent.value) }
+    }
+
     @UiIntentObserver(StoryEditorUiIntent.SetIncludeUserPersona::class)
     private fun onSetIncludeUserPersona(intent: StoryEditorUiIntent.SetIncludeUserPersona) {
         updateSettings { copy(includeUserPersona = intent.enabled) }
@@ -1250,6 +1278,8 @@ class StoryEditorViewModel : CoreViewModelWithEvent<StoryEditorUiIntent, StoryEd
                     summary = settings.summary,
                     authorNote = settings.authorNote,
                     includeUserPersona = settings.includeUserPersona,
+                    userName = settings.userName,
+                    userDescription = settings.userDescription,
                     lorebookSelections = settings.lorebookGroups
                         .flatMap { it.entries }
                         .filter { it.selected }
@@ -2772,6 +2802,11 @@ class StoryEditorViewModel : CoreViewModelWithEvent<StoryEditorUiIntent, StoryEd
             summary = story.summary,
             authorNote = story.authorNote,
             includeUserPersona = story.includeUserPersona,
+            // 有值才认为这个故事单独设过，否则回到继承全局
+            overridePersona = story.userName.isNotBlank() ||
+                story.userDescription.isNotBlank(),
+            userName = story.userName,
+            userDescription = story.userDescription,
             characters = normalizeCharacterOrder(characters),
             lorebookGroups = lorebooks.map { lorebook ->
                 StoryLorebookGroupItem(

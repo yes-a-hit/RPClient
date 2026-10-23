@@ -185,6 +185,12 @@ sealed class StoryEditorPageState {
         val authorNote: String,
         /** 故事 Prompt 是否包含当前用户名称和用户设定。 */
         val includeUserPersona: Boolean,
+        /** 是否为本故事单独设置人设；关掉则继承全局。 */
+        val overridePersona: Boolean = false,
+        /** 本故事里的 user 显示名。 */
+        val userName: String = "",
+        /** 本故事里的 user 人设。 */
+        val userDescription: String = "",
         /** 当前页面或流程可使用的角色列表。 */
         val characters: List<StoryCharacterOptionItem>,
         /** 按世界书分组后的条目列表。 */

@@ -68,6 +68,8 @@ interface StoryDao : MutableDao<Story> {
             summary = :summary,
             authorNote = :authorNote,
             includeUserPersona = :includeUserPersona,
+            userName = :userName,
+            userDescription = :userDescription,
             revision = revision + 1,
             latestTime = :latestTime
         WHERE id = :id
@@ -81,6 +83,8 @@ interface StoryDao : MutableDao<Story> {
         summary: String,
         authorNote: String,
         includeUserPersona: Boolean,
+        userName: String,
+        userDescription: String,
         latestTime: Long
     ): Int
 

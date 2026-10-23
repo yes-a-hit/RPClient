@@ -63,6 +63,19 @@ sealed class StoryEditorUiIntent {
     data class ChangeSummary(val value: String) : StoryEditorUiIntent()
     data class ChangeAuthorNote(val value: String) : StoryEditorUiIntent()
     data class SetIncludeUserPersona(val enabled: Boolean) : StoryEditorUiIntent()
+
+    /**
+     * 开关本故事的独立人设。
+     *
+     * 关掉时把本地值清空，回到继承全局。
+     */
+    data class ToggleOverridePersona(val enabled: Boolean) : StoryEditorUiIntent()
+
+    /** 改本故事的 user 显示名。 */
+    data class ChangeStoryUserName(val value: String) : StoryEditorUiIntent()
+
+    /** 改本故事的 user 人设。 */
+    data class ChangeStoryUserDescription(val value: String) : StoryEditorUiIntent()
     data object SummarizeStory : StoryEditorUiIntent()
     data object CancelStorySummary : StoryEditorUiIntent()
     data object ConfirmStorySummary : StoryEditorUiIntent()
