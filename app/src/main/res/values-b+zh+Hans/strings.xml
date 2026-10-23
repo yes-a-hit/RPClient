@@ -1494,4 +1494,7 @@
     <string name="save_and_regenerate">保存并重新回答</string>
     <string name="edit_think_block">思维链</string>
     <string name="edit_think_hint">留空则不写入思维链</string>
+    <string name="script_export_success">已导出：%1</string>
+    <string name="script_export_failed">导出失败：%1</string>
+    <string name="script_export_file">导出为文件</string>
 </resources>

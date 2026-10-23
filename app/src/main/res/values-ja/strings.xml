@@ -1497,4 +1497,7 @@
     <string name="save_and_regenerate">保存して再回答</string>
     <string name="edit_think_block">思考の連鎖</string>
     <string name="edit_think_hint">空欄なら思考を含めない</string>
+    <string name="script_export_success">書き出しました：%1</string>
+    <string name="script_export_failed">書き出し失敗：%1</string>
+    <string name="script_export_file">ファイルに書き出す</string>
 </resources>

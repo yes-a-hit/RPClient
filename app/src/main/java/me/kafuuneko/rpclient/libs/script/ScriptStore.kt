@@ -158,6 +158,24 @@ class ScriptStore(private val mContext: Context) {
     }
 
     /** 文件名安全化：只保留字母、数字、下划线与连字符。 */
+    /**
+     * 把剧本写成 .json 存到用户选定的位置。
+     *
+     * 走 SAF 的 OutputStream：目标可能是下载目录、网盘或别的应用，
+     * 不该假设那是本地路径。
+     *
+     * @return 失败时返回一句能直接给用户看的说明；成功返回 null。
+     */
+    suspend fun exportToUri(uri: Uri, pack: ScriptPack): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val json = mCodec.encode(pack)
+            mContext.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
+                writer.write(json)
+            } ?: return@runCatching "无法打开目标文件"
+            null
+        }.getOrElse { it.message ?: "写入失败" }
+    }
+
     private fun fileNameOf(packId: String): String {
         val safe = packId.map { char ->
             if (char.isLetterOrDigit() || char == '_' || char == '-') char else '_'

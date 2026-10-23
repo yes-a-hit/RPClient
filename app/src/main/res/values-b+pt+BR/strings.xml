@@ -1505,4 +1505,7 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="save_and_regenerate">Salvar e responder de novo</string>
     <string name="edit_think_block">Cadeia de raciocinio</string>
     <string name="edit_think_hint">Vazio: sem raciocinio</string>
+    <string name="script_export_success">Exportado: %1</string>
+    <string name="script_export_failed">Falha ao exportar: %1</string>
+    <string name="script_export_file">Exportar para arquivo</string>
 </resources>

@@ -1503,4 +1503,7 @@
     <string name="save_and_regenerate">Guardar y responder de nuevo</string>
     <string name="edit_think_block">Cadena de razonamiento</string>
     <string name="edit_think_hint">Vacio: sin razonamiento</string>
+    <string name="script_export_success">Exportado: %1</string>
+    <string name="script_export_failed">Error al exportar: %1</string>
+    <string name="script_export_file">Exportar a archivo</string>
 </resources>

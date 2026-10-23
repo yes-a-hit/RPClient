@@ -1480,4 +1480,7 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="save_and_regenerate">Salva e rispondi di nuovo</string>
     <string name="edit_think_block">Catena di ragionamento</string>
     <string name="edit_think_hint">Vuoto: nessun ragionamento</string>
+    <string name="script_export_success">Esportato: %1</string>
+    <string name="script_export_failed">Esportazione fallita: %1</string>
+    <string name="script_export_file">Esporta su file</string>
 </resources>

@@ -1502,4 +1502,7 @@
     <string name="save_and_regenerate">Enregistrer et repondre</string>
     <string name="edit_think_block">Chaine de raisonnement</string>
     <string name="edit_think_hint">Vide : pas de raisonnement</string>
+    <string name="script_export_success">Exporte : %1</string>
+    <string name="script_export_failed">Echec de l export : %1</string>
+    <string name="script_export_file">Exporter vers un fichier</string>
 </resources>

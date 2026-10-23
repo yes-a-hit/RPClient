@@ -1496,4 +1496,7 @@
     <string name="save_and_regenerate">저장 후 다시 답변</string>
     <string name="edit_think_block">사고 사슬</string>
     <string name="edit_think_hint">비우면 사고를 넣지 않음</string>
+    <string name="script_export_success">내보냄: %1</string>
+    <string name="script_export_failed">내보내기 실패: %1</string>
+    <string name="script_export_file">파일로 내보내기</string>
 </resources>

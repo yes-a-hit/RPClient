@@ -1506,4 +1506,7 @@
     <string name="save_and_regenerate">Сохранить и ответить заново</string>
     <string name="edit_think_block">Цепочка рассуждений</string>
     <string name="edit_think_hint">Пусто: без рассуждений</string>
+    <string name="script_export_success">Экспортировано: %1</string>
+    <string name="script_export_failed">Ошибка экспорта: %1</string>
+    <string name="script_export_file">Экспорт в файл</string>
 </resources>

@@ -1496,4 +1496,7 @@
     <string name="save_and_regenerate">儲存並重新回答</string>
     <string name="edit_think_block">思維鏈</string>
     <string name="edit_think_hint">留空則不寫入思維鏈</string>
+    <string name="script_export_success">已匯出：%1</string>
+    <string name="script_export_failed">匯出失敗：%1</string>
+    <string name="script_export_file">匯出為檔案</string>
 </resources>

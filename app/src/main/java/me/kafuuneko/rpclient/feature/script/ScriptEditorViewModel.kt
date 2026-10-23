@@ -834,6 +834,29 @@ class ScriptEditorViewModel : CoreViewModelWithEvent<ScriptEditorUiIntent, Scrip
         publish(state.editingSceneId, state.editingField)
     }
 
+    /** 导出到文件：先请宿主弹出保存框。 */
+    @UiIntentObserver(ScriptEditorUiIntent.ExportToFileClick::class)
+    private suspend fun onExportToFileClick() {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        val name = mPack.name.ifBlank { "script" }
+            .map { if (it.isLetterOrDigit() || it == '_' || it == '-') it else '_' }
+            .joinToString("")
+        ScriptEditorViewEvent.OpenExportTarget("$name.json").emitAndAwait()
+        publish(state.editingSceneId, state.editingField)
+    }
+
+    /** 用户选好位置后写入。 */
+    @UiIntentObserver(ScriptEditorUiIntent.ExportToFile::class)
+    private suspend fun onExportToFile(intent: ScriptEditorUiIntent.ExportToFile) {
+        val state = getOrNull<ScriptEditorUiState.Ready>() ?: return
+        val error = mStore.exportToUri(intent.uri, mPack)
+        ScriptEditorViewEvent.ExportResult(
+            success = error == null,
+            detail = error ?: mPack.name
+        ).tryEmit()
+        publish(state.editingSceneId, state.editingField)
+    }
+
     /** 返回上一页。 */
     @UiIntentObserver(ScriptEditorUiIntent.Back::class)
     private fun onBack() {

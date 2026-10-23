@@ -35,6 +35,12 @@ sealed class ScriptEditorUiIntent {
     /** 把当前剧本导出为 JSON 文本并复制到剪贴板。 */
     data object ExportLayout : ScriptEditorUiIntent()
 
+    /** 导出成 .json 文件；先弹系统保存框。 */
+    data object ExportToFileClick : ScriptEditorUiIntent()
+
+    /** 用户选好保存位置后写入。 */
+    data class ExportToFile(val uri: android.net.Uri) : ScriptEditorUiIntent()
+
     /** 返回上一页。 */
     data object Back : ScriptEditorUiIntent()
 
@@ -217,4 +223,11 @@ sealed class ScriptEditorViewEvent : me.kafuuneko.rpclient.libs.core.IViewEvent 
 
     /** 请求宿主把文本写入剪贴板。 */
     data class CopyToClipboard(val text: String) : ScriptEditorViewEvent()
+
+    /** 请求宿主弹出保存框；建议文件名一并带回。 */
+    data class OpenExportTarget(val suggestedName: String) : ScriptEditorViewEvent()
+
+    /** 文件导出的结果。 */
+    data class ExportResult(val success: Boolean, val detail: String) :
+        ScriptEditorViewEvent()
 }

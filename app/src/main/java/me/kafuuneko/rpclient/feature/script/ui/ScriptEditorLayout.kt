@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -70,6 +71,12 @@ fun ScriptEditorLayout(
                 title = state.packName.ifBlank { stringResource(R.string.script_editor_title) },
                 onBack = onBack,
                 actions = {
+                    IconButton(onClick = { ScriptEditorUiIntent.ExportToFileClick.emit() }) {
+                        Icon(
+                            Icons.Rounded.FileDownload,
+                            contentDescription = stringResource(R.string.script_export_file)
+                        )
+                    }
                     IconButton(onClick = { ScriptEditorUiIntent.AddScene.emit() }) {
                         Icon(
                             Icons.Rounded.Add,

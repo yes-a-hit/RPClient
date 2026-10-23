@@ -1502,4 +1502,7 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="save_and_regenerate">Lưu và trả lời lại</string>
     <string name="edit_think_block">Chuỗi suy luận</string>
     <string name="edit_think_hint">Trống: không có suy luận</string>
+    <string name="script_export_success">Đã xuất: %1</string>
+    <string name="script_export_failed">Xuất thất bại: %1</string>
+    <string name="script_export_file">Xuất ra tệp</string>
 </resources>

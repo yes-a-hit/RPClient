@@ -45,6 +45,13 @@ class ScriptEditorActivity : CoreActivityWithEvent() {
         mPendingBackgroundScene = null
     }
 
+    /** 剧本导出：让用户挑保存位置。 */
+    private val mExportPicker = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) mViewModel.emit(ScriptEditorUiIntent.ExportToFile(uri))
+    }
+
     /** 从剧本库进入时携带的剧本 ID。 */
     private val mPackId: String by lazy { intent.getStringExtra(EXTRA_PACK_ID).orEmpty() }
 
@@ -75,6 +82,10 @@ class ScriptEditorActivity : CoreActivityWithEvent() {
     /** 导出写入剪贴板，导入拉起文件选择器。 */
     override suspend fun onReceivedViewEvent(viewEvent: IViewEvent) {
         when (viewEvent) {
+            is ScriptEditorViewEvent.OpenExportTarget -> {
+                mExportPicker.launch(viewEvent.suggestedName)
+            }
+
             ScriptEditorViewEvent.OpenFilePicker -> {
                 mFilePicker.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                 return

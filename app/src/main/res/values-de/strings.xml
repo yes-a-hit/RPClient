@@ -1501,4 +1501,7 @@
     <string name="save_and_regenerate">Speichern und neu antworten</string>
     <string name="edit_think_block">Gedankengang</string>
     <string name="edit_think_hint">Leer: kein Gedankengang</string>
+    <string name="script_export_success">Exportiert: %1</string>
+    <string name="script_export_failed">Export fehlgeschlagen: %1</string>
+    <string name="script_export_file">Als Datei exportieren</string>
 </resources>
