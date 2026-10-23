@@ -48,6 +48,18 @@ fun describeUser(
     val genderText = gender.trim()
     if (genderText.isNotBlank()) parts += "性别：" + genderText
     val imageText = imageMeaning.trim()
-    if (imageText.isNotBlank()) parts += "用户发来的图片表示：" + imageText
+    if (imageText.isNotBlank()) {
+        // 只写「表示什么」压不住模型的默认联想——它照样会理解成拍照发送、
+        // 分享屏幕、转发截图。这里把否定项一起写进去，再要求直接描写画面，
+        // 不给它留「我看到你发来的图」这种转述的口子。
+        parts += buildString {
+            append("关于用户发来的图片：")
+            append(imageText)
+            append("\n这些图片不是用户拍照发来的，不是屏幕截图，")
+            append("也不是分享或转发给你看的东西，而是当前场景里正在发生的一部分。")
+            append("\n描写时直接写画面里的内容，不要说「你发来一张图」")
+            append("「我看到你发的图」这类转述。")
+        }
+    }
     return parts.joinToString("\n")
 }

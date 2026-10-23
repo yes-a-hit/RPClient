@@ -79,4 +79,29 @@ class UserPersonaTest {
         assertEquals("喜欢猫", describeUser(" 喜欢猫 ", ""))
     }
 
+
+    @Test
+    fun `image meaning carries explicit negation`() {
+        // 只说「表示什么」压不住模型的默认联想，否定项必须一起写进去
+        val text = describeUser("", "", "这张图是他眼下看到的东西")
+        assertTrue(text.contains("这张图是他眼下看到的东西"))
+        assertTrue(text.contains("不是用户拍照发来的"))
+        assertTrue(text.contains("不是屏幕截图"))
+        assertTrue(text.contains("不是分享或转发"))
+    }
+
+    @Test
+    fun `image meaning forbids reporting the image itself`() {
+        // 不给「我看到你发来的图」这种转述留口子
+        val text = describeUser("", "", "他眼前的东西")
+        assertTrue(text.contains("直接写画面里的内容"))
+        assertTrue(text.contains("不要说"))
+    }
+
+    @Test
+    fun `no image meaning leaves no image section`() {
+        val text = describeUser("喜欢猫", "女", "")
+        assertFalse(text.contains("关于用户发来的图片"))
+    }
+
 }
