@@ -748,6 +748,37 @@ class GroupChatViewModel :
         }
     }
 
+    /**
+     * 戳一戳。
+     *
+     * 复用发送链路：把这句话填进草稿再发一遍，
+     * 正则、发言人选、上下文都走原有逻辑，不用另开一条路。
+     */
+    @UiIntentObserver(GroupChatUiIntent.PokeMember::class)
+    private suspend fun onPokeMember(intent: GroupChatUiIntent.PokeMember) {
+        val uiState = getOrNull<GroupChatUiState.Normal>() ?: return
+        if (!canPoke(uiState)) return
+        val template = AppModel.pokePrompt.ifBlank { "（戳了戳 {name}）" }
+        val poke = template.replace("{name}", intent.memberName)
+        val reaction = AppModel.pokeReaction.trim()
+        val text = if (reaction.isBlank()) poke else "$poke\n$reaction"
+        // 戳是用户动作，写进草稿后照常发送
+        uiState.copy(
+            conversationState = uiState.conversationState.copy(inputDraft = text)
+        ).setup()
+        onSendMessage()
+    }
+
+    /** 生成中或没配模型时不能戳，免得点了没反应还看不出原因。 */
+    private fun canPoke(uiState: GroupChatUiState.Normal): Boolean {
+        if (mGenerationJob?.isCompleted == false) {
+            AppViewEvent.PopupToastMessageByResId(R.string.generation_already_running).tryEmit()
+            return false
+        }
+        if (mImageCoordinator.state.processing) return false
+        return true
+    }
+
     @UiIntentObserver(GroupChatUiIntent.SendMessage::class)
     private suspend fun onSendMessage() {
         try {

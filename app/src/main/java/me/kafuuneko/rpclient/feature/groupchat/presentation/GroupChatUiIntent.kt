@@ -33,6 +33,9 @@ sealed class GroupChatUiIntent {
     data class SelectSpeaker(val characterId: Long) : GroupChatUiIntent()
     data class ToggleMemberMuted(val characterId: Long) : GroupChatUiIntent()
     data object SendMessage : GroupChatUiIntent()
+
+    /** 戳一戳某个成员；长按头像触发。 */
+    data class PokeMember(val memberName: String) : GroupChatUiIntent()
     data object StopGeneration : GroupChatUiIntent()
     data object SummarizeNow : GroupChatUiIntent()
     data object RestorePreviousSummary : GroupChatUiIntent()

@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -286,7 +287,8 @@ private fun GroupChatNormalView(
                 },
                 onToggleMuted = {
                     emitIntent(GroupChatUiIntent.ToggleMemberMuted(it))
-                }
+                },
+                onPoke = { emitIntent(GroupChatUiIntent.PokeMember(it)) }
             )
             MessageList(
                 imageState = state.imageState,
@@ -1061,7 +1063,8 @@ private fun MemberRail(
     selectedSpeakerId: Long?,
     enabled: Boolean,
     onSelect: (Long) -> Unit,
-    onToggleMuted: (Long) -> Unit
+    onToggleMuted: (Long) -> Unit,
+    onPoke: (String) -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -1076,7 +1079,8 @@ private fun MemberRail(
                 selected = selectedSpeakerId == member.id,
                 enabled = enabled,
                 onSelect = { onSelect(member.id) },
-                onToggleMuted = { onToggleMuted(member.id) }
+                onToggleMuted = { onToggleMuted(member.id) },
+                onPoke = { onPoke(member.name) }
             )
         }
     }
@@ -1088,7 +1092,8 @@ private fun MemberChip(
     selected: Boolean,
     enabled: Boolean,
     onSelect: () -> Unit,
-    onToggleMuted: () -> Unit
+    onToggleMuted: () -> Unit,
+    onPoke: () -> Unit = {}
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val accent = getMacaronColor(member.name)
@@ -1096,8 +1101,13 @@ private fun MemberChip(
         modifier = Modifier
             .width(138.dp)
             .alpha(if (member.muted) 0.55f else 1f)
-            .clickable(
+            // 短按选中发言人，长按戳一戳
+            .combinedClickable(
                 enabled = enabled,
+                onLongClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onPoke()
+                },
                 onClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onSelect()

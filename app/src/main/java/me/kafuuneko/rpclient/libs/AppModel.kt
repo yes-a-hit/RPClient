@@ -364,6 +364,21 @@ Treat it as an instruction, not as manuscript text. Do not quote, repeat, explai
      */
     var userImageMeaning by stringPref(default = "")
 
+    /**
+     * 戳一戳时对角色说的话。
+     *
+     * `{name}` 会被换成被戳的人。留空时用内置措辞。
+     * 这句话是用户发的，所以写「我」的口吻。
+     */
+    var pokePrompt by stringPref(default = "")
+
+    /**
+     * 被戳之后的默认反应。
+     *
+     * 留空则不额外要求，交给模型自由发挥。
+     */
+    var pokeReaction by stringPref(default = "")
+
     // 摘要目标字数限制，对应摘要提示词中的 {{words}}。
     var summaryWordsLimit by intPref(default = 500)
 
