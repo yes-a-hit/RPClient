@@ -1523,6 +1523,13 @@ private fun ChatSettingsPage(
                         subtitle = stringResource(R.string.export_chat_desc),
                         enabled = loadState == ChatLoadState.None
                     ) { ChatUiIntent.ExportChatClick.emit() }
+                    // 清空上下文：消息全删，会话与设置留着
+                    MenuAction(
+                        icon = Icons.Rounded.Refresh,
+                        title = stringResource(R.string.clear_context_action),
+                        subtitle = stringResource(R.string.clear_context_message),
+                        enabled = loadState == ChatLoadState.None
+                    ) { ChatUiIntent.ClearConversationContextClick.emit() }
                     MenuAction(
                         icon = Icons.Rounded.Delete,
                         title = stringResource(R.string.delete_chat_title),

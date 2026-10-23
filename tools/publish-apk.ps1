@@ -18,9 +18,11 @@ $apk = Join-Path $repoRoot 'app\build\outputs\apk\debug\app-debug.apk'
 if (-not (Test-Path $apk)) { throw "APK 不存在，请先执行 gradlew assembleDebug：$apk" }
 
 # 从源码读取版本号，避免和关于页显示的版本不一致
-$appModel = Get-Content (Join-Path $repoRoot 'app\src\main\java\me\kafuuneko\rpclient\libs\AppModel.kt')
-$uvVersion = ($appModel | Select-String -Pattern 'UV_VERSION\s*=\s*"([^"]+)"').Matches.Groups[1].Value
-if (-not $uvVersion) { throw 'AppModel.kt 中找不到 UV_VERSION' }
+# 版本号以 gradle.properties 为准：AppModel 已改成读 BuildConfig，
+# 源码里不再有字面量，从那里取会取不到
+$props = Get-Content (Join-Path $repoRoot 'gradle.properties')
+$uvVersion = ($props | Select-String -Pattern '^uv\.version=(.+)$').Matches.Groups[1].Value.Trim()
+if (-not $uvVersion) { throw 'gradle.properties 中找不到 uv.version' }
 
 $gradle = Get-Content (Join-Path $repoRoot 'app\build.gradle.kts')
 $versionName = ($gradle | Select-String -Pattern 'versionName\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches.Groups[1].Value
