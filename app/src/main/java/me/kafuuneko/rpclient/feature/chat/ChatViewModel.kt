@@ -1295,6 +1295,29 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
      *
      * 空白名称统一保存为默认值 `You`，避免生成 prompt 和消息署名出现空名称。
      */
+    /**
+     * 开关本会话的独立人设。
+     *
+     * 关掉时把两个字段清空——存空就是继承全局的意思，
+     * 留着旧值会让人以为开关没生效。
+     */
+    @UiIntentObserver(ChatUiIntent.ToggleOverridePersona::class)
+    private suspend fun onToggleOverridePersona(intent: ChatUiIntent.ToggleOverridePersona) {
+        if (!isStateOf<ChatUiState.Normal>()) return
+        val sessionId = mSessionId ?: return
+        withContext(Dispatchers.IO) {
+            if (intent.enabled) {
+                // 打开时预填全局值，省得从空白开始重写
+                mChatRepository.updateSessionUserName(sessionId, AppModel.resolvedUserName)
+                mChatRepository.updateSessionUserDescription(sessionId, AppModel.userDescription)
+            } else {
+                mChatRepository.updateSessionUserName(sessionId, "")
+                mChatRepository.updateSessionUserDescription(sessionId, "")
+            }
+        }
+        refreshUiState(sessionId = sessionId)
+    }
+
     @UiIntentObserver(ChatUiIntent.SaveUserName::class)
     private suspend fun onSaveUserName(intent: ChatUiIntent.SaveUserName) {
         if (!isStateOf<ChatUiState.Normal>()) return

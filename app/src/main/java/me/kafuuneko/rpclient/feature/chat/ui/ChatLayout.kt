@@ -1571,22 +1571,47 @@ private fun ChatSettingsPage(
                         maxLines = 8,
                         onSave = { ChatUiIntent.SaveUserNote(it).emit() }
                     )
-                    AutoSaveTextField(
-                        label = stringResource(R.string.user_display_name),
-                        value = session.userName,
-                        minLines = 1,
-                        maxLines = 1,
-                        singleLine = true,
-                        onSave = { ChatUiIntent.SaveUserName(it).emit() }
-                    )
-                    AutoSaveTextField(
-                        label = stringResource(R.string.user_persona_description),
-                        value = session.userDescription,
-                        placeholder = stringResource(R.string.empty),
-                        minLines = 3,
-                        maxLines = 8,
-                        onSave = { ChatUiIntent.SaveUserDescription(it).emit() }
-                    )
+                    // 默认继承全局，要单独设才打开；关掉会清空本地值
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.override_persona),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.override_persona_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = session.overridePersona,
+                            onCheckedChange = {
+                                ChatUiIntent.ToggleOverridePersona(it).emit()
+                            }
+                        )
+                    }
+                    if (session.overridePersona) {
+                        AutoSaveTextField(
+                            label = stringResource(R.string.user_display_name),
+                            value = session.userName,
+                            minLines = 1,
+                            maxLines = 1,
+                            singleLine = true,
+                            onSave = { ChatUiIntent.SaveUserName(it).emit() }
+                        )
+                        AutoSaveTextField(
+                            label = stringResource(R.string.user_persona_description),
+                            value = session.userDescription,
+                            placeholder = stringResource(R.string.empty),
+                            minLines = 3,
+                            maxLines = 8,
+                            onSave = { ChatUiIntent.SaveUserDescription(it).emit() }
+                        )
+                    }
                     AutoSaveTextField(
                         label = stringResource(R.string.creator_notes),
                         value = session.creatorNotes,

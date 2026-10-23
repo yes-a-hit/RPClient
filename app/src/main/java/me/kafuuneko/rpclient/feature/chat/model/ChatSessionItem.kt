@@ -14,6 +14,8 @@ data class ChatSessionItem(
     val userName: String,
     /** 当前会话或 Prompt 使用的用户设定。 */
     val userDescription: String,
+    /** 是否为本会话单独设置人设；关掉回到继承全局。 */
+    val overridePersona: Boolean = false,
     /** 作者提供的角色使用说明和备注。 */
     val creatorNotes: String,
     /** 当前会话的自动摘要是否暂停。 */

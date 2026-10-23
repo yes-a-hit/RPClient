@@ -352,24 +352,48 @@ private fun GroupChatSettingsView(
                         minLines = 3,
                         maxLines = 8
                     )
-                    // 本群聊的人设，空着继承全局
-                    RpScrollableOutlinedTextField(
-                        value = state.userNameDraft,
-                        onValueChange = { emitIntent(GroupChatUiIntent.ChangeUserName(it)) },
+                    // 默认继承全局，要单独设才打开；关掉会清空本地值
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.user_display_name)) },
-                        singleLine = true
-                    )
-                    RpScrollableOutlinedTextField(
-                        value = state.userDescriptionDraft,
-                        onValueChange = {
-                            emitIntent(GroupChatUiIntent.ChangeUserDescription(it))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.user_persona_description)) },
-                        minLines = 3,
-                        maxLines = 8
-                    )
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.override_persona),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.override_persona_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = state.overridePersona,
+                            onCheckedChange = {
+                                emitIntent(GroupChatUiIntent.ToggleOverridePersona(it))
+                            }
+                        )
+                    }
+                    if (state.overridePersona) {
+                        RpScrollableOutlinedTextField(
+                            value = state.userNameDraft,
+                            onValueChange = { emitIntent(GroupChatUiIntent.ChangeUserName(it)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.user_display_name)) },
+                            singleLine = true
+                        )
+                        RpScrollableOutlinedTextField(
+                            value = state.userDescriptionDraft,
+                            onValueChange = {
+                                emitIntent(GroupChatUiIntent.ChangeUserDescription(it))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.user_persona_description)) },
+                            minLines = 3,
+                            maxLines = 8
+                        )
+                    }
                     RpScrollableOutlinedTextField(
                         value = state.userNoteDraft,
                         onValueChange = { emitIntent(GroupChatUiIntent.ChangeUserNote(it)) },

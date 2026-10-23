@@ -37,6 +37,8 @@ fun ChatSession.toChatSessionItem(
         userNote = userNote,
         userName = userName,
         userDescription = userDescription,
+        // 有值才认为这个会话单独设过，否则回到继承全局
+        overridePersona = userName.isNotBlank() || userDescription.isNotBlank(),
         creatorNotes = creatorNotes,
         autoSummaryPaused = autoSummaryPaused,
         messageCount = messageCount,

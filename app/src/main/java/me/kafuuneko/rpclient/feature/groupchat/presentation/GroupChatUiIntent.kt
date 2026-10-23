@@ -40,6 +40,14 @@ sealed class GroupChatUiIntent {
     data class ChangeScenario(val value: String) : GroupChatUiIntent()
     data class ChangeUserNote(val value: String) : GroupChatUiIntent()
 
+    /**
+     * 开关本群聊的独立人设。
+     *
+     * 关掉时把本地值清空，回到继承全局——不这么做的话，
+     * 关掉开关但值还在，用户会以为没生效。
+     */
+    data class ToggleOverridePersona(val enabled: Boolean) : GroupChatUiIntent()
+
     /** 改本群聊里的 user 显示名；清空即继承全局。 */
     data class ChangeUserName(val value: String) : GroupChatUiIntent()
 

@@ -110,6 +110,8 @@ data class GroupChatSettingsState(
     val scenarioDraft: String = "",
     /** 群聊用户备注的未保存草稿。 */
     val userNoteDraft: String = "",
+    /** 是否为本群聊单独设置人设；关掉就回到继承全局。 */
+    val overridePersona: Boolean = false,
     /** 本群聊里的 user 显示名；空着继承全局。 */
     val userNameDraft: String = "",
     /** 本群聊里的 user 人设；空着继承全局。 */

@@ -107,6 +107,14 @@ sealed class ChatUiIntent {
 
     data class SaveUserNote(val value: String) : ChatUiIntent()
 
+    /**
+     * 开关本会话的独立人设。
+     *
+     * 关掉时把本地值清空，回到继承全局——不这么做的话，
+     * 关掉开关但值还在，用户会以为没生效。
+     */
+    data class ToggleOverridePersona(val enabled: Boolean) : ChatUiIntent()
+
     data class SaveUserName(val value: String) : ChatUiIntent()
 
     data class SaveUserDescription(val value: String) : ChatUiIntent()

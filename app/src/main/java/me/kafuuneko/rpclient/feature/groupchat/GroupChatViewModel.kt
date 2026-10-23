@@ -917,6 +917,28 @@ class GroupChatViewModel :
      *
      * @param intent 包含用户备注文本的意图
      */
+    @UiIntentObserver(GroupChatUiIntent.ToggleOverridePersona::class)
+    private fun onToggleOverridePersona(intent: GroupChatUiIntent.ToggleOverridePersona) {
+        if (!isStateOf<GroupChatUiState.Normal>()) return
+        updateSettingsState {
+            if (intent.enabled) {
+                // 打开时预填全局值，省得从空白开始重写
+                copy(
+                    overridePersona = true,
+                    userNameDraft = AppModel.resolvedUserName,
+                    userDescriptionDraft = AppModel.userDescription
+                )
+            } else {
+                // 关掉就清空，真回到继承
+                copy(
+                    overridePersona = false,
+                    userNameDraft = "",
+                    userDescriptionDraft = ""
+                )
+            }
+        }
+    }
+
     /** 改本群聊的 user 显示名；清空即继承全局。 */
     @UiIntentObserver(GroupChatUiIntent.ChangeUserName::class)
     private fun onChangeUserName(intent: GroupChatUiIntent.ChangeUserName) {
@@ -2418,6 +2440,11 @@ class GroupChatViewModel :
                 trimOtherSpeakers = data.session.trimOtherSpeakers,
                 scenarioDraft = data.session.scenario,
                 userNoteDraft = data.session.userNote,
+                // 有值才认为这个群聊单独设过，否则回到继承全局
+                overridePersona = data.session.userName.isNotBlank() ||
+                    data.session.userDescription.isNotBlank(),
+                userNameDraft = data.session.userName,
+                userDescriptionDraft = data.session.userDescription,
                 summaryDraft = data.summary?.content.orEmpty(),
                 autoSummaryPaused = data.session.autoSummaryPaused,
                 systemPromptDraft = data.session.systemPromptOverride,
