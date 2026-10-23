@@ -1505,4 +1505,10 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="script_export_success">Diekspor: %1</string>
     <string name="script_export_failed">Gagal mengekspor: %1</string>
     <string name="script_export_file">Ekspor ke berkas</string>
+    <string name="override_persona">Persona terpisah</string>
+    <string name="override_persona_hint">Mati mewarisi global</string>
+    <string name="backup_and_restore">Cadangan dan pulih</string>
+    <string name="backup_and_restore_desc">Ekspor semua atau impor setelah pasang ulang</string>
+    <string name="backup_include_secrets">Sertakan kunci</string>
+    <string name="backup_include_secrets_hint">Mati: kunci kosong, sisanya lengkap</string>
 </resources>

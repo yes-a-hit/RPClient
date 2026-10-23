@@ -1499,4 +1499,10 @@
     <string name="script_export_success">已匯出：%1</string>
     <string name="script_export_failed">匯出失敗：%1</string>
     <string name="script_export_file">匯出為檔案</string>
+    <string name="override_persona">單獨設定人設</string>
+    <string name="override_persona_hint">關閉則繼承全域設定</string>
+    <string name="backup_and_restore">備份與還原</string>
+    <string name="backup_and_restore_desc">匯出全部資料，或在重裝後匯入</string>
+    <string name="backup_include_secrets">包含 API 金鑰</string>
+    <string name="backup_include_secrets_hint">關閉時匯出檔金鑰留空，其餘完整</string>
 </resources>

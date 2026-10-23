@@ -1505,4 +1505,10 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="script_export_success">Đã xuất: %1</string>
     <string name="script_export_failed">Xuất thất bại: %1</string>
     <string name="script_export_file">Xuất ra tệp</string>
+    <string name="override_persona">Persona riêng</string>
+    <string name="override_persona_hint">Tắt thì kế thừa chung</string>
+    <string name="backup_and_restore">Sao lưu và khôi phục</string>
+    <string name="backup_and_restore_desc">Xuất tất cả hoặc nhập sau khi cài lại</string>
+    <string name="backup_include_secrets">Kèm khoá API</string>
+    <string name="backup_include_secrets_hint">Tắt: khoá trống, còn lại đầy đủ</string>
 </resources>

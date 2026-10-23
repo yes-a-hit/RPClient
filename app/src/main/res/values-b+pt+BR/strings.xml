@@ -1508,4 +1508,10 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="script_export_success">Exportado: %1</string>
     <string name="script_export_failed">Falha ao exportar: %1</string>
     <string name="script_export_file">Exportar para arquivo</string>
+    <string name="override_persona">Persona separada</string>
+    <string name="override_persona_hint">Desligado herda o global</string>
+    <string name="backup_and_restore">Backup e restauracao</string>
+    <string name="backup_and_restore_desc">Exporte tudo ou importe apos reinstalar</string>
+    <string name="backup_include_secrets">Incluir chaves</string>
+    <string name="backup_include_secrets_hint">Desligado: chaves vazias, resto completo</string>
 </resources>

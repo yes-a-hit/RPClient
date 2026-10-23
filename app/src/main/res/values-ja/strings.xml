@@ -1500,4 +1500,10 @@
     <string name="script_export_success">書き出しました：%1</string>
     <string name="script_export_failed">書き出し失敗：%1</string>
     <string name="script_export_file">ファイルに書き出す</string>
+    <string name="override_persona">個別に設定</string>
+    <string name="override_persona_hint">オフなら全体設定を継承</string>
+    <string name="backup_and_restore">バックアップと復元</string>
+    <string name="backup_and_restore_desc">すべて書き出す／再インストール後に読み込む</string>
+    <string name="backup_include_secrets">APIキーを含める</string>
+    <string name="backup_include_secrets_hint">オフならキーは空、他は完全</string>
 </resources>

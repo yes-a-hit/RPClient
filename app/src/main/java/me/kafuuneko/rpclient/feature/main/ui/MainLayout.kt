@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AddComment
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Bookmarks
@@ -1572,6 +1573,7 @@ private fun SettingsPage(
         item { AppearancePanel(state.appearanceState, emit) }
         item { ChatDataManagementPanel(state.chatDataManagementState, emit) }
         item { TokenUsageEntryCard { emit(MainUiIntent.OpenTokenUsage) } }
+        item { BackupRestoreEntryCard { emit(MainUiIntent.OpenBackupRestore) } }
         item { ScriptEditorEntryCard { emit(MainUiIntent.OpenScriptEditor) } }
         item { DebugPanel(state.debugState, emit) }
         item { AboutEntryCard { emit(MainUiIntent.OpenAbout) } }
@@ -3090,6 +3092,35 @@ private fun UserPersonaSingleLineField(
                 MaterialTheme.colorScheme.onSurfaceVariant
             } else {
                 MaterialTheme.colorScheme.onSurface
+            }
+        )
+    }
+}
+
+
+/**
+ * 备份与恢复入口。
+ *
+ * 单独放出来是因为安装签名变了就只能卸载重装，一卸载 /data 全清，
+ * 用户得在卸载前先把资料导出去。这个入口不藏进调试面板里。
+ */
+@Composable
+private fun BackupRestoreEntryCard(onClick: () -> Unit) {
+    RpSettingsGroup {
+        RpSettingsTile(
+            icon = Icons.Rounded.CloudUpload,
+            iconColor = AccentSkyColor,
+            iconContainerColor = AccentSkyColor.copy(alpha = 0.14f),
+            title = stringResource(R.string.backup_and_restore),
+            subtitle = stringResource(R.string.backup_and_restore_desc),
+            onClick = onClick,
+            trailing = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.50f),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         )
     }

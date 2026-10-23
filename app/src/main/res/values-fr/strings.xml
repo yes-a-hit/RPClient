@@ -1505,4 +1505,10 @@
     <string name="script_export_success">Exporte : %1</string>
     <string name="script_export_failed">Echec de l export : %1</string>
     <string name="script_export_file">Exporter vers un fichier</string>
+    <string name="override_persona">Persona separee</string>
+    <string name="override_persona_hint">Desactive : herite du global</string>
+    <string name="backup_and_restore">Sauvegarde</string>
+    <string name="backup_and_restore_desc">Exporter tout ou importer apres reinstallation</string>
+    <string name="backup_include_secrets">Inclure les cles</string>
+    <string name="backup_include_secrets_hint">Desactive : cles vides, reste complet</string>
 </resources>

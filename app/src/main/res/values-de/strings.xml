@@ -1504,4 +1504,10 @@
     <string name="script_export_success">Exportiert: %1</string>
     <string name="script_export_failed">Export fehlgeschlagen: %1</string>
     <string name="script_export_file">Als Datei exportieren</string>
+    <string name="override_persona">Eigene Persona</string>
+    <string name="override_persona_hint">Aus: globale Einstellung</string>
+    <string name="backup_and_restore">Sicherung</string>
+    <string name="backup_and_restore_desc">Alles exportieren oder nach Neuinstallation importieren</string>
+    <string name="backup_include_secrets">API-Schluessel</string>
+    <string name="backup_include_secrets_hint">Aus: Schluessel leer, Rest komplett</string>
 </resources>

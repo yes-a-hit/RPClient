@@ -1509,4 +1509,10 @@
     <string name="script_export_success">Экспортировано: %1</string>
     <string name="script_export_failed">Ошибка экспорта: %1</string>
     <string name="script_export_file">Экспорт в файл</string>
+    <string name="override_persona">Своя персона</string>
+    <string name="override_persona_hint">Выкл: наследует общее</string>
+    <string name="backup_and_restore">Резервная копия</string>
+    <string name="backup_and_restore_desc">Экспорт всего или импорт после переустановки</string>
+    <string name="backup_include_secrets">Включить ключи</string>
+    <string name="backup_include_secrets_hint">Выкл: ключи пустые, остальное полное</string>
 </resources>

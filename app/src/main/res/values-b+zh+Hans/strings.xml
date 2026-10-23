@@ -1497,4 +1497,10 @@
     <string name="script_export_success">已导出：%1</string>
     <string name="script_export_failed">导出失败：%1</string>
     <string name="script_export_file">导出为文件</string>
+    <string name="override_persona">单独设置人设</string>
+    <string name="override_persona_hint">关闭则继承全局设置</string>
+    <string name="backup_and_restore">备份与恢复</string>
+    <string name="backup_and_restore_desc">导出全部资料，或在重装后导入</string>
+    <string name="backup_include_secrets">包含 API 密钥</string>
+    <string name="backup_include_secrets_hint">关闭时导出包里密钥置空，其余资料完整</string>
 </resources>

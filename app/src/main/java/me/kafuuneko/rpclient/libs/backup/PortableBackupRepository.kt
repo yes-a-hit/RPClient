@@ -44,7 +44,16 @@ class PortableBackupRepository(
         private const val BLOB_KEY = "$" + "blobBase64"
     }
 
-    suspend fun exportArchive(destination: Uri) = withContext(Dispatchers.IO) {
+    /**
+     * 打包导出到 [destination]。
+     *
+     * @param includeSecrets 是否包含 API Key。卸载重装前只想保住资料时传 false，
+     * 导出的包里密钥一律置空，其余内容完整。
+     */
+    suspend fun exportArchive(
+        destination: Uri,
+        includeSecrets: Boolean = true
+    ) = withContext(Dispatchers.IO) {
         val stage = File(context.cacheDir, "portable-export-" + System.nanoTime())
         check(stage.mkdirs()) { "Could not create temporary backup workspace." }
         try {
@@ -54,7 +63,7 @@ class PortableBackupRepository(
             primaryDb.beginTransaction()
             try {
                 writeText(File(stage, "app-data/database-schema.json"), schemaJson(primaryDb).toString(2))
-                exportFeatureFiles(primaryDb, primaryTables, stage)
+                exportFeatureFiles(primaryDb, primaryTables, stage, includeSecrets)
                 primaryDb.setTransactionSuccessful()
             } finally {
                 primaryDb.endTransaction()
@@ -103,7 +112,7 @@ class PortableBackupRepository(
                 .put("components", JSONObject()
                     .put("characters", true).put("stories", true).put("chats", true)
                     .put("groupChats", true).put("worldbooks", true).put("regex", true)
-                    .put("providersAndApiKeys", true).put("settingsAndPrompts", true)
+                    .put("providersAndApiKeys", includeSecrets).put("settingsAndPrompts", true)
                     .put("tokenUsage", true).put("requestLogs", true)
                     .put("attachments", true).put("privateAppFiles", true))
                 .put("recordCounts", countRecords(stage))
@@ -258,7 +267,9 @@ class PortableBackupRepository(
     private fun exportFeatureFiles(
         db: SupportSQLiteDatabase,
         tables: List<String>,
-        root: File
+        root: File,
+        includeSecrets: Boolean
+    
     ) {
         val ownedTables = mutableSetOf<String>()
         fun own(vararg names: String) {
@@ -425,7 +436,14 @@ class PortableBackupRepository(
 
         val associations = rows("character_llm_provider_associations")
         own("character_llm_provider_associations")
-        val providerRows = rows("llm_providers")
+        val providerRows = rows("llm_providers").also { rows ->
+            if (!includeSecrets) {
+                // 只保住配置结构，密钥一律留空——重装后自己填回去
+                for (index in 0 until rows.length()) {
+                    rows.optJSONObject(index)?.put("apiKey", "")
+                }
+            }
+        }
         own("llm_providers")
         writeText(File(root, "providers/provider-configurations.json"),
             JSONObject()

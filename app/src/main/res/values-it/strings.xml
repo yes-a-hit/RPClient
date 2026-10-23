@@ -1483,4 +1483,10 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="script_export_success">Esportato: %1</string>
     <string name="script_export_failed">Esportazione fallita: %1</string>
     <string name="script_export_file">Esporta su file</string>
+    <string name="override_persona">Persona separata</string>
+    <string name="override_persona_hint">Spento eredita il globale</string>
+    <string name="backup_and_restore">Backup e ripristino</string>
+    <string name="backup_and_restore_desc">Esporta tutto o importa dopo reinstallazione</string>
+    <string name="backup_include_secrets">Includi chiavi</string>
+    <string name="backup_include_secrets_hint">Spento: chiavi vuote, resto completo</string>
 </resources>

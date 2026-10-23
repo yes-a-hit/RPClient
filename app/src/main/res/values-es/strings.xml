@@ -1506,4 +1506,10 @@
     <string name="script_export_success">Exportado: %1</string>
     <string name="script_export_failed">Error al exportar: %1</string>
     <string name="script_export_file">Exportar a archivo</string>
+    <string name="override_persona">Persona propia</string>
+    <string name="override_persona_hint">Apagado hereda lo global</string>
+    <string name="backup_and_restore">Copia y restauracion</string>
+    <string name="backup_and_restore_desc">Exporta todo o importa tras reinstalar</string>
+    <string name="backup_include_secrets">Incluir claves</string>
+    <string name="backup_include_secrets_hint">Apagado: claves vacias, resto completo</string>
 </resources>

@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +50,9 @@ class BackupRestoreActivity : CoreActivity(), KoinComponent {
     @Composable
     override fun ViewContent() {
         var busy by remember { mutableStateOf(false) }
+        // 默认不含密钥：这个页最常用的场景是卸载前抢救资料，
+        // 密钥重装后自己填一遍就好，没必要跟着包到处跑
+        var includeSecrets by remember { mutableStateOf(false) }
         var status by remember { mutableStateOf<String?>(null) }
         var restoreUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -59,7 +64,7 @@ class BackupRestoreActivity : CoreActivity(), KoinComponent {
                 status = getString(R.string.backup_working)
                 lifecycleScope.launch {
                     try {
-                        backupRepository.exportArchive(uri)
+                        backupRepository.exportArchive(uri, includeSecrets = includeSecrets)
                         status = getString(R.string.backup_export_success)
                     } catch (error: Throwable) {
                         status = getString(R.string.backup_operation_failed, error.message ?: error.javaClass.simpleName)
@@ -85,6 +90,30 @@ class BackupRestoreActivity : CoreActivity(), KoinComponent {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
+                // 关掉时导出包里的密钥一律置空，其余完整
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            getString(R.string.backup_include_secrets),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            getString(R.string.backup_include_secrets_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = includeSecrets,
+                        enabled = !busy,
+                        onCheckedChange = { includeSecrets = it }
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
                 Button(
                     modifier = Modifier.fillMaxWidth(),
