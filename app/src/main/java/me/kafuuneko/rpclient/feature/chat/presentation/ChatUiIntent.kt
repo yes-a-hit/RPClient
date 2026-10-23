@@ -119,7 +119,21 @@ sealed class ChatUiIntent {
 
     data class ChangeEditingMessageDraft(val value: String) : ChatUiIntent()
 
+    /** 编辑思维链草稿。 */
+    data class ChangeEditingThinkDraft(val value: String) : ChatUiIntent()
+
+    /** 展开或收起编辑框里的思维链。 */
+    data object ToggleEditingThink : ChatUiIntent()
+
     data object SaveEditingMessage : ChatUiIntent()
+
+    /**
+     * 保存编辑并重新回答。
+     *
+     * 与 [SaveEditingMessage] 的区别只在于要不要作废这条之后的回复——
+     * 改错字和改内容意图不同，删不删得有用户自己决定。
+     */
+    data object SaveEditingMessageAndRegenerate : ChatUiIntent()
 
     data object CancelEditingMessage : ChatUiIntent()
 

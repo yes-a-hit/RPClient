@@ -1502,4 +1502,7 @@ Abra as Configurações de Modelo para verificar a chave de API, a URL base, o n
     <string name="user_image_meaning">Imagem enviada</string>
     <string name="user_image_meaning_hint">Em branco: entende como uma imagem enviada pelo usuario.</string>
     <string name="not_set">Nao definido</string>
+    <string name="save_and_regenerate">Salvar e responder de novo</string>
+    <string name="edit_think_block">Cadeia de raciocinio</string>
+    <string name="edit_think_hint">Vazio: sem raciocinio</string>
 </resources>

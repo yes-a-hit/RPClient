@@ -1500,4 +1500,7 @@
     <string name="user_image_meaning">Imagen enviada</string>
     <string name="user_image_meaning_hint">Vacio: se entiende como una imagen enviada por el usuario.</string>
     <string name="not_set">Sin definir</string>
+    <string name="save_and_regenerate">Guardar y responder de nuevo</string>
+    <string name="edit_think_block">Cadena de razonamiento</string>
+    <string name="edit_think_hint">Vacio: sin razonamiento</string>
 </resources>

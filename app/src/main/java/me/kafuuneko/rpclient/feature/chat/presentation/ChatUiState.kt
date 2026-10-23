@@ -71,7 +71,11 @@ data class ChatConversationState(
     /** 当前正在编辑的消息 ID；未编辑时为空。 */
     val editingMessageId: String? = null,
     /** 当前消息编辑器中尚未保存的草稿。 */
-    val editingMessageDraft: String = ""
+    val editingMessageDraft: String = "",
+    /** 编辑中的思维链草稿；与正文分开，两者都能改。 */
+    val editingThinkDraft: String = "",
+    /** 编辑框里思维链是否展开。 */
+    val editingThinkExpanded: Boolean = false
 )
 
 /** 单聊设置页中的世界书列表与搜索状态。 */

@@ -1499,4 +1499,7 @@
     <string name="user_image_meaning">Sens de l image</string>
     <string name="user_image_meaning_hint">Vide : comprend comme une image envoyee par l utilisateur.</string>
     <string name="not_set">Non defini</string>
+    <string name="save_and_regenerate">Enregistrer et repondre</string>
+    <string name="edit_think_block">Chaine de raisonnement</string>
+    <string name="edit_think_hint">Vide : pas de raisonnement</string>
 </resources>

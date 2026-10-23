@@ -369,6 +369,8 @@ private fun ChatNormal(
                     expandedThinkBlockIds = state.conversationState.expandedThinkBlockIds,
                     editing = message.id == state.conversationState.editingMessageId,
                     editingDraft = state.conversationState.editingMessageDraft,
+                    editingThinkDraft = state.conversationState.editingThinkDraft,
+                    editingThinkExpanded = state.conversationState.editingThinkExpanded,
                     isFirstMessage = !state.conversationState.canLoadOlderMessages &&
                             !state.conversationState.isLoadingOlderMessages &&
                             index == 0,
@@ -758,6 +760,8 @@ private fun MessageBubble(
     expandedThinkBlockIds: Set<String>,
     editing: Boolean,
     editingDraft: String,
+    editingThinkDraft: String = "",
+    editingThinkExpanded: Boolean = false,
     isFirstMessage: Boolean,
     emit: ChatUiIntent.() -> Unit
 ) {
@@ -877,6 +881,8 @@ private fun MessageBubble(
                     if (editing) {
                         MessageEditContent(
                             draft = editingDraft,
+                            thinkDraft = editingThinkDraft,
+                            thinkExpanded = editingThinkExpanded,
                             imageState = imageState,
                             isUser = isUser,
                             emit = emit
@@ -886,6 +892,9 @@ private fun MessageBubble(
                             message = message,
                             expandedThinkBlockIds = expandedThinkBlockIds,
                             isUser = isUser,
+                            editingDraft = editingDraft,
+                            editingThinkDraft = editingThinkDraft,
+                            editingThinkExpanded = editingThinkExpanded,
                             emit = emit
                         )
                     }
@@ -925,6 +934,9 @@ private fun MessageContent(
     message: ChatMessageUiModel,
     expandedThinkBlockIds: Set<String>,
     isUser: Boolean,
+    editingDraft: String = "",
+    editingThinkDraft: String = "",
+    editingThinkExpanded: Boolean = false,
     emit: ChatUiIntent.() -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -983,12 +995,52 @@ private fun StreamingStatus(
 @Composable
 private fun MessageEditContent(
     draft: String,
+    thinkDraft: String,
+    thinkExpanded: Boolean,
     imageState: MessageImageState,
     isUser: Boolean,
     emit: ChatUiIntent.() -> Unit
 ) {
     // 编辑框沿用正文排版，短消息仅占一行，长消息在高度上限内滚动。
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // 思维链单独一块：能改、能清空，折叠起来不占地方
+        if (thinkExpanded || thinkDraft.isNotBlank()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { ChatUiIntent.ToggleEditingThink.emit() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.edit_think_block),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isUser) {
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = if (thinkExpanded) "\u2212" else "+",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (thinkExpanded) {
+                RpScrollableOutlinedTextField(
+                    enabled = !imageState.submitting,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    value = thinkDraft,
+                    onValueChange = { ChatUiIntent.ChangeEditingThinkDraft(it).emit() },
+                    minLines = 2,
+                    maxLines = 8,
+                    shape = RoundedCornerShape(12.dp),
+                    placeholder = { Text(stringResource(R.string.edit_think_hint)) }
+                )
+            }
+        }
         RpScrollableOutlinedTextField(
             enabled = !imageState.submitting,
             modifier = Modifier.fillMaxWidth(),
@@ -1034,6 +1086,21 @@ private fun MessageEditContent(
                     fontWeight = FontWeight.Bold,
                     color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                 )
+            }
+            // 改自己的发言时才给这个选项：改别人（或自己）的回复不需要重答
+            if (isUser) {
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(
+                    onClick = { ChatUiIntent.SaveEditingMessageAndRegenerate.emit() },
+                    enabled = !imageState.processing,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.save_and_regenerate),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }

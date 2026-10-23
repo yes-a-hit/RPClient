@@ -58,8 +58,18 @@ fun stripThinkBlock(content: String): String {
  * 保存编辑时走这里：用户改的是正文，推理过程不该跟着一起被覆盖，
  * 也不该因为编辑而丢失——它是这条回复当时怎么想出来的记录。
  */
-fun replaceContentKeepingThink(original: String, newContent: String): String {
-    val think = extractThinkBlock(original)
-    if (think.isBlank()) return newContent.trim()
-    return "$OPEN_TAG\n$think\n$CLOSE_TAG\n\n${newContent.trim()}"
+fun replaceContentKeepingThink(original: String, newContent: String): String =
+    composeThinkContent(extractThinkBlock(original), newContent)
+
+/**
+ * 把思维链与正文拼回一条消息。
+ *
+ * 编辑时两者分开展示，保存时用这个拼回去。
+ * 思维链清空就不写标签——用户删掉推理，就该真的没有推理。
+ */
+fun composeThinkContent(think: String, body: String): String {
+    val reasoning = think.trim()
+    val content = body.trim()
+    if (reasoning.isBlank()) return content
+    return OPEN_TAG + "\n" + reasoning + "\n" + CLOSE_TAG + "\n\n" + content
 }

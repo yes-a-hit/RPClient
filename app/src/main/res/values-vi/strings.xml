@@ -1499,4 +1499,7 @@ Mở Cài đặt mô hình để kiểm tra khóa API, URL cơ sở, tên mô h�
     <string name="user_image_meaning">Ý nghĩa ảnh</string>
     <string name="user_image_meaning_hint">Trống: hiểu là ảnh do người dùng gửi.</string>
     <string name="not_set">Chưa đặt</string>
+    <string name="save_and_regenerate">Lưu và trả lời lại</string>
+    <string name="edit_think_block">Chuỗi suy luận</string>
+    <string name="edit_think_hint">Trống: không có suy luận</string>
 </resources>

@@ -1499,4 +1499,7 @@ Buka Pengaturan Model untuk memeriksa kunci API, URL dasar, nama model, dan izin
     <string name="user_image_meaning">Arti gambar</string>
     <string name="user_image_meaning_hint">Kosong: dianggap gambar kiriman pengguna.</string>
     <string name="not_set">Belum diatur</string>
+    <string name="save_and_regenerate">Simpan dan jawab ulang</string>
+    <string name="edit_think_block">Rantai penalaran</string>
+    <string name="edit_think_hint">Kosong: tanpa penalaran</string>
 </resources>

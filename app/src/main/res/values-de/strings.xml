@@ -1498,4 +1498,7 @@
     <string name="user_image_meaning">Bildbedeutung</string>
     <string name="user_image_meaning_hint">Leer: gilt als vom Nutzer gesendetes Bild.</string>
     <string name="not_set">Nicht gesetzt</string>
+    <string name="save_and_regenerate">Speichern und neu antworten</string>
+    <string name="edit_think_block">Gedankengang</string>
+    <string name="edit_think_hint">Leer: kein Gedankengang</string>
 </resources>

@@ -1493,4 +1493,7 @@
     <string name="user_image_meaning">發圖代表什麼</string>
     <string name="user_image_meaning_hint">留空時按預設理解：使用者送來一張圖片。填了就按這裡的說法理解。</string>
     <string name="not_set">未設定</string>
+    <string name="save_and_regenerate">儲存並重新回答</string>
+    <string name="edit_think_block">思維鏈</string>
+    <string name="edit_think_hint">留空則不寫入思維鏈</string>
 </resources>

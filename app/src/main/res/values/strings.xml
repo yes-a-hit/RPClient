@@ -1549,4 +1549,7 @@
     <string name="user_image_meaning">发图代表什么</string>
     <string name="user_image_meaning_hint">留空时按默认理解：用户发来一张图片。填了就按这里的说法理解，例如「这张图是他眼下看到的东西」。</string>
     <string name="not_set">未设置</string>
+    <string name="save_and_regenerate">保存并重新回答</string>
+    <string name="edit_think_block">思维链</string>
+    <string name="edit_think_hint">留空则不写入思维链</string>
 </resources>

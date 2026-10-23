@@ -1503,4 +1503,7 @@
     <string name="user_image_meaning">Смысл изображения</string>
     <string name="user_image_meaning_hint">Пусто: считается изображением от пользователя.</string>
     <string name="not_set">Не задано</string>
+    <string name="save_and_regenerate">Сохранить и ответить заново</string>
+    <string name="edit_think_block">Цепочка рассуждений</string>
+    <string name="edit_think_hint">Пусто: без рассуждений</string>
 </resources>

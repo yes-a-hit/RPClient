@@ -56,6 +56,9 @@ import me.kafuuneko.rpclient.libs.core.CoreViewModelWithEvent
 import me.kafuuneko.rpclient.libs.core.UiIntentObserver
 import me.kafuuneko.rpclient.libs.defaults.normalizedUserName
 import me.kafuuneko.rpclient.libs.llm.GenerationFailure
+import me.kafuuneko.rpclient.libs.llm.composeThinkContent
+import me.kafuuneko.rpclient.libs.llm.hasThinkBlock
+import me.kafuuneko.rpclient.libs.llm.extractThinkBlock
 import me.kafuuneko.rpclient.libs.llm.replaceContentKeepingThink
 import me.kafuuneko.rpclient.libs.llm.stripThinkBlock
 import me.kafuuneko.rpclient.libs.llm.ImageInputCapabilityResolver
@@ -1384,7 +1387,9 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             conversationState = uiState.conversationState.copy(
                 editingMessageId = message.id,
                 // 编辑框只放正文，思维链不进来
-                editingMessageDraft = editableContent
+                editingMessageDraft = editableContent,
+            editingThinkDraft = extractThinkBlock(rawContent),
+            editingThinkExpanded = hasThinkBlock(rawContent)
             )
         ).setup()
     }
@@ -1394,6 +1399,29 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
      *
      * @param intent 包含草稿文本的意图
      */
+    /** 改思维链草稿；与正文分开，各自独立保存。 */
+    @UiIntentObserver(ChatUiIntent.ChangeEditingThinkDraft::class)
+    private fun onChangeEditingThinkDraft(intent: ChatUiIntent.ChangeEditingThinkDraft) {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        uiState.copy(
+            conversationState = uiState.conversationState.copy(
+                editingThinkDraft = intent.value
+            )
+        ).setup()
+    }
+
+    /** 展开或收起编辑框里的思维链。 */
+    @UiIntentObserver(ChatUiIntent.ToggleEditingThink::class)
+    private fun onToggleEditingThink() {
+        val uiState = getOrNull<ChatUiState.Normal>() ?: return
+        val state = uiState.conversationState
+        uiState.copy(
+            conversationState = state.copy(
+                editingThinkExpanded = !state.editingThinkExpanded
+            )
+        ).setup()
+    }
+
     @UiIntentObserver(ChatUiIntent.ChangeEditingMessageDraft::class)
     private fun onChangeEditingMessageDraft(intent: ChatUiIntent.ChangeEditingMessageDraft) {
         if (mImageCoordinator.state.submitting) return
@@ -1413,7 +1441,20 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
      * 并将结果写回数据库，退出编辑状态。
      */
     @UiIntentObserver(ChatUiIntent.SaveEditingMessage::class)
-    private suspend fun onSaveEditingMessage() {
+    private suspend fun onSaveEditingMessage() = saveEditing(regenerate = false)
+
+    /**
+     * 保存编辑并重新回答。
+     *
+     * 与单纯保存的区别只有一点：把这之后的回复作废再重新生成。
+     * 改错字和改内容是两回事，删不删由用户按哪个按钮决定，
+     * 不做默认行为——那等于替人做决定，还把一个可撤销的编辑
+     * 变成不可恢复的删除。
+     */
+    @UiIntentObserver(ChatUiIntent.SaveEditingMessageAndRegenerate::class)
+    private suspend fun onSaveEditingMessageAndRegenerate() = saveEditing(regenerate = true)
+
+    private suspend fun saveEditing(regenerate: Boolean) {
         if (mImageCoordinator.state.processing) return
         try {
             val uiState = getOrNull<ChatUiState.Normal>() ?: return
@@ -1444,7 +1485,9 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
             }
             // 刷新 UI 状态并重置编辑态草稿
             // 用户发言改了，后面那些回复是针对旧内容生成的，必须作废
-            val editedUserMessage = message.source == ChatMessage.Source.User
+            // 只有点了「保存并重新回答」才作废后续回复
+            val editedUserMessage =
+                regenerate && message.source == ChatMessage.Source.User
             if (editedUserMessage) {
                 withContext(Dispatchers.IO) {
                     mChatRepository.deleteMessagesAfter(sessionId, messageId)
@@ -1458,7 +1501,6 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                 editingMessageId = null,
                 editingMessageDraft = ""
             )
-            // 改完直接接着生成回复：改一句话还要再点一次生成，太别扭
             if (editedUserMessage) {
                 continueLastAssistantMessage(sessionId)
             }

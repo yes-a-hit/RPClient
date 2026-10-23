@@ -1493,4 +1493,7 @@
     <string name="user_image_meaning">이미지 의미</string>
     <string name="user_image_meaning_hint">비우면 사용자가 보낸 이미지로 이해합니다.</string>
     <string name="not_set">설정 안 됨</string>
+    <string name="save_and_regenerate">저장 후 다시 답변</string>
+    <string name="edit_think_block">사고 사슬</string>
+    <string name="edit_think_hint">비우면 사고를 넣지 않음</string>
 </resources>

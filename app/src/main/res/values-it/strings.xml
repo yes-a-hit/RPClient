@@ -1477,4 +1477,7 @@ Apri le impostazioni del modello per verificare la chiave API, l\'URL di base, i
     <string name="user_image_meaning">Significato immagine</string>
     <string name="user_image_meaning_hint">Vuoto: inteso come immagine inviata dall utente.</string>
     <string name="not_set">Non impostato</string>
+    <string name="save_and_regenerate">Salva e rispondi di nuovo</string>
+    <string name="edit_think_block">Catena di ragionamento</string>
+    <string name="edit_think_hint">Vuoto: nessun ragionamento</string>
 </resources>

@@ -79,4 +79,44 @@ class ThinkBlockTest {
         val mixed = "他说完了。\n<think>又想起一件事"
         assertEquals("他说完了。", stripThinkBlock(mixed))
     }
+
+    @Test
+    fun `compose writes both parts`() {
+        val out = composeThinkContent("想了想", "说了一句")
+        assertEquals("想了想", extractThinkBlock(out))
+        assertEquals("说了一句", stripThinkBlock(out))
+    }
+
+    @Test
+    fun `compose without think yields plain body`() {
+        // 用户清空了思维链，就该真的没有思维链，而不是留个空标签
+        val out = composeThinkContent("", "说了一句")
+        assertFalse(hasThinkBlock(out))
+        assertEquals("说了一句", out)
+    }
+
+    @Test
+    fun `compose without body keeps think`() {
+        // 正文清空时推理还在，不能把整条消息变成空
+        val out = composeThinkContent("想了半天", "")
+        assertEquals("想了半天", extractThinkBlock(out))
+        assertEquals("", stripThinkBlock(out))
+    }
+
+    @Test
+    fun `compose trims both sides`() {
+        val out = composeThinkContent("  推理  ", "  正文  ")
+        assertEquals("推理", extractThinkBlock(out))
+        assertEquals("正文", stripThinkBlock(out))
+    }
+
+    @Test
+    fun `edit round trip keeps edited think`() {
+        // 打开带思维链的消息、改掉推理、保存，落库的应该是新推理
+        val original = "<think>\n旧的推理\n</think>\n\n正文"
+        val saved = composeThinkContent("新的推理", stripThinkBlock(original))
+        assertEquals("新的推理", extractThinkBlock(saved))
+        assertEquals("正文", stripThinkBlock(saved))
+    }
+
 }
