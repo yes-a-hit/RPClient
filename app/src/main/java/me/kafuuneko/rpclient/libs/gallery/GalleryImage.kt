@@ -22,7 +22,17 @@ data class GalleryImage(
     /** 模型可读的一句话说明，描述这张图适合什么时候发。 */
     val description: String = "",
     /** 加入时间戳，用于排序。 */
-    val addedAt: Long = 0L
+    val addedAt: Long = 0L,
+    /**
+     * 是否是角色本人的外观参考。
+     *
+     * 和「能不能发」是两件事：普通图是模型可以拿去发的东西，
+     * 外观图是**角色自己长什么样**——它要进 Prompt 当视觉锚点，
+     * 让模型认得出用户发来的 meme 里那个形象就是自己。
+     */
+    val isAppearance: Boolean = false,
+    /** 外观图在角色身上的含义，例如「立绘」「被摸头时的表情」。 */
+    val appearanceNote: String = ""
 ) {
     /** 供模型检索的一句话摘要。 */
     fun toBrief(): String = buildString {

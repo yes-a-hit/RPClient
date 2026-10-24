@@ -37,6 +37,25 @@ class GalleryStore(
     }
 
     /**
+     * 取某个角色的外观参考图。
+     *
+     * 这些图不是用来发的，是给模型认脸的——让它知道「自己长这样」，
+     * 用户发来同形象的 meme 时才认得出是自己，而不是别的同类。
+     *
+     * @param characterName 角色名；空表示没有绑定角色，返回空。
+     * @param limit 最多取几张。视觉 token 不便宜，默认三张封顶。
+     */
+    suspend fun appearanceImages(
+        characterName: String,
+        limit: Int = 3
+    ): List<GalleryImage> = withContext(Dispatchers.IO) {
+        if (characterName.isBlank()) return@withContext emptyList()
+        list()
+            .filter { it.isAppearance && it.characterName == characterName }
+            .take(limit)
+    }
+
+    /**
      * 按标签或名字挑图，供模型自主发图时检索。
      *
      * 匹配顺序：名字精确 > 标签命中 > 说明包含关键字。

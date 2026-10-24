@@ -46,6 +46,7 @@ import me.kafuuneko.rpclient.feature.noProviderModelSettingsGuide
 import me.kafuuneko.rpclient.feature.toGenerationFailurePresentation
 import me.kafuuneko.rpclient.feature.worldbooklist.WorldBookListActivity
 import me.kafuuneko.rpclient.libs.AppModel
+import me.kafuuneko.rpclient.libs.gallery.GalleryStore
 import me.kafuuneko.rpclient.libs.user.pickUserDescription
 import me.kafuuneko.rpclient.libs.user.describeUser
 import me.kafuuneko.rpclient.libs.imagegen.ImageGenRepository
@@ -174,6 +175,7 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
 
     private val mImageCapabilities by inject<ImageInputCapabilityResolver>()
     private val mImageRuntime by inject<MessageImageRuntime>()
+    private val mGalleryStore by inject<GalleryStore>()
     private val mImageCoordinator by lazy { MessageImageCoordinator(mImageRuntime, mFileRepository) { state ->
         getOrNull<ChatUiState.Normal>()?.copy(imageState = state)?.setup()
     } }
@@ -2340,6 +2342,15 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
         val creatorNotes = mChatRepository.getSessionCreatorNotes(session)
         val regexScripts = mRegexRepository.activeScripts(listOf(character))
         val imageReferences = mImageRuntime.prepareCandidates(generationHistory.messages)
+        // 角色本人的样子：给模型一个视觉锚点，
+        // 用户发同形象的梗图时才认得出画里那个是自己
+        val appearance = withContext(Dispatchers.IO) {
+            mGalleryStore.appearanceImages(character.name).mapNotNull { image ->
+                mImageRuntime.referenceOf(image.fileUuid)?.let { ref ->
+                    ref to image.appearanceNote
+                }
+            }
+        }
         // 按最近消息扫描 Skill 触发词；扫描在构建器之外完成，保持构建过程无 IO
         val activeSkills = mSkillRepository.resolveActive(
             recentText = generationHistory.messages
@@ -2371,6 +2382,8 @@ class ChatViewModel : CoreViewModelWithEvent<ChatUiIntent, ChatUiState>(
                     },
                     messageImages = imageReferences.references,
                     unavailableImages = imageReferences.unavailable,
+                    appearanceImages = appearance.map { it.first },
+                    appearanceNotes = appearance.map { it.second },
                     currentUserMessage = null,
                     totalMessageCount = generationHistory.totalMessageCount,
                     candidateLorebookEntries = lorebookEntries,

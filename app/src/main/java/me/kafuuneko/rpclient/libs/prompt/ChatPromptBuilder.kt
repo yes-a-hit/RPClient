@@ -3,6 +3,7 @@ package me.kafuuneko.rpclient.libs.prompt
 import com.google.gson.Gson
 import me.kafuuneko.rpclient.libs.character.CharacterProfileCodec
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationOptions
+import me.kafuuneko.rpclient.libs.llm.model.LLMImageReference
 import me.kafuuneko.rpclient.libs.llm.model.LLMGenerationRequest
 import me.kafuuneko.rpclient.libs.llm.model.LLMMessageRole
 import me.kafuuneko.rpclient.libs.prompt.model.ExampleDialogueBehavior
@@ -317,6 +318,18 @@ class ChatPromptBuilder(
             )
         }
         // 插入用户设定、角色定义、性格与场景
+        // 外观参考：把角色本人的样子作为视觉锚点塞进去，
+        // 否则它只有文字描述，用户发同形象的 meme 时会当成别的同类
+        if (context.appearanceImages.isNotEmpty()) {
+            beforeHistory += PromptPiece(
+                role = LLMMessageRole.System,
+                content = buildAppearancePrompt(context),
+                source = PromptSource(PromptSourceKind.UserPersona, "外观参考"),
+                retentionPriority = PRIORITY_ESSENTIAL,
+                canDrop = false,
+                images = context.appearanceImages
+            )
+        }
         beforeHistory += PromptPiece.required(
             LLMMessageRole.System,
             renderUserPersonaTemplate(
@@ -790,7 +803,8 @@ class ChatPromptBuilder(
             content = resolved,
             source = source,
             retentionPriority = retentionPriority,
-            canDrop = canDrop
+            canDrop = canDrop,
+            images = images
         )
     }
 
@@ -960,7 +974,14 @@ class ChatPromptBuilder(
         /** Prompt 超出预算时是否允许移除当前内容。 */
         val canDrop: Boolean,
         /** 宏展开或后处理前保留的原始 Prompt 内容。 */
-        val original: String = content
+        val original: String = content,
+        /**
+         * 随这段文字一起送进请求的图片。
+         *
+         * 目前只有角色外观参考会用到：文字说「这是你」，图紧跟其后，
+         * 模型才能把描述和形象对上。
+         */
+        val images: List<LLMImageReference> = emptyList()
     ) {
         companion object {
             /** 创建不可裁剪的核心必需片段。 */
@@ -1063,3 +1084,29 @@ private fun parseExampleBlocks(examples: String): List<String> {
         .map { "<START>\n${it.trim()}" }
         .filter { it.trim() != "<START>" }
 }
+
+
+/**
+ * 外观参考图的说明文字。
+ *
+ * 核心是最后两句的身份断言：光给图不够，模型还会把它当成「用户发来的参考图」，
+ * 甚至当成别的角色。要明确写死「这就是你自己」。
+ */
+internal fun buildAppearancePrompt(context: PromptBuildContext): String = buildString {
+    append("以下是 ")
+    append(context.character.name)
+    append(" 本人的样子：")
+    context.appearanceNotes.forEachIndexed { index, note ->
+        append("\n- 第 ")
+        append(index + 1)
+        append(" 张")
+        if (note.isNotBlank()) {
+            append("：")
+            append(note)
+        }
+    }
+    append("\n这些形象就是你。用户发来同一形象的图片、表情包或梗图时，")
+    append("画里的那个就是你本人，不要当成别的角色，也不要认成别人的同类。")
+    append("\n如果图里是你在做某件事，那就是你自己在那样做。")
+}
+

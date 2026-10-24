@@ -60,7 +60,17 @@ data class PromptBuildContext(
      */
     val activeSkills: List<SkillManifest> = emptyList(),
     val messageImages: Map<Long, List<LLMImageReference>> = emptyMap(),
-    val unavailableImages: Map<Long, List<UnavailablePromptImage>> = emptyMap()
+    val unavailableImages: Map<Long, List<UnavailablePromptImage>> = emptyMap(),
+    /**
+     * 角色本人的外观参考图。
+     *
+     * 不是拿来发的，是给模型认脸的——用户发来同形象的 meme 时，
+     * 它得知道画里那个就是自己，而不是某个长得很像的同类。
+     * 每张配一句 [appearanceNotes] 说明这是哪个角度/状态。
+     */
+    val appearanceImages: List<LLMImageReference> = emptyList(),
+    /** 与 [appearanceImages] 一一对应的说明，可为空串。 */
+    val appearanceNotes: List<String> = emptyList()
 )
 
 /** 本次构建对应的用户操作，会影响尾部指令和世界书生成类型过滤。 */

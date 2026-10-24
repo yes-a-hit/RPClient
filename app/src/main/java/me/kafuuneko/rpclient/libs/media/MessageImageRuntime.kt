@@ -168,6 +168,21 @@ class MessageImageRuntime(
     }
 
     /**
+     * 按文件 UUID 造一个发送引用，用于不在消息里的图片。
+     *
+     * 目前只有角色外观参考走这条路：它不属于任何一条消息，
+     * 但要跟 Prompt 一起作为视觉输入送出去。
+     *
+     * @return 文件缺失或不可发送时返回 null，由调用方跳过这一张，
+     *         不让一张坏图把整轮对话卡住。
+     */
+    suspend fun referenceOf(uuid: String): LLMImageReference? = withContext(Dispatchers.IO) {
+        runCatching {
+            mFiles.withFileLease(uuid) { file -> describe(uuid, file) }
+        }.getOrNull()
+    }
+
+    /**
      * 持仓库读取保护消费已提交图片；不按当前设置重新编码历史附件。
      *
      * @param reference 请求准备阶段读取的不可变文件描述。
