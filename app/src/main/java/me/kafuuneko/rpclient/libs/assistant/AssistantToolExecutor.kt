@@ -209,29 +209,31 @@ class AssistantToolExecutor(
             examplesOfDialogue = arguments.stringOrNull("exampleDialogue")?.trim().orEmpty(),
             postHistoryInstructions = arguments.stringOrNull("postHistoryInstructions")?.trim().orEmpty()
         )
-        // 同名卡已存在就更新，不再新建一张。
-        // 模型经常对同一个角色重发 create_character，每次都新建的话
-        // 列表里会堆出好几张一模一样的卡，用户只能手动一张张删。
+        // 同名就停下，不动已有的那张卡。
+        //
+        // 之前的写法是「同名则合并」：新值非空就盖掉原字段。
+        // 这等于让模型一句话就能改写用户精心写好的角色卡——
+        // 而且模型并不知道自己在覆盖东西，它只以为在建新卡。
+        //
+        // 要改内容请用 update_character 明确指定 id 与字段，
+        // 那是双方都知情的一次修改，不是建卡顺手带出来的副作用。
         val existing = runCatching {
             mCharacterRepository.getAllCharacters().firstOrNull { it.name == name }
         }.getOrNull()
         if (existing != null) {
-            val merged = existing.copy(
-                description = character.description.ifBlank { existing.description },
-                personality = character.personality.ifBlank { existing.personality },
-                scenario = character.scenario.ifBlank { existing.scenario },
-                firstMessages = character.firstMessages.ifBlank { existing.firstMessages },
-                examplesOfDialogue = character.examplesOfDialogue
-                    .ifBlank { existing.examplesOfDialogue },
-                postHistoryInstructions = character.postHistoryInstructions
-                    .ifBlank { existing.postHistoryInstructions }
-            )
-            mCharacterRepository.saveCharacter(merged)
-            return "同名角色卡已存在，已更新 id=" + existing.id +
-                "，名称：" + name + "（没有重复创建）"
+            return buildString {
+                append("已存在同名角色卡「")
+                append(name)
+                append("」（id=")
+                append(existing.id)
+                append("），本次未创建，也没有改动它。")
+                append("如果要改这张卡，请用 update_character 指定 id=")
+                append(existing.id)
+                append(" 和 fields；如果要另建一个，请换个名字。")
+            }
         }
         val id = mCharacterRepository.saveCharacter(character)
-        return "已创建角色卡 id=$id，名称：$name"
+        return "已创建角色卡 id=$id（名称：$name）"
     }
 
     /** 按白名单字段更新角色卡；未提供的字段保持原值。 */
